@@ -16,7 +16,9 @@
             <div class="relative">
                 <div class="rounded-full h-28 w-28 mb-4 overflow-hidden flex items-center justify-center bg-brand-blue/80"
                      style="border: 4px solid #f2d00d; box-shadow: 0 0 15px rgba(242,208,13,0.3);">
-                    <span class="text-primary font-extrabold text-4xl">{{ $initials }}</span>
+                    <img class="size-full rounded-full object-cover object-top"
+                         src="{{ asset('images/' . $member->PrvCusID . '.jpg') }}"
+                         alt="Profile Image">
                 </div>
 
             </div>

@@ -6,7 +6,6 @@ use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Collection;
 
 #[Layout('layouts.app')]
 #[Title('Member Directory — Chittagong Club Ltd.')]
@@ -15,18 +14,16 @@ class MemberDirectory extends Component
     public string $search       = '';
     public string $activeFilter = 'All';
     public int    $perPage      = 20;
-    public bool   $hasMore      = true;
+    public bool   $hasMore      = false;
 
-    public function updatedSearch(): void
+    public function updatingSearch(): void
     {
-        $this->perPage  = 20;
-        $this->hasMore  = true;
+        $this->perPage = 20;
     }
 
-    public function updatedActiveFilter(): void
+    public function updatingActiveFilter(): void
     {
-        $this->perPage  = 20;
-        $this->hasMore  = true;
+        $this->perPage = 20; // reset BEFORE render
     }
 
     public function loadMore(): void
@@ -34,9 +31,9 @@ class MemberDirectory extends Component
         $this->perPage += 20;
     }
 
-    public function render()
+    private function baseQuery()
     {
-        $query = DB::table('CustomerMst as c')
+        return DB::table('CustomerMst as c')
             ->leftJoin('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.Cardid')
             ->select([
                 'c.PrvCusID',
@@ -45,15 +42,19 @@ class MemberDirectory extends Component
                 'c.DOE',
                 'cc.Remarks as MemberCategory',
             ])
-            //            ->where('MemExpTypeID',100)
-            ->orderBy('PrvCusID')
-//            ->whereNotIn('c.Cardid', [137])
-            ->where('c.is_active', 1);
+            ->where('c.MemExpTypeID', 100)
+            ->whereIn('c.Cardid', [101]);
+    }
 
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('c.CusName',   'like', '%' . $this->search . '%')
-                    ->orWhere('c.PrvCusID','like', '%' . $this->search . '%');
+    public function render()
+    {
+        $query = $this->baseQuery();
+
+        if (trim($this->search) !== '') {
+            $s = '%' . $this->search . '%';
+            $query->where(function ($q) use ($s) {
+                $q->where('c.CusName',    'like', $s)
+                    ->orWhere('c.PrvCusID', 'like', $s);
             });
         }
 
@@ -62,20 +63,23 @@ class MemberDirectory extends Component
         }
 
         $total   = (clone $query)->count();
-        $members = $query->orderBy('c.CusName')->limit($this->perPage)->get();
+        $members = (clone $query)
+            ->orderBy('c.CusName')
+            ->limit($this->perPage)
+            ->get();
 
-        $this->hasMore = $members->count() < $total;
+        $this->hasMore = $total > $this->perPage;
 
         $categories = DB::table('CusCardCatagory')
+            ->whereNotNull('Remarks')
             ->orderBy('Remarks')
             ->pluck('Remarks')
-            ->filter()
             ->values();
 
         return view('livewire.member-directory', [
             'members'    => $members,
             'categories' => $categories,
-            'total'      => DB::table('CustomerMst')->where('is_active', 1)->count(),
+            'total'      => $total,
         ]);
     }
 }
