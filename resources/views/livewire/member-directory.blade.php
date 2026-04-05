@@ -1,36 +1,28 @@
 <div
     class="flex flex-col min-h-screen pb-24"
     x-data="{
-    observer: null,
+        init() {
+            // Intersection Observer watches the sentinel div at bottom
+            const observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) {
+                    @this.loadMore()
+                }
+            }, { threshold: 0.5 });
 
-    setupObserver() {
-        if (this.observer) {
-            this.observer.disconnect();
+            this.$nextTick(() => {
+                const sentinel = document.getElementById('scroll-sentinel');
+                if (sentinel) observer.observe(sentinel);
+            });
+
+            // Re-observe after each Livewire update (new items rendered)
+            $wire.on('render', () => {
+                this.$nextTick(() => {
+                    const sentinel = document.getElementById('scroll-sentinel');
+                    if (sentinel) observer.observe(sentinel);
+                });
+            });
         }
-
-        const sentinel = document.getElementById('scroll-sentinel');
-        if (!sentinel) return;
-
-        this.observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting) {
-                this.observer.disconnect();
-                $wire.loadMore();
-            }
-        }, {
-            rootMargin: '200px'
-        });
-
-        this.observer.observe(sentinel);
-    },
-
-    init() {
-        this.$nextTick(() => this.setupObserver());
-
-        Livewire.hook('morph.updated', () => {
-            this.$nextTick(() => this.setupObserver());
-        });
-    }
-}"
+    }"
 >
     {{-- Sticky Header --}}
     <header class="sticky top-0 z-50 bg-background-dark/95 ios-blur border-b border-white/10">
@@ -107,8 +99,8 @@
 
                 <div class="shrink-0 size-14 rounded-full overflow-hidden border-2 border-primary/30 bg-primary/10 flex items-center justify-center">
                     <img class="size-full rounded-full object-cover object-top"
-                         src="{{ asset('images/' .  $member->PrvCusID . '.jpg') }}"
-                         alt="Profile Image">
+     src="{{ asset('images/' .  $member->PrvCusID . '.jpg') }}"
+     alt="Profile Image">
                 </div>
 
                 <div class="flex-1 min-w-0">
@@ -130,13 +122,15 @@
     {{-- Scroll sentinel + loading indicator --}}
     @if ($hasMore)
         <div id="scroll-sentinel" class="flex justify-center py-6">
-            <div class="items-center gap-2 text-white/40 text-sm flex">
+            <div wire:loading.flex wire:target="loadMore" class="items-center gap-2 text-white/40 text-sm">
                 <svg class="animate-spin h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                 </svg>
                 Loading more…
             </div>
+            {{-- Invisible trigger point when not loading --}}
+            <div wire:loading.remove wire:target="loadMore" class="h-1 w-1"></div>
         </div>
     @else
         <p class="text-center text-white/20 text-xs py-6">All {{ $total }} members loaded</p>

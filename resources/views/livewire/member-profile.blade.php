@@ -19,8 +19,8 @@
                 <div class="rounded-full h-28 w-28 mb-4 overflow-hidden flex items-center justify-center bg-brand-blue/80"
                      style="border: 4px solid #f2d00d; box-shadow: 0 0 15px rgba(242,208,13,0.3);">
                     <img class="size-full rounded-full object-cover object-top"
-                         src="{{ asset('images/' . session('member.id') . '.jpg') }}"
-                         alt="Profile Image">
+     src="{{ asset('images/' . session('member.id') . '.jpg') }}"
+     alt="Profile Image">
                 </div>
             </div>
             <div class="text-center mt-3">
