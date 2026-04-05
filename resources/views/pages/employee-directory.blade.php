@@ -1,0 +1,308 @@
+@extends('layouts.app')
+@section('title', 'Employee Directory — Chittagong Club Ltd.')
+@section('show_nav', true)
+
+@section('content')
+<div
+    x-data="{
+        search: '',
+        activeBranch: 'All',
+        activeEmp: null,
+        employees: {{ json_encode($employees) }},
+        grouped: {{ json_encode($grouped) }},
+
+        get branches() {
+            return ['All', ...this.grouped.map(g => g.branch)];
+        },
+
+        get filtered() {
+            let list = this.employees;
+            if (this.activeBranch !== 'All') {
+                list = list.filter(e => e.branch === this.activeBranch);
+            }
+            if (this.search) {
+                const q = this.search.toLowerCase();
+                list = list.filter(e =>
+                    e.name.toLowerCase().includes(q) ||
+                    e.desig.toLowerCase().includes(q) ||
+                    e.branch.toLowerCase().includes(q) ||
+                    e.section.toLowerCase().includes(q)
+                );
+            }
+            return list;
+        },
+
+        get filteredGrouped() {
+            if (this.search || this.activeBranch !== 'All') return null;
+            return this.grouped;
+        },
+
+        open(emp) { this.activeEmp = emp; },
+        close() { this.activeEmp = null; }
+    }"
+    @keydown.escape.window="close()"
+    class="flex flex-col min-h-screen pb-24"
+>
+
+    {{-- Header --}}
+    <header class="sticky top-0 z-50 bg-brand-blue/90 ios-blur border-b border-white/10 px-4 pt-12 pb-4 space-y-3">
+        <div class="flex items-center justify-between">
+            <a href="{{ route('dashboard') }}"
+               class="flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+                <span class="material-symbols-outlined text-white">arrow_back_ios</span>
+            </a>
+            <div class="text-center">
+                <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Chittagong Club Ltd</p>
+                <h1 class="text-white text-lg font-bold">Employee Directory</h1>
+            </div>
+            <div class="size-10"></div>
+        </div>
+
+        {{-- Search --}}
+        <div class="relative">
+            <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                <span class="material-symbols-outlined text-white/40 text-xl">search</span>
+            </div>
+            <input
+                x-model="search"
+                type="text"
+                placeholder="Search name, role, department…"
+                autocomplete="off"
+                class="w-full bg-white/10 border border-white/10 rounded-full py-2.5 pl-11 pr-10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+            />
+            <button x-show="search" @click="search = ''"
+                    class="absolute inset-y-0 right-4 flex items-center text-white/40">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+        </div>
+
+        {{-- Branch filter chips --}}
+        <div class="flex gap-2 overflow-x-auto hide-scrollbar pb-0.5">
+            <template x-for="b in branches" :key="b">
+                <button
+                    @click="activeBranch = b; search = ''"
+                    :class="activeBranch === b
+                        ? 'bg-primary text-brand-blue font-bold'
+                        : 'bg-white/10 text-white/60 border border-white/10'"
+                    class="shrink-0 h-8 px-4 rounded-full text-xs transition-all"
+                    x-text="b"
+                ></button>
+            </template>
+        </div>
+    </header>
+
+    {{-- Stats bar --}}
+    <div class="px-4 py-3 flex items-center justify-between">
+        <p class="text-white/40 text-sm">
+            <span class="text-primary font-bold" x-text="filtered.length"></span> employees
+        </p>
+        <p class="text-white/25 text-xs">{{ $employees->count() }} total active</p>
+    </div>
+
+    {{-- ── Grouped view (default) ──────────────────────── --}}
+    <div x-show="filteredGrouped !== null" class="px-4 space-y-6 pb-4">
+        <template x-for="group in grouped" :key="group.branch">
+            <div>
+                {{-- Branch heading --}}
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="material-symbols-outlined text-primary text-base">corporate_fare</span>
+                        <h3 class="text-white font-extrabold text-sm tracking-tight" x-text="group.branch"></h3>
+                    </div>
+                    <div class="h-px flex-1 bg-white/10"></div>
+                    <span class="text-white/25 text-xs shrink-0" x-text="group.members.length + ' staff'"></span>
+                </div>
+
+                {{-- Employee cards --}}
+                <div class="space-y-2">
+                    <template x-for="emp in group.members" :key="emp.id">
+                        <button
+                            @click="open(emp)"
+                            class="w-full flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-3 text-left active:scale-[0.98] transition-transform"
+                        >
+                            {{-- Avatar --}}
+                            <div class="shrink-0 size-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                <span class="text-primary font-extrabold text-sm" x-text="emp.initials"></span>
+                            </div>
+
+                            {{-- Info --}}
+                            <div class="flex-1 min-w-0">
+                                <p class="text-white font-bold text-sm leading-tight truncate" x-text="emp.name"></p>
+                                <p class="text-primary/70 text-xs truncate" x-text="emp.desig"></p>
+                                <p class="text-white/30 text-xs truncate" x-show="emp.section" x-text="emp.section"></p>
+                            </div>
+
+                            {{-- Blood group badge --}}
+                            <div x-show="emp.blood" class="shrink-0 text-center mr-1">
+                                <span class="text-[10px] font-extrabold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full"
+                                      x-text="emp.blood"></span>
+                            </div>
+
+                            {{-- Call --}}
+                            <template x-if="emp.phone">
+                                <a :href="'tel:' + emp.phone"
+                                   @click.stop
+                                   class="shrink-0 flex size-9 items-center justify-center rounded-full bg-primary/10 border border-primary/20 active:scale-90 transition-transform">
+                                    <span class="material-symbols-outlined text-primary text-base">call</span>
+                                </a>
+                            </template>
+                            <template x-if="!emp.phone">
+                                <div class="shrink-0 size-9 flex items-center justify-center rounded-full bg-white/5 border border-white/5">
+                                    <span class="material-symbols-outlined text-white/15 text-base">phone_disabled</span>
+                                </div>
+                            </template>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    {{-- ── Flat filtered view (search / branch filter active) ── --}}
+    <div x-show="filteredGrouped === null" class="px-4 space-y-2 pb-4">
+        <template x-for="emp in filtered" :key="emp.id">
+            <button
+                @click="open(emp)"
+                class="w-full flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-3 text-left active:scale-[0.98] transition-transform"
+            >
+                <div class="shrink-0 size-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                    <span class="text-primary font-extrabold text-sm" x-text="emp.initials"></span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-white font-bold text-sm leading-tight truncate" x-text="emp.name"></p>
+                    <p class="text-primary/70 text-xs truncate" x-text="emp.desig"></p>
+                    <p class="text-white/30 text-xs truncate" x-text="emp.branch"></p>
+                </div>
+                <div x-show="emp.blood" class="shrink-0 mr-1">
+                    <span class="text-[10px] font-extrabold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full"
+                          x-text="emp.blood"></span>
+                </div>
+                <template x-if="emp.phone">
+                    <a :href="'tel:' + emp.phone" @click.stop
+                       class="shrink-0 flex size-9 items-center justify-center rounded-full bg-primary/10 border border-primary/20 active:scale-90 transition-transform">
+                        <span class="material-symbols-outlined text-primary text-base">call</span>
+                    </a>
+                </template>
+                <template x-if="!emp.phone">
+                    <div class="shrink-0 size-9 flex items-center justify-center rounded-full bg-white/5 border border-white/5">
+                        <span class="material-symbols-outlined text-white/15 text-base">phone_disabled</span>
+                    </div>
+                </template>
+            </button>
+        </template>
+
+        {{-- Empty --}}
+        <div x-show="filtered.length === 0" class="flex flex-col items-center py-16">
+            <span class="material-symbols-outlined text-5xl text-white/20 mb-3">search_off</span>
+            <p class="text-white/40 text-sm">No employees found</p>
+            <button @click="search = ''; activeBranch = 'All'"
+                    class="mt-3 text-primary text-sm font-bold">Clear filters</button>
+        </div>
+    </div>
+
+
+    {{-- ── Detail Modal ─────────────────────────────────── --}}
+    <template x-if="activeEmp !== null">
+        <div class="fixed inset-0 z-[100] flex items-end justify-center">
+
+            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="close()"></div>
+
+            <div
+                class="relative w-full max-w-[425px] bg-[#0a3d62] rounded-t-3xl border-t border-white/10 flex flex-col"
+                style="max-height: 80dvh;"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="transform translate-y-full"
+                x-transition:enter-end="transform translate-y-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="transform translate-y-0"
+                x-transition:leave-end="transform translate-y-full"
+            >
+                {{-- Handle --}}
+                <div class="flex justify-center pt-3 pb-2 shrink-0">
+                    <div class="w-10 h-1 bg-white/20 rounded-full"></div>
+                </div>
+
+                {{-- Modal header --}}
+                <div class="px-5 pb-4 border-b border-white/10 shrink-0">
+                    <div class="flex items-center gap-4">
+                        {{-- Large avatar --}}
+                        <div class="shrink-0 size-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                            <span class="text-primary font-extrabold text-2xl" x-text="activeEmp.initials"></span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white font-extrabold text-base leading-tight" x-text="activeEmp.name"></p>
+                            <p class="text-primary text-sm font-semibold mt-0.5" x-text="activeEmp.desig"></p>
+                            <p class="text-white/40 text-xs mt-0.5" x-text="activeEmp.branch"></p>
+                        </div>
+                        <button @click="close()"
+                                class="shrink-0 flex size-8 items-center justify-center rounded-full bg-white/10 text-white/60">
+                            <span class="material-symbols-outlined text-lg">close</span>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Detail rows --}}
+                <div class="overflow-y-auto flex-1 px-5 py-4 space-y-2">
+
+                    {{-- Section --}}
+                    <template x-if="activeEmp.section">
+                        <div class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3">
+                            <span class="material-symbols-outlined text-primary text-base shrink-0">workspaces</span>
+                            <div>
+                                <p class="text-white/30 text-[10px] uppercase tracking-wider">Section</p>
+                                <p class="text-white text-sm" x-text="activeEmp.section"></p>
+                            </div>
+                        </div>
+                    </template>
+
+                    {{-- Join year --}}
+                    <template x-if="activeEmp.join_year">
+                        <div class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3">
+                            <span class="material-symbols-outlined text-primary text-base shrink-0">calendar_today</span>
+                            <div>
+                                <p class="text-white/30 text-[10px] uppercase tracking-wider">Joined</p>
+                                <p class="text-white text-sm" x-text="activeEmp.join_year"></p>
+                            </div>
+                        </div>
+                    </template>
+
+                    {{-- Blood group --}}
+                    <template x-if="activeEmp.blood">
+                        <div class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3">
+                            <span class="material-symbols-outlined text-red-400 text-base shrink-0">bloodtype</span>
+                            <div>
+                                <p class="text-white/30 text-[10px] uppercase tracking-wider">Blood Group</p>
+                                <p class="text-red-400 font-bold text-sm" x-text="activeEmp.blood"></p>
+                            </div>
+                        </div>
+                    </template>
+
+                    {{-- Employee ID --}}
+                    <div class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3">
+                        <span class="material-symbols-outlined text-primary text-base shrink-0">badge</span>
+                        <div>
+                            <p class="text-white/30 text-[10px] uppercase tracking-wider">Employee ID</p>
+                            <p class="text-white text-sm" x-text="activeEmp.id"></p>
+                        </div>
+                    </div>
+
+                    {{-- Call button --}}
+                    <template x-if="activeEmp.phone">
+                        <a :href="'tel:' + activeEmp.phone"
+                           class="flex items-center gap-3 bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
+                            <span class="material-symbols-outlined text-primary text-base shrink-0">call</span>
+                            <div>
+                                <p class="text-white/30 text-[10px] uppercase tracking-wider">Mobile</p>
+                                <p class="text-white text-sm" x-text="activeEmp.phone"></p>
+                            </div>
+                            <span class="material-symbols-outlined text-primary/40 text-base ml-auto">arrow_outward</span>
+                        </a>
+                    </template>
+
+                </div>
+            </div>
+        </div>
+    </template>
+
+</div>
+@endsection

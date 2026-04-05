@@ -5,104 +5,165 @@
 @section('content')
 <div
     x-data="{
-        activeFilter: 'All',
-        filters: ['All', 'General', 'Events', 'Urgent', 'Finance'],
-        notices: [
-            { id:1, category:'Events',  title:'Annual Gala Dinner 2024', excerpt:'The Annual Grand Gala Dinner will be held on December 24th in the Grand Ballroom. Black tie dress code is mandatory.', date:'Dec 10, 2024', icon:'celebration',  urgent:false, unread:true  },
-            { id:2, category:'Urgent',  title:'Temporary Pool Closure',  excerpt:'The Olympic Pool will be closed from Dec 15–20 for scheduled maintenance. We apologise for any inconvenience.', date:'Dec 8, 2024',  icon:'pool',         urgent:true,  unread:true  },
-            { id:3, category:'Finance', title:'Q4 Subscription Due',     excerpt:'The Q4 membership subscription of ৳3,500 is due by December 31. Please clear dues to maintain active status.', date:'Dec 5, 2024',  icon:'payments',     urgent:false, unread:false },
-            { id:4, category:'General', title:'Library New Arrivals',    excerpt:'Over 150 new titles have been added to the Grand Library catalogue this month. Members can reserve books online.', date:'Dec 1, 2024',  icon:'menu_book',    urgent:false, unread:false },
-            { id:5, category:'Events',  title:'Tennis Tournament Registration', excerpt:'Registrations are now open for the Inter-Member Tennis Tournament. Last date to register: Dec 18.', date:'Nov 28, 2024', icon:'sports_tennis', urgent:false, unread:false },
-        ],
+        search: '',
+        activeNotice: null,
+
         get filtered() {
-            if (this.activeFilter === 'All') return this.notices;
-            return this.notices.filter(n => n.category === this.activeFilter);
-        }
+            if (!this.search) return notices;
+            const q = this.search.toLowerCase();
+            return notices.filter(n =>
+                n.title.toLowerCase().includes(q) ||
+                n.excerpt.toLowerCase().includes(q)
+            );
+        },
+
+        openNotice(notice) { this.activeNotice = notice; },
+        closeNotice() { this.activeNotice = null; }
     }"
+    x-init="notices = {{ json_encode($notices) }}"
+    @keydown.escape.window="closeNotice()"
     class="flex flex-col min-h-screen pb-24"
 >
+
     {{-- Header --}}
-    <header class="bg-brand-blue pt-12 pb-6 px-4 sticky top-0 z-50 rounded-b-xl shadow-lg">
+    <header class="bg-brand-blue pt-12 pb-5 px-4 sticky top-0 z-50 rounded-b-xl shadow-lg">
         <div class="flex items-center justify-between mb-4">
-            <a href="{{ route('dashboard') }}" class="text-white flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+            <a href="{{ route('dashboard') }}"
+               class="text-white flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
                 <span class="material-symbols-outlined">arrow_back_ios</span>
             </a>
             <div class="text-center">
                 <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Chittagong Club Ltd</p>
                 <h1 class="text-white text-lg font-bold">Notice Board</h1>
             </div>
-            <button class="text-white flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-                <span class="material-symbols-outlined text-primary">search</span>
-            </button>
+            <div class="size-10"></div>
         </div>
 
-        {{-- Filter chips --}}
-        <div class="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
-            <template x-for="f in filters" :key="f">
-                <button
-                    @click="activeFilter = f"
-                    :class="activeFilter === f
-                        ? 'bg-primary text-brand-blue font-bold shadow-lg shadow-primary/20'
-                        : 'bg-white/10 text-white/70 border border-white/20 hover:bg-white/20'"
-                    class="flex h-9 shrink-0 items-center justify-center rounded-full px-5 text-sm transition-all"
-                    x-text="f"
-                ></button>
-            </template>
+        {{-- Search --}}
+        <div class="relative">
+            <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                <span class="material-symbols-outlined text-white/40 text-xl">search</span>
+            </div>
+            <input
+                x-model="search"
+                type="text"
+                placeholder="Search notices…"
+                autocomplete="off"
+                class="w-full bg-white/10 border border-white/10 rounded-full py-2.5 pl-11 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+            />
+            <button
+                x-show="search"
+                @click="search = ''"
+                class="absolute inset-y-0 right-4 flex items-center text-white/40">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
         </div>
     </header>
 
-    {{-- Notices List --}}
-    <main class="flex-1 p-4 space-y-4">
+    {{-- Stats bar --}}
+    <div class="px-4 py-3 flex items-center justify-between">
+        <p class="text-white/40 text-sm">
+            <span class="text-primary font-bold" x-text="filtered.length"></span>
+            notices
+        </p>
+        <p class="text-white/30 text-xs">Total: {{ count($notices) }}</p>
+    </div>
 
-        {{-- Unread count badge --}}
-        <div class="flex items-center justify-between px-1">
-            <p class="text-white/50 text-sm font-medium">
-                <span class="text-primary font-bold" x-text="filtered.filter(n=>n.unread).length"></span>
-                unread notices
-            </p>
-            <button class="text-xs text-primary/70 hover:text-primary font-semibold transition-colors">Mark all read</button>
-        </div>
+    {{-- Notices List --}}
+    <main class="flex-1 px-4 space-y-3">
 
         <template x-for="notice in filtered" :key="notice.id">
-            <div
-                :class="notice.unread ? 'border-primary/30 bg-white/10' : 'border-white/10 bg-white/5'"
-                class="rounded-xl border p-4 transition-all active:scale-[0.98] cursor-pointer"
+            <button
+                @click="openNotice(notice)"
+                class="w-full rounded-xl border border-white/10 bg-white/5 p-4 text-left active:scale-[0.98] transition-transform"
             >
-                <div class="flex items-start gap-4">
+                <div class="flex items-start gap-3">
                     {{-- Icon --}}
-                    <div
-                        :class="notice.urgent ? 'bg-red-500/20 text-red-400' : 'bg-primary/10 text-primary'"
-                        class="shrink-0 size-12 rounded-xl flex items-center justify-center"
-                    >
-                        <span class="material-symbols-outlined text-2xl" x-text="notice.icon"></span>
+                    <div class="shrink-0 size-10 rounded-xl bg-primary/10 flex items-center justify-center mt-0.5">
+                        <span class="material-symbols-outlined text-primary text-xl">campaign</span>
                     </div>
 
                     {{-- Content --}}
                     <div class="flex-1 min-w-0">
-                        <div class="flex items-center justify-between gap-2 mb-1">
-                            <h3 class="text-white font-bold text-sm leading-tight truncate" x-text="notice.title"></h3>
-                            <div x-show="notice.unread" class="shrink-0 size-2 rounded-full bg-primary"></div>
-                        </div>
-                        <p class="text-white/50 text-xs leading-relaxed line-clamp-2" x-text="notice.excerpt"></p>
-                        <div class="flex items-center justify-between mt-3">
-                            <span
-                                :class="notice.urgent ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white/50'"
-                                class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                                x-text="notice.category"
-                            ></span>
-                            <span class="text-white/30 text-xs" x-text="notice.date"></span>
-                        </div>
+                        <p class="text-white font-bold text-sm leading-tight line-clamp-2 mb-1"
+                           x-text="notice.title"></p>
+                        <p class="text-white/40 text-xs leading-relaxed line-clamp-2"
+                           x-text="notice.excerpt"></p>
+                        <p class="text-white/25 text-[10px] mt-2 font-medium"
+                           x-text="notice.date"></p>
                     </div>
+
+                    <span class="material-symbols-outlined text-white/20 shrink-0 mt-1">chevron_right</span>
                 </div>
-            </div>
+            </button>
         </template>
 
         {{-- Empty state --}}
-        <div x-show="filtered.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
+        <div x-show="filtered.length === 0" class="flex flex-col items-center justify-center py-16">
             <span class="material-symbols-outlined text-5xl text-white/20 mb-3">inbox</span>
-            <p class="text-white/40 font-medium">No notices in this category</p>
+            <p class="text-white/40 text-sm">No notices found</p>
+            <button x-show="search" @click="search=''"
+                    class="mt-3 text-primary text-sm font-bold">Clear search</button>
         </div>
 
     </main>
+
+    {{-- ── Modal: notice detail ──────────────────────────── --}}
+    <template x-if="activeNotice !== null">
+        <div class="fixed inset-0 z-[100] flex items-end justify-center"
+             @keydown.escape.window="closeNotice()">
+
+            {{-- Backdrop --}}
+            <div class="absolute inset-0 bg-black/60 ios-blur"
+                 @click="closeNotice()"></div>
+
+            {{-- Sheet --}}
+            <div
+                class="relative w-full max-w-[425px] bg-[#0a3d62] rounded-t-3xl border-t border-white/10 flex flex-col"
+                style="max-height: 88dvh;"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="transform translate-y-full"
+                x-transition:enter-end="transform translate-y-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="transform translate-y-0"
+                x-transition:leave-end="transform translate-y-full"
+            >
+                {{-- Handle --}}
+                <div class="flex justify-center pt-3 pb-2 shrink-0">
+                    <div class="w-10 h-1 bg-white/20 rounded-full"></div>
+                </div>
+
+                {{-- Modal header --}}
+                <div class="px-5 pb-4 border-b border-white/10 shrink-0">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white font-extrabold text-base leading-snug"
+                               x-text="activeNotice.title"></p>
+                            <p class="text-white/40 text-xs mt-1"
+                               x-text="activeNotice.date"></p>
+                        </div>
+                        <button @click="closeNotice()"
+                                class="shrink-0 flex size-8 items-center justify-center rounded-full bg-white/10 text-white/60">
+                            <span class="material-symbols-outlined text-lg">close</span>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Modal body — scrollable --}}
+                <div class="overflow-y-auto px-5 py-4 flex-1">
+                    {{-- Render body with newlines preserved --}}
+                    <p class="text-white/80 text-sm leading-relaxed whitespace-pre-wrap"
+                       x-text="activeNotice.body"></p>
+                </div>
+
+            </div>
+        </div>
+    </template>
+
 </div>
+
+{{-- Pass notices to Alpine (defined before x-data evaluates) --}}
+<script>
+    var notices = [];
+</script>
 @endsection

@@ -1,144 +1,183 @@
 @extends('layouts.app')
 @section('title', 'Contact — Chittagong Club Ltd.')
 @section('show_nav', true)
-
 @section('content')
-<div class="flex flex-col min-h-screen pb-24">
 
-    {{-- Header --}}
-    <div class="fixed top-0 z-50 w-full max-w-[425px] flex items-center justify-between px-4 py-4 bg-brand-blue/80 ios-blur border-b border-white/10">
-        <div class="flex items-center gap-3">
-            <a href="{{ route('dashboard') }}" class="flex items-center justify-center rounded-full p-1 text-white">
-                <span class="material-symbols-outlined text-[28px]">chevron_left</span>
+    <div class="flex flex-col min-h-screen pb-24">
+
+        {{-- Header --}}
+        <header class="sticky top-0 z-50 bg-brand-blue/90 ios-blur border-b border-white/10 px-4 pt-12 pb-4">
+            <div class="flex items-center justify-between">
+                <a href="{{ route('dashboard') }}"
+                   class="flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+                    <span class="material-symbols-outlined text-white">arrow_back_ios</span>
+                </a>
+                <div class="text-center">
+                    <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Chittagong Club Ltd</p>
+                    <h1 class="text-white text-lg font-bold">Contact Us</h1>
+                </div>
+                <div class="size-10"></div>
+            </div>
+        </header>
+
+        <main class="px-4 py-5 space-y-5">
+
+            {{-- Address card --}}
+            <a href="https://maps.google.com/?q=Chittagong+Club+Ltd+S.S.+Khaled+Road+Chittagong+Bangladesh"
+               target="_blank"
+               class="flex items-start gap-4 bg-white/5 border border-white/10 rounded-2xl p-4">
+                <div class="shrink-0 size-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary text-xl">location_on</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-white/40 text-[10px] uppercase tracking-wider font-bold mb-1">Address</p>
+                    <p class="text-white font-semibold text-sm leading-relaxed">
+                        Chittagong Club Ltd.<br>
+                        S.S. Khaled Road,<br>
+                        Chittagong, Bangladesh.
+                    </p>
+                </div>
+                <span class="material-symbols-outlined text-white/20 shrink-0 mt-1">open_in_new</span>
             </a>
-            <h1 class="text-lg font-bold tracking-tight text-white">Contact &amp; Info</h1>
-        </div>
-        <button class="text-club-gold">
-            <span class="material-symbols-outlined">share</span>
-        </button>
-    </div>
 
-    {{-- Hero Map --}}
-    <div class="relative h-[40vh] w-full pt-16">
-        <div class="absolute inset-0 z-0 bg-cover bg-center"
-             style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCAV4OPFWDT-BcpdKTbxmvkjFOxK8ii8F1WRamzYjeIoyT0I1wIpcPtpFJnRHhyRqi9kJZmwYyNfUNnh02oosVZvA0aY7KsmUphrZiztEbk-Ox9Bbe4VEfwf2jYFW9r32Z0TRHvck_xjUr4e00vuIvbEon8XnXzL3h3A-tf4s_Je1mPdggSycsyMpXYyWuNwxsY_Fb5WvMFfaZZIVd0YyWv_0m8u9Gc6uDvwuNBs8TFgEmvR2EXxjbC9gqEMaqb6LSNtj-WGClZOs4')">
-        </div>
-        <div class="absolute inset-0 flex items-center justify-center z-10 pointer-events-none pb-12">
-            <div class="flex flex-col items-center">
-                <div class="bg-brand-blue text-club-gold p-2 rounded-full shadow-xl border-2 border-club-gold">
-                    <span class="material-symbols-outlined text-[32px] font-bold">location_on</span>
-                </div>
-                <div class="mt-2 bg-white/90 px-3 py-1 rounded-full shadow-lg border border-club-gold/30">
-                    <span class="text-xs font-bold text-brand-blue">Chittagong Club</span>
-                </div>
-            </div>
-        </div>
-        <div class="absolute bottom-0 left-0 right-0 h-32 z-20"
-             style="background: linear-gradient(to bottom, rgba(2,86,138,0) 0%, rgba(10,61,98,1) 100%)">
-        </div>
-    </div>
+            {{-- ── Main Club ────────────────────────────── --}}
+            <div class="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
 
-    {{-- Info Card --}}
-    <div class="relative z-30 -mt-10 mb-8 px-4">
-        <div class="rounded-xl bg-white/10 border border-white/10 shadow-xl overflow-hidden">
-
-            {{-- Header band --}}
-            <div class="bg-brand-blue p-6">
-                <h2 class="text-xl font-bold text-white leading-tight">Chittagong Club Ltd.</h2>
-                <p class="text-club-gold text-sm font-medium mt-1 uppercase tracking-widest">Heritage &amp; Excellence Since 1878</p>
-            </div>
-
-            {{-- Address --}}
-            <div class="p-6 border-b border-white/10">
-                <div class="flex items-start gap-4">
-                    <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-club-gold/10 text-club-gold">
-                        <span class="material-symbols-outlined">map</span>
+                {{-- Section heading --}}
+                <div class="flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-white/5">
+                    <div class="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-primary text-base">domain</span>
                     </div>
-                    <div class="flex-1">
-                        <h3 class="text-sm font-bold text-club-gold uppercase tracking-tighter mb-1">Location</h3>
-                        <p class="text-base font-medium leading-relaxed text-white">
-                            1-5 S.S. Khaled Road, Lalkhan Bazar,<br/>Chittagong, Bangladesh
-                        </p>
-                        <button class="mt-4 flex items-center gap-2 text-primary font-bold text-sm">
-                            <span class="material-symbols-outlined text-sm">directions</span>
-                            Get Directions
-                        </button>
+                    <div>
+                        <p class="text-white font-extrabold text-sm">Main Club</p>
+                        <p class="text-white/40 text-[10px]">For any query please contact</p>
                     </div>
                 </div>
-            </div>
 
-            {{-- Phone & Email --}}
-            <div class="p-6 border-b border-white/10">
-                <h3 class="text-xs font-bold text-club-gold uppercase tracking-widest mb-4">Reception &amp; Services</h3>
+                <div class="divide-y divide-white/5">
 
-                <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center gap-4">
-                        <div class="flex size-10 items-center justify-center rounded-lg bg-club-gold/10 text-club-gold">
-                            <span class="material-symbols-outlined">call</span>
-                        </div>
-                        <div>
-                            <p class="text-xs text-white/50">Primary Desk</p>
-                            <p class="text-base font-bold text-white">+880 31 611251-53</p>
-                        </div>
-                    </div>
-                    <a href="tel:+88031611251" class="rounded-full bg-brand-blue px-4 py-2 text-xs font-bold text-white">Call</a>
-                </div>
-
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="flex size-10 items-center justify-center rounded-lg bg-club-gold/10 text-club-gold">
-                            <span class="material-symbols-outlined">mail</span>
-                        </div>
-                        <div>
-                            <p class="text-xs text-white/50">General Inquiry</p>
-                            <p class="text-base font-bold text-white">info@chittagongclub.com</p>
-                        </div>
-                    </div>
-                    <a href="mailto:info@chittagongclub.com" class="rounded-full border-2 border-white/30 px-4 py-2 text-xs font-bold text-white">Email</a>
-                </div>
-            </div>
-
-            {{-- Departments --}}
-            <div class="p-6 bg-white/5">
-                <h3 class="text-xs font-bold text-club-gold uppercase tracking-widest mb-4">Department Extensions</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    @php
-                    $depts = [
-                        ['name' => 'Member Services', 'ext' => '102'],
-                        ['name' => 'Dining Hall',     'ext' => '205'],
-                        ['name' => 'Sports Complex',  'ext' => '310'],
-                        ['name' => 'Library',          'ext' => '401'],
-                    ];
-                    @endphp
-                    @foreach ($depts as $d)
-                    <div class="rounded-lg bg-white/5 border border-white/10 p-3">
-                        <p class="text-xs text-white/50">{{ $d['name'] }}</p>
-                        <p class="text-sm font-bold text-white">Ext: {{ $d['ext'] }}</p>
-                    </div>
+                    {{-- General lines --}}
+                    @foreach ([
+                        '+88 02333388078',
+                        '+88 02333388079',
+                        '+88 02333388080',
+                        '+88 02333388081',
+                    ] as $num)
+                        <a href="tel:{{ preg_replace('/\s+/','',$num) }}"
+                           class="flex items-center gap-3 px-4 py-3 active:bg-white/5 transition-colors">
+                            <span class="material-symbols-outlined text-primary text-base shrink-0">call</span>
+                            <span class="text-white text-sm">{{ $num }}</span>
+                        </a>
                     @endforeach
+
+                    {{-- Auto hunting --}}
+                    <div class="px-4 pt-3 pb-1">
+                        <p class="text-white/30 text-[10px] uppercase tracking-wider font-bold">Auto Hunting</p>
+                    </div>
+                    <a href="tel:+880233338083"
+                       class="flex items-center gap-3 px-4 py-3 active:bg-white/5 transition-colors">
+                        <span class="material-symbols-outlined text-primary text-base shrink-0">call</span>
+                        <span class="text-white text-sm">+88 02333388083</span>
+                    </a>
+
+                    {{-- Venue booking --}}
+                    <div class="px-4 pt-3 pb-1">
+                        <p class="text-white/30 text-[10px] uppercase tracking-wider font-bold">Venue Booking</p>
+                    </div>
+                    <a href="tel:+8801755665150"
+                       class="flex items-center gap-3 px-4 py-3 active:bg-white/5 transition-colors">
+                        <span class="material-symbols-outlined text-primary text-base shrink-0">call</span>
+                        <span class="text-white text-sm">+88 01755665150</span>
+                    </a>
+
+                    {{-- bKash / Nagad --}}
+                    <div class="px-4 pt-3 pb-1">
+                        <p class="text-white/30 text-[10px] uppercase tracking-wider font-bold">bKash &amp; Nagad (Bill Payment Only)</p>
+                    </div>
+                    <a href="tel:+8801844667014"
+                       class="flex items-center gap-3 px-4 py-3 active:bg-white/5 transition-colors">
+                        <span class="material-symbols-outlined text-primary text-base shrink-0">payments</span>
+                        <span class="text-white text-sm">+88 01844667014</span>
+                    </a>
+
+                    {{-- Secretary --}}
+                    <div class="px-4 pt-3 pb-1">
+                        <p class="text-white/30 text-[10px] uppercase tracking-wider font-bold">Secretary</p>
+                    </div>
+                    <div class="px-4 pb-2">
+                        <p class="text-white/60 text-xs">Cdr Md. Ashraf Uddin, (C), psc, BN (Retd)</p>
+                    </div>
+                    <a href="tel:+8801713123124"
+                       class="flex items-center gap-3 px-4 py-3 active:bg-white/5 transition-colors">
+                        <span class="material-symbols-outlined text-primary text-base shrink-0">call</span>
+                        <span class="text-white text-sm">+880 1713123124</span>
+                    </a>
+
+                    {{-- Email --}}
+                    <a href="mailto:chittagongclub@gmail.com"
+                       class="flex items-center gap-3 px-4 py-3 active:bg-white/5 transition-colors">
+                        <span class="material-symbols-outlined text-primary text-base shrink-0">mail</span>
+                        <span class="text-white text-sm">chittagongclub@gmail.com</span>
+                    </a>
+
                 </div>
             </div>
 
-            {{-- Hours --}}
-            <div class="p-6">
-                <div class="flex items-center gap-4 mb-3">
-                    <span class="material-symbols-outlined text-club-gold">schedule</span>
-                    <h3 class="text-sm font-bold text-club-gold uppercase tracking-widest">Operating Hours</h3>
+
+            {{-- ── Guest House Complex ──────────────────── --}}
+            <div class="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+
+                <div class="flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-white/5">
+                    <div class="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-primary text-base">hotel</span>
+                    </div>
+                    <div>
+                        <p class="text-white font-extrabold text-sm">Guest House Complex</p>
+                        <p class="text-white/40 text-[10px]">For query / reservation please contact</p>
+                    </div>
                 </div>
-                <div class="space-y-2">
-                    <div class="flex justify-between text-sm">
-                        <span class="text-white/50">Sunday – Thursday</span>
-                        <span class="font-medium text-white">08:00 AM – 11:00 PM</span>
+
+                <div class="divide-y divide-white/5">
+
+                    {{-- Front desk heading --}}
+                    <div class="px-4 pt-3 pb-1">
+                        <p class="text-white/30 text-[10px] uppercase tracking-wider font-bold">Front Desk (Reception)</p>
                     </div>
-                    <div class="flex justify-between text-sm">
-                        <span class="text-white/50">Friday – Saturday</span>
-                        <span class="font-medium text-white">07:00 AM – 12:00 AM</span>
+                    @foreach (['+88 02333388084', '+88 02333388085'] as $num)
+                        <a href="tel:{{ preg_replace('/\s+/','',$num) }}"
+                           class="flex items-center gap-3 px-4 py-3 active:bg-white/5 transition-colors">
+                            <span class="material-symbols-outlined text-primary text-base shrink-0">call</span>
+                            <span class="text-white text-sm">{{ $num }}</span>
+                        </a>
+                    @endforeach
+
+                    {{-- Guest house direct --}}
+                    <div class="px-4 pt-3 pb-1">
+                        <p class="text-white/30 text-[10px] uppercase tracking-wider font-bold">Guest House Direct</p>
                     </div>
+                    <a href="tel:+8801714080714"
+                       class="flex items-center gap-3 px-4 py-3 active:bg-white/5 transition-colors">
+                        <span class="material-symbols-outlined text-primary text-base shrink-0">call</span>
+                        <span class="text-white text-sm">+88 01714080714</span>
+                    </a>
+
+                    {{-- Email --}}
+                    <a href="mailto:ghcchittagongclub@gmail.com"
+                       class="flex items-center gap-3 px-4 py-3 active:bg-white/5 transition-colors">
+                        <span class="material-symbols-outlined text-primary text-base shrink-0">mail</span>
+                        <span class="text-white text-sm">ghcchittagongclub@gmail.com</span>
+                    </a>
+
                 </div>
             </div>
 
-        </div>
+            {{-- Footer note --}}
+            <div class="flex flex-col items-center text-center py-4 opacity-40">
+                <span class="material-symbols-outlined text-2xl text-primary mb-2">verified_user</span>
+                <p class="text-xs italic">Upholding the prestige and legacy of Chittagong Club Ltd since 1878.</p>
+            </div>
+
+        </main>
     </div>
 
-</div>
 @endsection

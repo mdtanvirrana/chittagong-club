@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Executive Committee — Chittagong Club Ltd.')
+@section('title', 'Former Chairmen — Chittagong Club Ltd.')
 @section('show_nav', true)
 
 @section('content')
@@ -13,7 +13,7 @@
         </a>
         <div class="text-center">
             <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Chittagong Club Ltd</p>
-            <h1 class="text-white text-lg font-bold">Executive Committee</h1>
+            <h1 class="text-white text-lg font-bold">Former Chairmen</h1>
         </div>
         <div class="size-10"></div>
     </header>
@@ -24,11 +24,11 @@
         <div class="flex flex-col items-center justify-center py-2">
             <div class="flex items-center gap-2 mb-2">
                 <span class="h-px w-8 bg-primary/40"></span>
-                <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Leadership</span>
+                <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Legacy of Leadership</span>
                 <span class="h-px w-8 bg-primary/40"></span>
             </div>
-            <p class="text-white/40 text-sm font-medium">
-                Showing {{ $previousYear }} – {{ $currentYear }} committee members
+            <p class="text-white/40 text-sm">
+                {{ $grouped->sum(fn($g) => count($g['members'])) }} Chairmen across {{ $grouped->count() }} terms
             </p>
         </div>
 
@@ -37,22 +37,20 @@
         {{-- Year group heading --}}
         <div class="flex items-center gap-3">
             <div class="flex items-center gap-2 shrink-0">
-                <span class="material-symbols-outlined text-primary text-base">gavel</span>
+                <span class="material-symbols-outlined text-primary text-base">history_edu</span>
                 <h3 class="text-white font-extrabold text-base tracking-tight">{{ $group['label'] }}</h3>
             </div>
             <div class="h-px flex-1 bg-white/10"></div>
-            <span class="text-white/30 text-xs shrink-0">{{ count($group['members']) }} members</span>
         </div>
 
         {{-- Member cards --}}
-        {{-- Member cards container --}}
 <div class="grid gap-3 -mt-3 w-full">
     @foreach ($group['members'] as $m)
-    {{-- Container: removed fixed widths, using flex-1 to let it breathe --}}
-    <div class="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-3 sm:p-4 overflow-hidden">
+    {{-- Main Card: Added overflow-hidden and backdrop blur --}}
+    <div class="flex items-center gap-3 bg-brand-blue/20 backdrop-blur-md border border-white/10 rounded-2xl p-3 overflow-hidden shadow-lg">
 
-        {{-- Avatar: Shrink-0 prevents the image from squishing --}}
-        <div class="shrink-0 size-14 sm:size-16 rounded-xl overflow-hidden border border-primary/20">
+        {{-- Avatar: shrink-0 ensures the circle doesn't turn into an oval --}}
+        <div class="shrink-0 size-14 rounded-full overflow-hidden border border-white/10 shadow-inner">
             @if ($m['has_photo'])
                 <div class="size-full bg-center bg-cover"
                      style="background-image: url('{{ asset('images/' . $m['member_id'] . '.jpg') }}')">
@@ -64,39 +62,44 @@
             @endif
         </div>
 
-        {{-- Info: min-w-0 is CRITICAL here to allow truncate/line-clamp to work inside flex --}}
+        {{-- Info: min-w-0 is the "Magic Fix" for text overflow --}}
         <div class="flex-1 min-w-0">
-            {{-- Name --}}
-            <h4 class="text-white font-bold text-sm leading-tight truncate uppercase tracking-tight">
-                {{ $m['name'] }}
-            </h4>
+            {{-- Serial + Name --}}
+            <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="text-primary/60 text-[9px] font-black shrink-0">#{{ $m['serial'] }}</span>
+                <h4 class="text-white font-bold text-sm truncate uppercase tracking-tight">
+                    {{ $m['name'] }}
+                </h4>
+            </div>
 
             {{-- Designation --}}
             @if ($m['designation'])
-            <div class="flex items-center gap-1 mt-0.5">
+            <div class="flex items-center gap-1 mb-1">
                 <span class="material-symbols-outlined text-primary text-[14px]">business_center</span>
-                <p class="text-primary text-[11px] font-bold truncate uppercase">{{ $m['designation'] }}</p>
+                <p class="text-primary text-[11px] font-bold truncate uppercase tracking-wide">
+                    {{ $m['designation'] }}
+                </p>
             </div>
             @endif
 
-            {{-- Area: Description --}}
+            {{-- Area / Term Description --}}
             @if ($m['area'])
-            <p class="text-white/40 text-[10px] leading-snug line-clamp-2 mt-1 italic">
+            <p class="text-white/40 text-[10px] leading-snug line-clamp-2 italic">
                 {{ $m['area'] }}
             </p>
             @endif
         </div>
 
-        {{-- Call button: Kept at a consistent size --}}
+        {{-- Call button: shrink-0 and ml-auto keeps it pinned to the right --}}
         <div class="shrink-0 ml-auto">
             @if ($m['phone'])
             <a href="tel:{{ preg_replace('/\s+/', '', $m['phone']) }}"
-               class="flex size-10 items-center justify-center rounded-full bg-white/5 border border-white/10 active:bg-primary/20 transition-colors">
-                <span class="material-symbols-outlined text-primary text-xl">call</span>
+               class="flex size-10 items-center justify-center rounded-full bg-white/5 border border-white/10 active:bg-primary/20 transition-all shadow-md">
+                <span class="material-symbols-outlined text-primary text-lg">call</span>
             </a>
             @else
             <div class="size-10 flex items-center justify-center rounded-full bg-white/5 border border-white/5 opacity-20">
-                <span class="material-symbols-outlined text-white text-xl">phone_disabled</span>
+                <span class="material-symbols-outlined text-white text-lg">phone_disabled</span>
             </div>
             @endif
         </div>
@@ -107,8 +110,8 @@
 
         @empty
         <div class="flex flex-col items-center justify-center py-20">
-            <span class="material-symbols-outlined text-5xl text-white/20 mb-3">group_off</span>
-            <p class="text-white/40 text-sm">No committee members found</p>
+            <span class="material-symbols-outlined text-5xl text-white/20 mb-3">history_edu</span>
+            <p class="text-white/40 text-sm">No records found</p>
         </div>
         @endforelse
 
