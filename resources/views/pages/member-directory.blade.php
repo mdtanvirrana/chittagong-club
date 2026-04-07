@@ -3,7 +3,7 @@
 @section('show_nav', true)
 @section('content')
 
-<div x-data="memberDirectory()" class="flex flex-col min-h-screen pb-24">
+<div x-data="memberDirectory()" x-on:keydown.escape.window="closePreview()" class="flex flex-col min-h-screen pb-24">
 
     {{-- Header --}}
     <header class="sticky top-0 z-50 bg-brand-blue/90 ios-blur border-b border-white/10">
@@ -47,20 +47,32 @@
     {{-- List --}}
     <main class="flex-1 px-4 space-y-3">
         <template x-for="m in paginated" :key="m.id">
-            <a :href="'/directory/' + m.id"
-               class="flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl p-3 active:scale-95 transition-transform overflow-hidden">
-                <div class="shrink-0 size-12 rounded-full overflow-hidden border border-white/10 bg-primary/10 flex items-center justify-center">
-                    <img :src="'/images/'+m.id+'.jpg'" class="size-full object-cover"
-                         x-on:error="$el.style.display='none'; $el.nextElementSibling.style.display='flex'">
-                    <span class="text-primary font-bold text-sm" style="display:none" x-text="m.initials"></span>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-white font-bold text-sm truncate uppercase" x-text="m.name"></p>
-                    <p class="text-white/40 text-[10px]" x-text="'Member ID: ' + m.id"></p>
-                    <p class="text-primary/50 text-[10px]" x-show="m.category" x-text="m.category"></p>
-                </div>
-                <span class="material-symbols-outlined text-white/20 shrink-0">chevron_right</span>
-            </a>
+            <div class="flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl p-3 overflow-hidden">
+                <button type="button"
+                        x-on:click.stop="openPreview(m)"
+                        class="relative shrink-0 size-12 rounded-full overflow-hidden border border-white/10 bg-primary/10 flex items-center justify-center"
+                        :class="m.has_photo ? 'active:scale-95 transition-transform' : 'cursor-default'"
+                        :aria-label="'Preview ' + m.name + ' profile picture'">
+                    <img :src="m.has_photo ? m.photo_url : null" class="size-full object-cover"
+                         x-show="m.has_photo"
+                         x-bind:alt="m.name + ' profile picture'">
+                    <span class="text-primary font-bold text-sm" x-show="!m.has_photo" x-text="m.initials"></span>
+                    <span x-show="m.has_photo"
+                          class="absolute inset-x-0 bottom-0 flex justify-center bg-black/45 py-0.5">
+                        <span class="material-symbols-outlined text-[12px] text-white">zoom_in</span>
+                    </span>
+                </button>
+
+                <a :href="'/directory/' + m.id"
+                   class="flex min-w-0 flex-1 items-center gap-3 active:scale-95 transition-transform">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-white font-bold text-sm truncate uppercase" x-text="m.name"></p>
+                        <p class="text-white/40 text-[10px]" x-text="'Member ID: ' + m.id"></p>
+                        <p class="text-primary/50 text-[10px]" x-show="m.category" x-text="m.category"></p>
+                    </div>
+                    <span class="material-symbols-outlined text-white/20 shrink-0">chevron_right</span>
+                </a>
+            </div>
         </template>
 
         <div x-show="filtered.length === 0" class="flex flex-col items-center py-16">
@@ -82,6 +94,37 @@
            x-text="'All ' + filtered.length + ' members loaded'"></p>
     </div>
 
+    <div x-show="previewOpen"
+         x-transition.opacity
+         class="fixed inset-0 z-[80] flex items-center justify-center p-4"
+         style="display: none;">
+        <button type="button"
+                x-on:click="closePreview()"
+                class="absolute inset-0 bg-black/80 ios-blur"
+                aria-label="Close image preview"></button>
+
+        <div class="relative w-full max-w-sm">
+            <button type="button"
+                    x-on:click="closePreview()"
+                    class="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full bg-black/40 text-white">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <div class="rounded-[2rem] border border-white/10 bg-brand-blue/95 p-4 shadow-2xl">
+                <div class="aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-primary/20 bg-white/5">
+                    <img x-bind:src="previewMember ? previewMember.photo_url : null"
+                         x-bind:alt="previewMember ? previewMember.name + ' full-size profile picture' : 'Profile picture preview'"
+                         class="size-full object-cover object-top">
+                </div>
+
+                <div class="pt-4 text-center">
+                    <p class="text-white text-base font-bold" x-text="previewMember ? previewMember.name : ''"></p>
+                    <p class="mt-1 text-xs text-white/40" x-text="previewMember ? 'Member ID: ' + previewMember.id : ''"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @include('layouts.bottom-nav')
 
 </div>
@@ -96,6 +139,8 @@
             activeFilter: 'All',
             page: 1,
             perPage: 20,
+            previewOpen: false,
+            previewMember: null,
             all: _data,
             categories: (function() {
                 var seen = {}, cats = [];
@@ -128,6 +173,20 @@
 
             get hasMore() {
                 return this.paginated.length < this.filtered.length;
+            },
+
+            openPreview: function(member) {
+                if (!member.has_photo) {
+                    return;
+                }
+
+                this.previewMember = member;
+                this.previewOpen = true;
+            },
+
+            closePreview: function() {
+                this.previewOpen = false;
+                this.previewMember = null;
             },
 
             setFilter: function(f) { this.activeFilter = f; this.page = 1; },

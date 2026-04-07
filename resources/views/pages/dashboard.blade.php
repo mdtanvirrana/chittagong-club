@@ -85,14 +85,13 @@
                     'items' => [
                         ['label' => 'Club Shop',           'icon' => 'shopping_bag',      'route' => 'shop'],
                         ['label' => 'Gallery',             'icon' => 'photo_library',     'route' => 'gallery'],
-                        ['label' => 'Club Facilities',     'icon' => 'sports_tennis',     'route' => 'facilities'],
                         ['label' => 'Greetings Calendar',  'icon' => 'calendar_month',    'route' => null],
                     ],
                 ],
                 [
                     'heading' => 'Members',
                     'items' => [
-                        ['label' => 'Current GC Members',  'icon' => 'groups',            'route' => 'executive'],
+                        ['label' => 'Chittagong Club Limited – Executive Committee', 'icon' => 'groups', 'route' => 'executive'],
                         ['label' => 'Former Chairmen',     'icon' => 'history_edu',       'route' => 'former-chairman'],
                         ['label' => 'Employee Directory',  'icon' => 'badge',             'route' => 'employee-directory'],
 
@@ -221,7 +220,6 @@
             $services = [
                 ['route' => 'notice-board', 'icon' => 'campaign',               'label' => 'Notice Board'],
                 ['route' => 'ledger',       'icon' => 'account_balance_wallet', 'label' => 'Ledger'],
-                ['route' => 'facilities',   'icon' => 'sports_tennis',          'label' => 'Facilities'],
                 ['route' => 'directory',    'icon' => 'group',                  'label' => 'Directory'],
                 ['route' => 'shop',         'icon' => 'shopping_bag',           'label' => 'Club Shop'],
                 ['route' => 'executive',    'icon' => 'gavel',                  'label' => 'Committee'],

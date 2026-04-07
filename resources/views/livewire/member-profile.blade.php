@@ -1,4 +1,6 @@
-<div class="flex flex-col min-h-screen pb-24">
+<div x-data="{ previewOpen: false }"
+     x-on:keydown.escape.window="previewOpen = false"
+     class="flex flex-col min-h-screen pb-24">
 
     {{-- ── Blue Header ───────────────────────────────────── --}}
     <div class="bg-brand-blue w-full pt-4 pb-14 px-4 rounded-b-[2.5rem] shadow-2xl">
@@ -16,12 +18,23 @@
         {{-- Avatar (initials) --}}
         <div class="flex flex-col items-center">
             <div class="relative">
-                <div class="rounded-full h-28 w-28 mb-4 overflow-hidden flex items-center justify-center bg-brand-blue/80"
-                     style="border: 4px solid #f2d00d; box-shadow: 0 0 15px rgba(242,208,13,0.3);">
-                    <img class="size-full rounded-full object-cover object-top"
-     src="{{ asset('images/' . session('member.id') . '.jpg') }}"
-     alt="Profile Image">
-                </div>
+                <button type="button"
+                        @if ($hasProfilePhoto) x-on:click="previewOpen = true" @endif
+                        class="relative rounded-full h-28 w-28 mb-4 overflow-hidden flex items-center justify-center bg-brand-blue/80"
+                        :class="{ 'active:scale-95 transition-transform': {{ $hasProfilePhoto ? 'true' : 'false' }} }"
+                        style="border: 4px solid #f2d00d; box-shadow: 0 0 15px rgba(242,208,13,0.3);"
+                        aria-label="Preview profile picture">
+                    @if ($hasProfilePhoto)
+                        <img class="size-full rounded-full object-cover object-top"
+                             src="{{ $profilePhotoUrl }}"
+                             alt="{{ $fullName }} profile picture">
+                        <span class="absolute inset-x-0 bottom-0 flex justify-center bg-black/45 py-1">
+                            <span class="material-symbols-outlined text-sm text-white">zoom_in</span>
+                        </span>
+                    @else
+                        <span class="text-primary font-extrabold text-3xl">{{ $initials }}</span>
+                    @endif
+                </button>
             </div>
             <div class="text-center mt-3">
                 <h1 class="text-white text-2xl font-extrabold tracking-tight">{{ $fullName }}</h1>
@@ -49,6 +62,31 @@
                     {{ $member->MemExpTypeName ?? 'N/A' }}
                 </span>
             </div>
+        </div>
+
+        @php
+            $contactActions = [
+                ['label' => 'Call', 'icon' => 'call', 'href' => $callHref],
+                ['label' => 'SMS', 'icon' => 'sms', 'href' => $smsHref],
+                ['label' => 'Email', 'icon' => 'mail', 'href' => $emailHref],
+            ];
+        @endphp
+
+        <div class="grid grid-cols-3 gap-3">
+            @foreach ($contactActions as $action)
+                @if ($action['href'])
+                    <a href="{{ $action['href'] }}"
+                       class="flex flex-col items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 px-3 py-4 text-center active:scale-95 transition-transform">
+                        <span class="material-symbols-outlined text-primary text-2xl">{{ $action['icon'] }}</span>
+                        <span class="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white">{{ $action['label'] }}</span>
+                    </a>
+                @else
+                    <div class="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-3 py-4 text-center opacity-40">
+                        <span class="material-symbols-outlined text-white text-2xl">{{ $action['icon'] }}</span>
+                        <span class="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white">{{ $action['label'] }}</span>
+                    </div>
+                @endif
+            @endforeach
         </div>
 
         {{-- ── Personal Info ─────────────────────────────── --}}
@@ -149,21 +187,88 @@
                     <x-profile-row label="Anniversary"   :value="$weddingDt" />
                 @endif
 
-                @if ($member->NoChild > 0)
-                    <div class="px-4 py-3">
-                        <p class="text-white/40 text-[10px] font-bold uppercase tracking-widest mb-2">
-                            Children ({{ $member->NoChild }})
-                        </p>
-                        @foreach (['Child1', 'Child2', 'Child3'] as $col)
-                            @if ($member->$col)
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="material-symbols-outlined text-white/20 text-base">child_care</span>
-                                    <p class="text-white text-sm">{{ $member->$col }}</p>
-                                </div>
-                            @endif
-                        @endforeach
+                <div class="px-4 py-3">
+                    @php
+                        $visibleChildrenCount = count($children);
+                        $childCountBadge = max($childrenCount, $visibleChildrenCount);
+                    @endphp
+
+                    <div class="mb-3 flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-white/40 text-[10px] font-bold uppercase tracking-widest">Children Information</p>
+                            <p class="mt-1 text-white/30 text-xs">Showing the child details stored in the member database record.</p>
+                        </div>
+                        <span class="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                            {{ $childCountBadge }}
+                        </span>
                     </div>
-                @endif
+
+                    @if ($visibleChildrenCount > 0)
+                        <div class="space-y-3">
+                            @foreach ($children as $child)
+                                <div class="rounded-2xl border border-white/10 bg-white/5 p-3">
+                                    <div class="flex items-start gap-3">
+                                        <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-extrabold text-primary">
+                                            {{ $child['slot'] }}
+                                        </div>
+
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-white text-sm font-bold leading-tight">{{ $child['name'] }}</p>
+
+                                            @if (! empty($child['sex']) || ! empty($child['blood']))
+                                                <div class="mt-2 flex flex-wrap gap-2">
+                                                    @if (! empty($child['sex']))
+                                                        <span class="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/70">
+                                                            {{ $child['sex'] }}
+                                                        </span>
+                                                    @endif
+                                                    @if (! empty($child['blood']))
+                                                        <span class="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/70">
+                                                            Blood: {{ $child['blood'] }}
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            @endif
+
+                                            <div class="mt-3 space-y-2">
+                                                @if (! empty($child['dob']))
+                                                    <div class="flex items-center gap-2 text-xs text-white/70">
+                                                        <span class="material-symbols-outlined text-base text-primary/80">cake</span>
+                                                        <span>{{ $child['dob'] }}</span>
+                                                    </div>
+                                                @endif
+
+                                                @if (! empty($child['mobile']))
+                                                    <div class="flex items-center gap-2 text-xs text-white/70">
+                                                        <span class="material-symbols-outlined text-base text-primary/80">call</span>
+                                                        <span>{{ $child['mobile'] }}</span>
+                                                    </div>
+                                                @endif
+
+                                                @if (! empty($child['email']))
+                                                    <div class="flex items-center gap-2 text-xs text-white/70 break-all">
+                                                        <span class="material-symbols-outlined text-base text-primary/80">mail</span>
+                                                        <span>{{ $child['email'] }}</span>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-3">
+                            <p class="text-sm text-white/55">No children information is stored in the database for this member.</p>
+                        </div>
+                    @endif
+
+                    @if ($hasMoreChildren || $childrenCount > $visibleChildrenCount)
+                        <p class="mt-3 text-[11px] leading-relaxed text-primary/75">
+                            The database indicates additional child entries beyond the detailed records currently available in the profile fields.
+                        </p>
+                    @endif
+                </div>
 
             </div>
         </div>
@@ -185,5 +290,38 @@
 
     {{-- Bottom Navigation --}}
     @include('layouts.bottom-nav')
+
+    @if ($hasProfilePhoto)
+        <div x-show="previewOpen"
+             x-transition.opacity
+             class="fixed inset-0 z-[80] flex items-center justify-center p-4"
+             style="display: none;">
+            <button type="button"
+                    x-on:click="previewOpen = false"
+                    class="absolute inset-0 bg-black/80 ios-blur"
+                    aria-label="Close image preview"></button>
+
+            <div class="relative w-full max-w-sm">
+                <button type="button"
+                        x-on:click="previewOpen = false"
+                        class="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full bg-black/40 text-white">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+
+                <div class="rounded-[2rem] border border-white/10 bg-brand-blue/95 p-4 shadow-2xl">
+                    <div class="aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-primary/20 bg-white/5">
+                        <img src="{{ $profilePhotoUrl }}"
+                             alt="{{ $fullName }} full-size profile picture"
+                             class="size-full object-cover object-top">
+                    </div>
+
+                    <div class="pt-4 text-center">
+                        <p class="text-white text-base font-bold">{{ $fullName }}</p>
+                        <p class="mt-1 text-xs text-white/40">Member ID: {{ $member->PrvCusID }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
 </div>

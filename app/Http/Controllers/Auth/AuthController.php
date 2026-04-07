@@ -29,23 +29,22 @@ class AuthController extends Controller
      */
     public function authenticate(LoginRequest $request)
     {
-
         $member = DB::table('T_MEMBER')
             ->where('tx_org_id',   $request->member_id)
             ->where('tx_password', $request->password)
             ->first();
 
-        if (! $member) {
+        if (!$member) {
             return back()
                 ->withInput($request->only('member_id'))
                 ->withErrors(['member_id' => 'Invalid Membership ID or password.']);
         }
 
-        // Store member info in session
-        Session::put('member', [
+        $request->session()->put('member', [
             'id'   => $member->tx_org_id,
-            'name' => $member->tx_name ?? 'Member',   // adjust column name if different
+            'name' => $member->tx_name ?? 'Member',
         ]);
+        $request->session()->regenerate();
 
         return redirect()->route('dashboard');
     }
