@@ -8,7 +8,11 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $memberId = session('member')['id'];
+        $memberId = data_get(session('member'), 'id');
+
+        if (! $memberId) {
+            return redirect()->route('login');
+        }
  
         $member = DB::table('CustomerMst as c')
             ->leftJoin('List_MemExpType as mt', 'c.MemExpTypeID', '=', 'mt.MemExpTypeID')

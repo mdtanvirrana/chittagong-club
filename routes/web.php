@@ -21,7 +21,7 @@ Route::middleware('guest.member')->group(function () {
 });
 
 // ─── Authenticated routes ────────────────────────────────────────────────────
-//Route::middleware('auth.member')->group(function () {
+Route::middleware('auth.member')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -47,4 +47,4 @@ Route::middleware('guest.member')->group(function () {
     Route::get('/dress-code',        fn() => view('pages.dress-code'))->name('dress-code');
     Route::get('/general-rules',     fn() => view('pages.general-rules'))->name('general-rules');
     Route::get('/gallery',           fn() => view('pages.gallery'))->name('gallery');
-//});
+});

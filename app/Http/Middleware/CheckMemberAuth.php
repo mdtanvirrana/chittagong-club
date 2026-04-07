@@ -10,7 +10,7 @@ class CheckMemberAuth
 {
     public function handle(Request $request, Closure $next)
     {
-        if (! Session::has('member')) {
+        if (! data_get(Session::get('member'), 'id')) {
             return redirect()->route('login');
         }
 

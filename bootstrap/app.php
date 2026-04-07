@@ -13,7 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-//            'auth.member' => CheckMemberAuth::class,
+            'auth.member' => CheckMemberAuth::class,
             'guest.member' => RedirectIfAuthenticated::class,
         ]);
     })
