@@ -13,6 +13,7 @@ use App\Http\Controllers\CommitteeController;
 use App\Http\Controllers\AffiliatedClubsController;
 use App\Http\Controllers\FormerChairmanController;
 use App\Http\Controllers\EmployeeDirectoryController;
+use App\Http\Controllers\CircularController;
 
 // ─── Guest routes (no auth needed) ──────────────────────────────────────────
 Route::middleware('guest.member')->group(function () {
@@ -25,6 +26,7 @@ Route::middleware('auth.member')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/circulars', [CircularController::class, 'index'])->name('circulars');
     Route::get('/profile', MemberProfile::class)->name('profile');
     Route::get('/notice-board', [NoticeController::class, 'index'])->name('notice-board');
     Route::get('/ledger', [LedgerController::class, 'index'])->name('ledger');

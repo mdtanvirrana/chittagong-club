@@ -218,6 +218,7 @@
 
             @php
             $services = [
+                ['route' => 'circulars',    'icon' => 'article',                'label' => 'Circular'],
                 ['route' => 'notice-board', 'icon' => 'campaign',               'label' => 'Notice Board'],
                 ['route' => 'ledger',       'icon' => 'account_balance_wallet', 'label' => 'Ledger'],
                 ['route' => 'directory',    'icon' => 'group',                  'label' => 'Directory'],

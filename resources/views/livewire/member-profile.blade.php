@@ -257,9 +257,9 @@
                                 </div>
                             @endforeach
                         </div>
-                    @else
+                    @elseif ($isMarried)
                         <div class="rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-3">
-                            <p class="text-sm text-white/55">No children information is stored in the database for this member.</p>
+                            <p class="text-sm text-white/55">No children information is added.</p>
                         </div>
                     @endif
 

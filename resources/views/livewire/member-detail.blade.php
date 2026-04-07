@@ -145,19 +145,31 @@
                     <x-profile-row label="Anniversary"   :value="$weddingDt" />
                 @endif
 
-                @if ($member->NoChild > 0)
+                @php
+                    $children = collect([
+                        $member->Child1 ?? null,
+                        $member->Child2 ?? null,
+                        $member->Child3 ?? null,
+                    ])->map(fn ($child) => trim((string) $child))
+                      ->filter(fn ($child) => $child !== '' && $child !== '0')
+                      ->values();
+                @endphp
+
+                @if ($children->isNotEmpty())
                     <div class="px-4 py-3">
-                        <p class="text-white/40 text-[10px] font-bold uppercase tracking-widest mb-2">
-                            Children ({{ $member->NoChild }})
+                        <p class="mb-2 text-white/40 text-[10px] font-bold uppercase tracking-widest">
+                            Children ({{ max((int) ($member->NoChild ?? 0), $children->count()) }})
                         </p>
-                        @foreach (['Child1', 'Child2', 'Child3'] as $col)
-                            @if ($member->$col)
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="material-symbols-outlined text-white/20 text-base">child_care</span>
-                                    <p class="text-white text-sm">{{ $member->$col }}</p>
-                                </div>
-                            @endif
+                        @foreach ($children as $child)
+                            <div class="mb-1 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-white/20 text-base">child_care</span>
+                                <p class="text-white text-sm">{{ $child }}</p>
+                            </div>
                         @endforeach
+                    </div>
+                @elseif ($isMarried)
+                    <div class="px-4 py-3">
+                        <p class="text-sm text-white/55">No children information is added.</p>
                     </div>
                 @endif
             </div>
