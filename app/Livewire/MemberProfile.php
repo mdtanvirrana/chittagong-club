@@ -2,11 +2,12 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
-use Illuminate\Support\Facades\DB;
+use App\Support\PortalCache;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Livewire\Component;
 
 #[Layout('layouts.app')]
 #[Title('My Profile — Chittagong Club Ltd.')]
@@ -37,67 +38,69 @@ class MemberProfile extends Component
     {
         $memberId = session('member')['id'];
 
-        $member = DB::table('CustomerMst as c')
-            ->leftJoin('List_MemExpType as mt', 'c.MemExpTypeID', '=', 'mt.MemExpTypeID')
-            ->leftJoin('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.Cardid')
-            ->where('c.PrvCusID', $memberId)
-            ->select([
-                'c.PrvCusID',
-                'c.Title',
-                'c.CusName',
-                'c.BloodGroup',
-                'c.Phone',
-                'c.Mobile',
-                'c.Email',
-                'c.Address',
-                'c.City',
-                'c.Profession',
-                'c.Sex',
-                'c.BirthDt',
-                'c.DOE',
-                'c.ExpDt',
-                'c.MaritalStatus',
-                'c.MarriageDT',
-                'c.SpouseName',
-                'c.SpoBlood',
-                'c.SpoMobile',
-                'c.NoChild',
-                'c.Child1',
-                'c.Child2',
-                'c.Child3',
-                'c.Child4',
-                'c.DTChild1',
-                'c.DTChild2',
-                'c.DTChild3',
-                'c.DTChild4',
-                'c.Child1Mobile',
-                'c.Child2Mobile',
-                'c.Child3Mobile',
-                'c.Child4Mobile',
-                'c.child1Sex',
-                'c.child2Sex',
-                'c.child3Sex',
-                'c.child4Sex',
-                'c.child1Blood',
-                'c.child2Blood',
-                'c.child3Blood',
-                'c.child4Blood',
-                'c.Child1Email',
-                'c.Child2Email',
-                'c.Child3Email',
-                'c.Child4Email',
-                'c.MoreChild',
-                'c.FatherName',
-                'c.MotherName',
-                'c.Religion',
-                'c.Nationality',
-                'c.NID',
-                'c.PassportNo',
-                'c.CreditBal',
-                'mt.MemExpTypeName',
-                'cc.Remarks as MemberCategory',
-            ])
-            ->first();
+        $member = PortalCache::remember("member_profile_{$memberId}_v1", now()->addMinutes(10), function () use ($memberId) {
+            return DB::table('CustomerMst as c')
+                ->leftJoin('List_MemExpType as mt', 'c.MemExpTypeID', '=', 'mt.MemExpTypeID')
+                ->leftJoin('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.Cardid')
+                ->where('c.PrvCusID', $memberId)
+                ->select([
+                    'c.PrvCusID',
+                    'c.Title',
+                    'c.CusName',
+                    'c.BloodGroup',
+                    'c.Phone',
+                    'c.Mobile',
+                    'c.Email',
+                    'c.Address',
+                    'c.City',
+                    'c.Profession',
+                    'c.Sex',
+                    'c.BirthDt',
+                    'c.DOE',
+                    'c.ExpDt',
+                    'c.MaritalStatus',
+                    'c.MarriageDT',
+                    'c.SpouseName',
+                    'c.SpoBlood',
+                    'c.SpoMobile',
+                    'c.NoChild',
+                    'c.Child1',
+                    'c.Child2',
+                    'c.Child3',
+                    'c.Child4',
+                    'c.DTChild1',
+                    'c.DTChild2',
+                    'c.DTChild3',
+                    'c.DTChild4',
+                    'c.Child1Mobile',
+                    'c.Child2Mobile',
+                    'c.Child3Mobile',
+                    'c.Child4Mobile',
+                    'c.child1Sex',
+                    'c.child2Sex',
+                    'c.child3Sex',
+                    'c.child4Sex',
+                    'c.child1Blood',
+                    'c.child2Blood',
+                    'c.child3Blood',
+                    'c.child4Blood',
+                    'c.Child1Email',
+                    'c.Child2Email',
+                    'c.Child3Email',
+                    'c.Child4Email',
+                    'c.MoreChild',
+                    'c.FatherName',
+                    'c.MotherName',
+                    'c.Religion',
+                    'c.Nationality',
+                    'c.NID',
+                    'c.PassportNo',
+                    'c.CreditBal',
+                    'mt.MemExpTypeName',
+                    'cc.Remarks as MemberCategory',
+                ])
+                ->first();
+        });
 
         if (! $member) {
             abort(404, 'Member not found.');
@@ -141,8 +144,7 @@ class MemberProfile extends Component
         $this->smsHref = $this->buildPhoneHref($callNumber, 'sms');
         $this->emailHref = $this->buildEmailHref($m->Email ?? null);
 
-        $photoPath = public_path('images/' . $m->PrvCusID . '.jpg');
-        $this->hasProfilePhoto = file_exists($photoPath);
+        $this->hasProfilePhoto = PortalCache::hasMemberPhoto($m->PrvCusID);
         $this->profilePhotoUrl = $this->hasProfilePhoto
             ? asset('images/' . $m->PrvCusID . '.jpg')
             : null;

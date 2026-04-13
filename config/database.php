@@ -109,8 +109,12 @@ return [
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
-             'encrypt' => env('DB_ENCRYPT', 'yes'),
-             'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
+            'encrypt' => env('DB_ENCRYPT', 'yes'),
+            'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
+            'login_timeout' => (int) env('DB_LOGIN_TIMEOUT', 5),
+            'options' => array_filter([
+                defined('PDO::SQLSRV_ATTR_QUERY_TIMEOUT') ? \PDO::SQLSRV_ATTR_QUERY_TIMEOUT : null => (int) env('DB_QUERY_TIMEOUT', 15),
+            ], fn ($value, $key) => $key !== null, ARRAY_FILTER_USE_BOTH),
         ],
 
     ],

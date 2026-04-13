@@ -50,6 +50,31 @@
             </div>
         </div>
 
+        @php
+            $contactActions = [
+                ['label' => 'Call', 'icon' => 'call', 'href' => $callHref],
+                ['label' => 'SMS', 'icon' => 'sms', 'href' => $smsHref],
+                ['label' => 'Email', 'icon' => 'mail', 'href' => $emailHref],
+            ];
+        @endphp
+
+        <div class="grid grid-cols-3 gap-3">
+            @foreach ($contactActions as $action)
+                @if ($action['href'])
+                    <a href="{{ $action['href'] }}"
+                       class="flex flex-col items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 px-3 py-4 text-center active:scale-95 transition-transform">
+                        <span class="material-symbols-outlined text-primary text-2xl">{{ $action['icon'] }}</span>
+                        <span class="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white">{{ $action['label'] }}</span>
+                    </a>
+                @else
+                    <div class="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-3 py-4 text-center opacity-40">
+                        <span class="material-symbols-outlined text-white text-2xl">{{ $action['icon'] }}</span>
+                        <span class="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white">{{ $action['label'] }}</span>
+                    </div>
+                @endif
+            @endforeach
+        </div>
+
         {{-- Personal Info --}}
         <x-profile-card icon="person" title="Personal Information">
             <x-profile-row label="Full Name"     :value="$fullName" />

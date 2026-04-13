@@ -28,9 +28,6 @@
                         <img class="size-full rounded-full object-cover object-top"
                              src="{{ $profilePhotoUrl }}"
                              alt="{{ $fullName }} profile picture">
-                        <span class="absolute inset-x-0 bottom-0 flex justify-center bg-slate-950/20 py-1 backdrop-blur-sm">
-                            <span class="material-symbols-outlined text-sm text-white">zoom_in</span>
-                        </span>
                     @else
                         <span class="text-primary font-extrabold text-3xl">{{ $initials }}</span>
                     @endif
@@ -298,13 +295,13 @@
              style="display: none;">
             <button type="button"
                     x-on:click="previewOpen = false"
-                    class="absolute inset-0 bg-slate-950/35 backdrop-blur-sm"
+                    class="absolute inset-0 bg-slate-950/35"
                     aria-label="Close image preview"></button>
 
             <div class="relative w-full max-w-sm">
                 <button type="button"
                         x-on:click="previewOpen = false"
-                        class="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full border border-white/10 bg-slate-950/25 text-white backdrop-blur-sm">
+                        class="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full border border-white/10 bg-slate-950/25 text-white">
                     <span class="material-symbols-outlined">close</span>
                 </button>
 

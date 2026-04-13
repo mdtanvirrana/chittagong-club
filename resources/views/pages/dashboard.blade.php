@@ -18,8 +18,44 @@
 
 @section('content')
 <div
-    x-data="{ sidebarOpen: false }"
-    @keydown.escape.window="sidebarOpen = false"
+    x-data="{
+        sidebarOpen: false,
+        previewOpen: false,
+        balanceLoading: true,
+        creditBal: null,
+        totalDue: null,
+        creditLimit: {{ (float) ($member->CreditAmt ?? 0) }},
+        async loadSummary() {
+            try {
+                const response = await fetch('{{ route('dashboard.summary') }}', {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin',
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load dashboard summary');
+                }
+
+                const data = await response.json();
+                this.creditBal = Number(data.creditBal ?? 0);
+                this.totalDue = Number(data.totalDue ?? 0);
+                this.creditLimit = Number(data.creditLimit ?? this.creditLimit);
+            } catch (error) {
+                this.creditBal = 0;
+                this.totalDue = 0;
+            } finally {
+                this.balanceLoading = false;
+            }
+        },
+        formatMoney(value, decimals = 2) {
+            return '৳' + Number(value || 0).toLocaleString(undefined, {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals,
+            });
+        }
+    }"
+    x-init="loadSummary()"
+    @keydown.escape.window="sidebarOpen = false; previewOpen = false"
     class="flex flex-col min-h-screen pb-24"
 >
 
@@ -83,6 +119,7 @@
                 [
                     'heading' => 'Services',
                     'items' => [
+                        ['label' => 'Facilities',          'icon' => 'apartment',         'route' => 'facilities'],
                         ['label' => 'Club Shop',           'icon' => 'shopping_bag',      'route' => 'shop'],
                         ['label' => 'Gallery',             'icon' => 'photo_library',     'route' => 'gallery'],
                         ['label' => 'Greetings Calendar',  'icon' => 'calendar_month',    'route' => null],
@@ -164,20 +201,22 @@
         <div class="flex items-center gap-5">
 
             <div class="relative">
-                <div class="size-20 rounded-full gold-border p-1 bg-background-dark">
-                    @if (file_exists(public_path('images/' . $member->PrvCusID . '.jpg')))
-                        <div class="size-full rounded-full bg-center bg-cover object-center"
-                             style="background-image: url('{{ asset('images/' . $member->PrvCusID . '.jpg') }}')">
-                        </div>
+                <button type="button"
+                        @if ($member->hasProfilePhoto) x-on:click="previewOpen = true" @endif
+                        class="size-20 rounded-full gold-border p-1 bg-background-dark block"
+                        :class="{ 'active:scale-95 transition-transform': {{ $member->hasProfilePhoto ? 'true' : 'false' }} }"
+                        aria-label="Preview profile picture">
+                    @if ($member->hasProfilePhoto)
+                        <span class="relative block size-full rounded-full overflow-hidden">
+                            <span class="size-full block bg-center bg-cover object-center"
+                                  style="background-image: url('{{ $member->profilePhotoUrl }}')"></span>
+                        </span>
                     @else
-                        <div class="size-full rounded-full bg-primary/10 flex items-center justify-center">
+                        <span class="size-full rounded-full bg-primary/10 flex items-center justify-center">
                             <span class="text-primary font-extrabold text-xl">{{ $initials }}</span>
-                        </div>
+                        </span>
                     @endif
-                </div>
-                <div class="absolute -bottom-1 -right-1 bg-primary text-brand-blue px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
-                    {{ strtoupper(substr($member->MemberCategory ?? 'MBR', 0, 3)) }}
-                </div>
+                </button>
             </div>
 
             <div class="flex flex-col">
@@ -201,15 +240,56 @@
             <div class="h-10 w-px bg-white/10"></div>
             <div class="space-y-1 text-right">
                 <p class="text-xs uppercase tracking-widest text-white/50">Credit Balance</p>
-                <p class="text-lg font-bold {{ $creditBal >= 0 ? 'text-white' : 'text-red-400' }}">
-                    ৳{{ number_format(abs($creditBal), 2) }}
-                </p>
+                <a href="{{ route('ledger') }}">
+                    <div x-show="balanceLoading" class="flex justify-end">
+                        <span class="inline-flex size-5 animate-spin rounded-full border-2 border-white/15 border-t-primary"></span>
+                    </div>
+                    <p x-show="!balanceLoading"
+                       class="text-lg font-bold"
+                       :class="(creditBal ?? 0) >= 0 ? 'text-white' : 'text-red-400'"
+                       x-text="formatMoney(Math.abs(creditBal ?? 0), 2)"></p>
+                </a>
                 <p class="text-white/30 text-xs">
-                    Due: ৳{{ number_format($totalDue, 0) }} / Limit: ৳{{ number_format($member->CreditAmt ?? 0, 0) }}
+                    <span x-show="balanceLoading">Due: -- / Limit: ৳{{ number_format($member->CreditAmt ?? 0, 0) }}</span>
+                    <span x-show="!balanceLoading"
+                          x-text="'Due: ' + formatMoney(totalDue ?? 0, 0) + ' / Limit: ' + formatMoney(creditLimit ?? 0, 0)"></span>
                 </p>
             </div>
         </div>
     </section>
+
+    @if ($member->hasProfilePhoto)
+        <div x-show="previewOpen"
+             x-transition.opacity
+             class="fixed inset-0 z-[80] flex items-center justify-center p-4"
+             style="display: none;">
+            <button type="button"
+                    x-on:click="previewOpen = false"
+                    class="absolute inset-0 bg-slate-950/35"
+                    aria-label="Close image preview"></button>
+
+            <div class="relative w-full max-w-sm">
+                <button type="button"
+                        x-on:click="previewOpen = false"
+                        class="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full border border-white/10 bg-slate-950/25 text-white">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+
+                <div class="rounded-[2rem] border border-white/10 bg-brand-blue/90 p-4 shadow-2xl">
+                    <div class="aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-primary/20 bg-white/5">
+                        <img src="{{ $member->profilePhotoUrl }}"
+                             alt="{{ $fullName }} full-size profile picture"
+                             class="size-full object-cover object-top">
+                    </div>
+
+                    <div class="pt-4 text-center">
+                        <p class="text-white text-base font-bold">{{ $fullName }}</p>
+                        <p class="mt-1 text-xs text-white/40">Member ID: {{ $member->PrvCusID }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- ── Action Grid ──────────────────────────────────── --}}
     <section class="px-6 pb-8">

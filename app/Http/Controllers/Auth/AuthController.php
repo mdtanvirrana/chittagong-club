@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
 
 class AuthController extends Controller
@@ -21,7 +20,11 @@ class AuthController extends Controller
             return redirect()->route('dashboard');
         }
 
-        return view('pages.login');
+        return response()
+            ->view('pages.login')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
     }
 
     /**
@@ -29,22 +32,27 @@ class AuthController extends Controller
      */
     public function authenticate(LoginRequest $request)
     {
+        $memberId = trim((string) $request->member_id);
+        $password = (string) $request->password;
+
         $member = DB::table('T_MEMBER')
-            ->where('tx_org_id',   $request->member_id)
-            ->where('tx_password', $request->password)
+            ->where('tx_org_id', $memberId)
+            ->where('tx_password', $password)
+            ->select('tx_org_id', 'tx_name')
             ->first();
 
-        if (!$member) {
+        if (! $member) {
             return back()
-                ->withInput($request->only('member_id'))
+                ->withInput(['member_id' => $memberId])
                 ->withErrors(['member_id' => 'Invalid Membership ID or password.']);
         }
 
+        $request->session()->regenerate();
+        $request->session()->regenerateToken();
         $request->session()->put('member', [
-            'id'   => $member->tx_org_id,
+            'id' => $member->tx_org_id,
             'name' => $member->tx_name ?? 'Member',
         ]);
-        $request->session()->regenerate();
 
         return redirect()->route('dashboard');
     }

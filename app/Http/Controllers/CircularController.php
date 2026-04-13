@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\PortalCache;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -18,7 +18,7 @@ class CircularController extends Controller
         $perPage = 10;
         $page = max(1, (int) request()->query('page', 1));
 
-        $resolvedCirculars = collect(Cache::remember(
+        $resolvedCirculars = collect(PortalCache::remember(
             'circular_resolved_items_v3',
             now()->addHours(12),
             fn () => DB::table('T_CAREER')
@@ -80,7 +80,7 @@ class CircularController extends Controller
 
     private function resolveCircularAsset(object $row, ?string $body = null): array
     {
-        return Cache::remember(
+        return PortalCache::remember(
             'circular_asset_v3_' . $row->id_career_key,
             now()->addHours(12),
             function () use ($row, $body) {
@@ -128,60 +128,67 @@ class CircularController extends Controller
 
     private function getWordPressCircularPosts()
     {
-        return Cache::remember(
-            'circular_wordpress_posts_v2',
-            now()->addHours(12),
-            function () {
-                $posts = collect();
+        $cache = PortalCache::store();
+        $freshCacheKey = 'circular_wordpress_posts_v3';
+        $staleCacheKey = 'circular_wordpress_posts_stale_v1';
 
-                for ($page = 1; $page <= 3; $page++) {
-                    try {
-                        $response = Http::acceptJson()
-                            ->connectTimeout(3)
-                            ->timeout(8)
-                            ->get(self::WORDPRESS_API_BASE . '/posts', [
-                                'categories' => 3,
-                                'page' => $page,
-                                'per_page' => 50,
-                                '_embed' => 'wp:featuredmedia',
-                            ]);
-                    } catch (\Throwable) {
-                        break;
-                    }
+        if ($cache->has($freshCacheKey)) {
+            return collect($cache->get($freshCacheKey, []));
+        }
 
-                    if (! $response->successful()) {
-                        break;
-                    }
+        $posts = collect();
 
-                    $batch = collect($response->json())
-                        ->map(function (array $post) {
-                            $title = html_entity_decode((string) data_get($post, 'title.rendered', ''), ENT_QUOTES | ENT_HTML5);
-                            $content = (string) data_get($post, 'content.rendered', '');
-                            $embeddedImage = $post['_embedded']['wp:featuredmedia'][0]['source_url'] ?? null;
-
-                            return [
-                                'id' => (int) ($post['id'] ?? 0),
-                                'title' => $title,
-                                'normalized_title' => $this->normalizeTitle($title),
-                                'year' => $this->parseDate((string) data_get($post, 'date'))?->format('Y'),
-                                'link' => $post['link'] ?? null,
-                                'image_url' => $embeddedImage ?: $this->extractFirstImageUrl($content),
-                            ];
-                        })
-                        ->filter(fn (array $post) => $post['normalized_title'] !== '' && filled($post['image_url']));
-
-                    $posts = $posts->concat($batch);
-
-                    $totalPages = (int) $response->header('X-WP-TotalPages', $page);
-
-                    if ($page >= $totalPages) {
-                        break;
-                    }
-                }
-
-                return $posts->values();
+        for ($page = 1; $page <= 2; $page++) {
+            try {
+                $response = Http::acceptJson()
+                    ->connectTimeout(2)
+                    ->timeout(4)
+                    ->get(self::WORDPRESS_API_BASE . '/posts', [
+                        'categories' => 3,
+                        'page' => $page,
+                        'per_page' => 50,
+                        '_embed' => 'wp:featuredmedia',
+                    ]);
+            } catch (\Throwable) {
+                return collect($cache->get($staleCacheKey, []));
             }
-        );
+
+            if (! $response->successful()) {
+                return collect($cache->get($staleCacheKey, []));
+            }
+
+            $batch = collect($response->json())
+                ->map(function (array $post) {
+                    $title = html_entity_decode((string) data_get($post, 'title.rendered', ''), ENT_QUOTES | ENT_HTML5);
+                    $content = (string) data_get($post, 'content.rendered', '');
+                    $embeddedImage = $post['_embedded']['wp:featuredmedia'][0]['source_url'] ?? null;
+
+                    return [
+                        'id' => (int) ($post['id'] ?? 0),
+                        'title' => $title,
+                        'normalized_title' => $this->normalizeTitle($title),
+                        'year' => $this->parseDate((string) data_get($post, 'date'))?->format('Y'),
+                        'link' => $post['link'] ?? null,
+                        'image_url' => $embeddedImage ?: $this->extractFirstImageUrl($content),
+                    ];
+                })
+                ->filter(fn (array $post) => $post['normalized_title'] !== '' && filled($post['image_url']));
+
+            $posts = $posts->concat($batch);
+
+            $totalPages = (int) $response->header('X-WP-TotalPages', $page);
+
+            if ($page >= $totalPages) {
+                break;
+            }
+        }
+
+        $resolvedPosts = $posts->values()->all();
+
+        $cache->put($freshCacheKey, $resolvedPosts, now()->addHours(12));
+        $cache->put($staleCacheKey, $resolvedPosts, now()->addDays(7));
+
+        return collect($resolvedPosts);
     }
 
     private function scoreCircularPost(array $post, string $targetTitle, ?string $targetYear): int

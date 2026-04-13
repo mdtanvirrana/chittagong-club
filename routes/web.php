@@ -26,6 +26,7 @@ Route::middleware('auth.member')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/summary', [DashboardController::class, 'summary'])->name('dashboard.summary');
     Route::get('/circulars', [CircularController::class, 'index'])->name('circulars');
     Route::get('/profile', MemberProfile::class)->name('profile');
     Route::get('/notice-board', [NoticeController::class, 'index'])->name('notice-board');

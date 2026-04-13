@@ -50,8 +50,15 @@
 
     {{-- Login Form --}}
     <div class="flex-1 px-8 pb-12 flex flex-col justify-start w-full">
-        <form action="{{ route('login.post') }}" method="POST" class="space-y-6">
+        <form action="{{ route('login.post') }}" method="POST" class="space-y-6" @submit="loading = true">
             @csrf
+
+            @if (session('session_expired'))
+            <div class="flex items-center gap-3 bg-amber-500/15 border border-amber-400/30 rounded-xl px-4 py-3">
+                <span class="material-symbols-outlined text-amber-300 shrink-0">schedule</span>
+                <p class="text-amber-100 text-sm">{{ session('session_expired') }}</p>
+            </div>
+            @endif
 
             {{-- Error alert --}}
             @if ($errors->any())

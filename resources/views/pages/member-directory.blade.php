@@ -47,8 +47,17 @@
     {{-- List --}}
     <main class="flex-1 px-4 space-y-3">
         <template x-for="m in paginated" :key="m.id">
-            <div class="flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl p-3 overflow-hidden">
+            <div class="relative overflow-hidden rounded-xl"
+                 style="touch-action: pan-y;">
+                <div class="flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl p-3 transition-transform duration-200"
+                     x-bind:style="swipeStyles(m.id)"
+                     x-on:pointerdown="startSwipe($event, m)"
+                     x-on:pointermove="moveSwipe($event)"
+                     x-on:pointerup="endSwipe($event, m)"
+                     x-on:pointercancel="cancelSwipe()"
+                     x-on:pointerleave="endSwipe($event, m)">
                 <button type="button"
+                        x-on:pointerdown.stop
                         x-on:click.stop="openPreview(m)"
                         class="relative shrink-0 size-12 rounded-full overflow-hidden border border-white/10 bg-primary/10 flex items-center justify-center"
                         :class="m.has_photo ? 'active:scale-95 transition-transform' : 'cursor-default'"
@@ -57,21 +66,27 @@
                          x-show="m.has_photo"
                          x-bind:alt="m.name + ' profile picture'">
                     <span class="text-primary font-bold text-sm" x-show="!m.has_photo" x-text="m.initials"></span>
-                    <span x-show="m.has_photo"
-                          class="absolute inset-x-0 bottom-0 flex justify-center bg-slate-950/20 py-0.5 backdrop-blur-sm">
-                        <span class="material-symbols-outlined text-[12px] text-white">zoom_in</span>
-                    </span>
                 </button>
 
-                <a :href="'/directory/' + m.id"
-                   class="flex min-w-0 flex-1 items-center gap-3 active:scale-95 transition-transform">
+                <div class="flex min-w-0 flex-1 items-center gap-3">
                     <div class="flex-1 min-w-0">
-                        <p class="text-white font-bold text-sm truncate uppercase" x-text="m.name"></p>
+                        <a :href="'/directory/' + m.id"
+                           x-on:click="cancelClickAfterSwipe($event)"
+                           class="block min-w-0">
+                            <p class="text-white font-bold text-sm truncate uppercase" x-text="m.name"></p>
+                        </a>
                         <p class="text-white/40 text-[10px]" x-text="'Member ID: ' + m.id"></p>
                         <p class="text-primary/50 text-[10px]" x-show="m.category" x-text="m.category"></p>
                     </div>
-                    <span class="material-symbols-outlined text-white/20 shrink-0">chevron_right</span>
-                </a>
+
+                    <a :href="'/directory/' + m.id"
+                       x-on:click="cancelClickAfterSwipe($event)"
+                       class="flex shrink-0 items-center justify-center rounded-full p-1 text-white/20 active:scale-95 transition-transform"
+                       :aria-label="'Open ' + m.name + ' profile'">
+                        <span class="material-symbols-outlined">chevron_right</span>
+                    </a>
+                </div>
+            </div>
             </div>
         </template>
 
@@ -100,13 +115,13 @@
          style="display: none;">
         <button type="button"
                 x-on:click="closePreview()"
-                class="absolute inset-0 bg-slate-950/35 backdrop-blur-sm"
+                class="absolute inset-0 bg-slate-950/35"
                 aria-label="Close image preview"></button>
 
         <div class="relative w-full max-w-sm">
             <button type="button"
                     x-on:click="closePreview()"
-                    class="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full border border-white/10 bg-slate-950/25 text-white backdrop-blur-sm">
+                    class="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full border border-white/10 bg-slate-950/25 text-white">
                 <span class="material-symbols-outlined">close</span>
             </button>
 
@@ -122,6 +137,15 @@
                     <p class="mt-1 text-xs text-white/40" x-text="previewMember ? 'Member ID: ' + previewMember.id : ''"></p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div x-show="toast.show"
+         x-transition.opacity.duration.200ms
+         class="fixed inset-x-4 bottom-24 z-[90] flex justify-center"
+         style="display: none;">
+        <div class="max-w-sm rounded-full border border-white/10 bg-slate-950/90 px-4 py-3 text-sm font-medium text-white shadow-2xl">
+            <span x-text="toast.message"></span>
         </div>
     </div>
 
@@ -141,6 +165,21 @@
             perPage: 20,
             previewOpen: false,
             previewMember: null,
+            swipe: {
+                active: false,
+                memberId: null,
+                startX: 0,
+                currentX: 0,
+                offsetX: 0,
+                targetEl: null
+            },
+            swipeOffsets: {},
+            suppressClickUntil: 0,
+            toast: {
+                show: false,
+                message: ''
+            },
+            toastTimer: null,
             all: _data,
             categories: (function() {
                 var seen = {}, cats = [];
@@ -173,6 +212,183 @@
 
             get hasMore() {
                 return this.paginated.length < this.filtered.length;
+            },
+
+            swipeStyles: function(memberId) {
+                var offset = this.swipeOffsets[memberId] || 0;
+                var background = 'transparent';
+
+                if (offset > 16) {
+                    background = 'linear-gradient(90deg, rgba(242,208,13,0.16), rgba(242,208,13,0.03))';
+                } else if (offset < -16) {
+                    background = 'linear-gradient(270deg, rgba(242,208,13,0.16), rgba(242,208,13,0.03))';
+                }
+
+                return 'transform: translateX(' + offset + 'px); background: ' + background + ';';
+            },
+
+            startSwipe: function(event, member) {
+                if (!event.isPrimary) {
+                    return;
+                }
+
+                this.swipe.active = true;
+                this.swipe.memberId = member.id;
+                this.swipe.startX = event.clientX;
+                this.swipe.currentX = event.clientX;
+                this.swipe.offsetX = this.swipeOffsets[member.id] || 0;
+                this.swipe.targetEl = event.currentTarget;
+                this.swipe.targetEl.style.transition = 'none';
+            },
+
+            moveSwipe: function(event) {
+                if (!this.swipe.active || this.swipe.memberId === null) {
+                    return;
+                }
+
+                this.swipe.currentX = event.clientX;
+
+                var deltaX = this.swipe.currentX - this.swipe.startX;
+                var limited = Math.max(-112, Math.min(112, deltaX));
+
+                if (Math.abs(limited) > 8 && event.cancelable) {
+                    event.preventDefault();
+                }
+
+                this.swipe.offsetX = limited;
+                this.swipeOffsets = Object.assign({}, this.swipeOffsets, {
+                    [this.swipe.memberId]: limited
+                });
+            },
+
+            endSwipe: function(event, member) {
+                if (!this.swipe.active || this.swipe.memberId !== member.id) {
+                    return;
+                }
+
+                if (event && typeof event.clientX === 'number') {
+                    this.swipe.currentX = event.clientX;
+                }
+
+                var deltaX = this.swipe.currentX - this.swipe.startX;
+                var threshold = 72;
+
+                if (Math.abs(deltaX) >= threshold) {
+                    this.suppressClickUntil = Date.now() + 350;
+
+                    if (deltaX < 0) {
+                        this.handleEmailAction(member);
+                    } else {
+                        this.handleSmsAction(member);
+                    }
+                }
+
+                this.resetSwipe(member.id);
+            },
+
+            cancelSwipe: function() {
+                if (!this.swipe.active || this.swipe.memberId === null) {
+                    return;
+                }
+
+                this.resetSwipe(this.swipe.memberId);
+            },
+
+            resetSwipe: function(memberId) {
+                if (this.swipe.targetEl) {
+                    this.swipe.targetEl.style.transition = 'transform 200ms ease';
+                }
+
+                this.swipeOffsets = Object.assign({}, this.swipeOffsets, {
+                    [memberId]: 0
+                });
+
+                this.swipe = {
+                    active: false,
+                    memberId: null,
+                    startX: 0,
+                    currentX: 0,
+                    offsetX: 0,
+                    targetEl: null
+                };
+            },
+
+            cancelClickAfterSwipe: function(event) {
+                if (Date.now() < this.suppressClickUntil) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            },
+
+            isMobileDevice: function() {
+                return window.matchMedia('(pointer: coarse)').matches
+                    || /Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(navigator.userAgent || '');
+            },
+
+            showToast: function(message) {
+                this.toast.message = message;
+                this.toast.show = true;
+
+                if (this.toastTimer) {
+                    clearTimeout(this.toastTimer);
+                }
+
+                this.toastTimer = setTimeout(() => {
+                    this.toast.show = false;
+                }, 2200);
+            },
+
+            handleEmailAction: function(member) {
+                var email = (member.email || '').trim();
+
+                if (!email) {
+                    this.showToast('No email found for this member.');
+                    return;
+                }
+
+                if (this.isMobileDevice()) {
+                    this.openMobileGmail(email);
+                    return;
+                }
+
+                window.open(
+                    'https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=' + encodeURIComponent(email),
+                    '_blank',
+                    'noopener'
+                );
+                this.showToast('Opened Gmail compose for ' + email + '.');
+            },
+
+            openMobileGmail: function(email) {
+                var fallback = function() {
+                    window.location.href = 'mailto:' + email;
+                };
+
+                var ua = navigator.userAgent || '';
+
+                if (/iPhone|iPad|iPod/i.test(ua)) {
+                    window.location.href = 'googlegmail://co?to=' + encodeURIComponent(email);
+                    setTimeout(fallback, 700);
+                } else if (/Android/i.test(ua)) {
+                    window.location.href = 'intent://co?to=' + encodeURIComponent(email) + '#Intent;scheme=googlegmail;package=com.google.android.gm;end';
+                    setTimeout(fallback, 700);
+                } else {
+                    fallback();
+                }
+
+                this.showToast('Trying to open Gmail for ' + email + '.');
+            },
+
+            handleSmsAction: function(member) {
+                var mobile = (member.mobile || '').trim();
+
+                if (!mobile) {
+                    this.showToast('No mobile number found for this member.');
+                    return;
+                }
+
+                window.location.href = 'sms:' + mobile.replace(/\s+/g, '');
+                this.showToast('Opening SMS for ' + mobile + '.');
             },
 
             openPreview: function(member) {
