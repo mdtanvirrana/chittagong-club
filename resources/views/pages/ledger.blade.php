@@ -35,15 +35,14 @@
                     <span class="material-symbols-outlined text-white">arrow_back_ios</span>
                 </a>
                 <div class="text-center">
-                    <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Chittagong Club Ltd</p>
+                    <p class="text-[14px] font-bold uppercase tracking-[0.2em] text-primary">Chittagong Club Ltd</p>
                     <h1 class="text-lg font-bold text-white">My Ledger</h1>
                 </div>
-{{--                <button--}}
-{{--                    @click="openPaymentModal()"--}}
-{{--                    class="rounded-full bg-primary px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-brand-blue transition-transform active:scale-95"--}}
-{{--                >--}}
-{{--                    Payment--}}
-{{--                </button>--}}
+                <button
+                    @click="openPaymentModal()"
+                    class=""
+                >
+                </button>
             </div>
 
             <div class="grid grid-cols-3 gap-2">
@@ -559,13 +558,19 @@
                     successfulTransactions: [],
                 },
 
-                get filteredHistory() {
-                    return this.state.monthlyHistory.filter((month) => {
-                        if (this.fromDate && month.month_key < this.fromDate) return false;
-                        if (this.toDate && month.month_key > this.toDate) return false;
-                        return true;
-                    });
-                },
+            get filteredHistory() {
+                const history = this.state.monthlyHistory.filter((month) => {
+                    if (this.fromDate && month.month_key < this.fromDate) return false;
+                    if (this.toDate && month.month_key > this.toDate) return false;
+                    return true;
+                });
+
+                if (!this.fromDate && !this.toDate) {
+                    return history.slice(0, 12);
+                }
+
+                return history;
+            },
 
                 init() {
                     this.fetchLedgerData();

@@ -72,27 +72,33 @@ class LedgerController extends Controller
             ->sortByDesc('month_key')
             ->values();
 
-        $currentMonthRows = $ledgerRows->filter(function ($row) {
-            $date = Carbon::parse($row->EDate);
-
-            return $date->between(Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth());
-        });
-
         $now = Carbon::now();
         $currentMonth = $monthlyHistory->firstWhere('month_key', $now->format('Y-m'));
-        $deptBreakdown = $currentMonthRows
-            ->filter(fn ($row) => (float) ($row->DrAmt ?? 0) > 0)
-            ->groupBy(fn ($row) => $row->DeptName ?: 'General')
-            ->map(fn ($rows, $dept) => [
-                'dept' => $dept,
-                'amount' => (float) $rows->sum(fn ($row) => (float) ($row->DrAmt ?? 0)),
-                'count' => $rows->count(),
+        $deptBreakdown = DB::table('Customer_Ledger as a')
+            ->join('List_Department as b', 'a.DepartmentID', '=', 'b.Departmentid')
+            ->where('a.PrvCusID', $memberId)
+            ->where('a.InvMRN', '<>', '0')
+            ->whereRaw("CONVERT(char(7), a.EDate, 120) = ?", [$now->format('Y-m')])
+            ->selectRaw('b.Departmentname as dept')
+            ->selectRaw('SUM(COALESCE(a.DrAmt, 0)) as amount')
+            ->selectRaw('COUNT(*) as count')
+            ->groupBy('b.Departmentname')
+            ->orderBy('b.Departmentname')
+            ->get()
+            ->map(fn ($row) => [
+                'dept' => $row->dept,
+                'amount' => (float) ($row->amount ?? 0),
+                'count' => (int) ($row->count ?? 0),
             ])
-            ->sortByDesc('amount')
             ->values();
 
         $thisMonthDebit = (float) $deptBreakdown->sum('amount');
-        $thisMonthCredit = (float) $currentMonthRows->sum(fn ($row) => (float) ($row->CrAmt ?? 0));
+        $thisMonthCredit = (float) DB::table('Customer_Ledger as a')
+            ->join('List_Department as b', 'a.DepartmentID', '=', 'b.Departmentid')
+            ->where('a.PrvCusID', $memberId)
+            ->where('a.InvMRN', '<>', '0')
+            ->whereRaw("CONVERT(char(7), a.EDate, 120) = ?", [$now->format('Y-m')])
+            ->sum('a.CrAmt');
 
         if ($thisMonthDebit <= 0 && $currentMonth) {
             $thisMonthDebit = (float) ($currentMonth['total_debit'] ?? 0);
