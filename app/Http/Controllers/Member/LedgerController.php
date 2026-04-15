@@ -39,15 +39,16 @@ class LedgerController extends Controller
             ->first();
 
         $ledgerRows = DB::table('Customer_Ledger as cl')
-            ->leftJoin('List_Department as ld', 'cl.DepartmentID', '=', 'ld.Departmentid')
+            ->join('List_Department as ld', 'cl.DepartmentID', '=', 'ld.Departmentid')
             ->where('cl.PrvCusID', $memberId)
+            ->where('cl.InvMRN', '<>', '0')
             ->select([
                 'cl.InvMRN',
                 'cl.DrAmt',
                 'cl.CrAmt',
                 'cl.EDate',
                 'cl.Remarks',
-                'ld.DepartmentnameMaster as DeptName',
+                'ld.Departmentname as DeptName',
             ])
             ->get();
 
@@ -144,8 +145,9 @@ class LedgerController extends Controller
         }
 
         $monthRows = DB::table('Customer_Ledger as cl')
-            ->leftJoin('List_Department as ld', 'cl.DepartmentID', '=', 'ld.Departmentid')
+            ->join('List_Department as ld', 'cl.DepartmentID', '=', 'ld.Departmentid')
             ->where('cl.PrvCusID', $memberId)
+            ->where('cl.InvMRN', '<>', '0')
             ->whereRaw("CONVERT(char(7), cl.EDate, 120) = ?", [$monthKey])
             ->select([
                 'cl.InvMRN',
@@ -153,7 +155,7 @@ class LedgerController extends Controller
                 'cl.CrAmt',
                 'cl.EDate',
                 'cl.Remarks',
-                'ld.DepartmentnameMaster as DeptName',
+                'ld.Departmentname as DeptName',
             ])
             ->orderByDesc('cl.EDate')
             ->get();
@@ -191,7 +193,7 @@ class LedgerController extends Controller
         }
 
         $departmentRows = $monthRows
-            ->groupBy(fn ($row) => $row->DeptName ?: 'General')
+            ->groupBy(fn ($row) => $row->DeptName)
             ->map(fn ($rows, $dept) => [
                 'dept' => $dept,
                 'total_debit' => (float) $rows->sum(fn ($row) => (float) ($row->DrAmt ?? 0)),
