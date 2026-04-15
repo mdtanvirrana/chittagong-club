@@ -75,9 +75,13 @@ class MemberLedgerHistory extends Component
         $this->thisMonthCredit = (float) $currentMonthRows->sum('CrAmt');
 
         // 4. All-time totals
-        $totalDebit         = (float) $allRows->sum('DrAmt');
-        $totalCredit        = (float) $allRows->sum('CrAmt');
-        $this->totalDue     = max(0, $totalDebit - $totalCredit);
+        $ledgerDue = DB::table('Customer_Ledger')
+            ->where('PrvCusId', $memberId)
+            ->where('InvMRN', '<>', '0')
+            ->selectRaw('COALESCE(SUM(COALESCE(DrAmt, 0) - COALESCE(CrAmt, 0)), 0) as Due')
+            ->first();
+
+        $this->totalDue     = max(0, (float) ($ledgerDue->Due ?? 0));
         $this->remaining    = $this->creditLimit - $this->totalDue;
         $this->usagePercent = $this->creditLimit > 0
             ? min(100, (int) round(($this->totalDue / $this->creditLimit) * 100))

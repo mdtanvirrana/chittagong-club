@@ -6,6 +6,7 @@ use App\Livewire\MemberProfile;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Member\LedgerController;
+use App\Http\Controllers\Payments\SSLCommerzPaymentController;
 use App\Http\Controllers\Member\DashboardController;
 use App\Http\Controllers\Member\MemberDirectoryController;
 use App\Http\Controllers\NoticeController;
@@ -31,6 +32,10 @@ Route::middleware('auth.member')->group(function () {
     Route::get('/profile', MemberProfile::class)->name('profile');
     Route::get('/notice-board', [NoticeController::class, 'index'])->name('notice-board');
     Route::get('/ledger', [LedgerController::class, 'index'])->name('ledger');
+    Route::get('/ledger/data', [LedgerController::class, 'data'])->name('ledger.data');
+    Route::get('/ledger/month-details', [LedgerController::class, 'monthDetails'])->name('ledger.month-details');
+    Route::post('/ledger/payments/sslcommerz/initiate', [SSLCommerzPaymentController::class, 'initiate'])
+        ->name('ledger.payments.sslcommerz.initiate');
     Route::get('/directory', [MemberDirectoryController::class, 'index'])->name('directory');
     Route::get('/directory/{id}', MemberDetail::class)->name('directory.show');
     Route::get('/facilities', fn() => view('pages.club-facilities'))->name('facilities');
@@ -51,3 +56,12 @@ Route::middleware('auth.member')->group(function () {
     Route::get('/general-rules',     fn() => view('pages.general-rules'))->name('general-rules');
     Route::get('/gallery',           fn() => view('pages.gallery'))->name('gallery');
 });
+
+Route::match(['get', 'post'], '/payments/sslcommerz/success', [SSLCommerzPaymentController::class, 'success'])
+    ->name('payments.sslcommerz.success');
+Route::match(['get', 'post'], '/payments/sslcommerz/fail', [SSLCommerzPaymentController::class, 'fail'])
+    ->name('payments.sslcommerz.fail');
+Route::match(['get', 'post'], '/payments/sslcommerz/cancel', [SSLCommerzPaymentController::class, 'cancel'])
+    ->name('payments.sslcommerz.cancel');
+Route::match(['get', 'post'], '/payments/sslcommerz/ipn', [SSLCommerzPaymentController::class, 'ipn'])
+    ->name('payments.sslcommerz.ipn');

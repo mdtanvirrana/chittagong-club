@@ -78,4 +78,24 @@ class PortalCache
 
         return isset(static::memberPhotoIndex()[(string) $memberId]);
     }
+
+    public static function memberPhotoUrl(string|int|null $memberId): ?string
+    {
+        if (! static::hasMemberPhoto($memberId)) {
+            return null;
+        }
+
+        $memberId = (string) $memberId;
+        $path = public_path('images/' . $memberId . '.jpg');
+
+        if (! is_file($path)) {
+            return null;
+        }
+
+        $mtime = @filemtime($path) ?: 0;
+        $ctime = @filectime($path) ?: 0;
+        $version = max($mtime, $ctime);
+
+        return asset('images/' . $memberId . '.jpg') . '?v=' . $version;
+    }
 }

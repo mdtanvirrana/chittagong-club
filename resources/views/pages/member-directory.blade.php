@@ -12,11 +12,11 @@
                 <span class="material-symbols-outlined text-white">arrow_back_ios</span>
             </a>
             <div class="text-center">
-                <p class="text-primary text-[10px] uppercase tracking-widest font-bold">Chittagong Club Ltd</p>
+                <p class="text-primary text-[14px] uppercase tracking-widest font-bold">Chittagong Club Ltd</p>
                 <h1 class="text-white text-lg font-bold">Member Directory</h1>
             </div>
             <div class="size-10 flex items-center justify-center">
-                <span class="text-white/30 text-xs">{{ $total }}</span>
+{{--                <span class="text-white/30 text-xs">{{ $total }}</span>--}}
             </div>
         </div>
 
@@ -33,14 +33,14 @@
             </div>
         </div>
 
-       
+
     </header>
 
     {{-- Stats --}}
     <div class="px-4 py-3">
         <p class="text-white/40 text-sm">
             Showing <span class="text-primary font-bold" x-text="paginated.length"></span>
-            of <span class="text-white/60 font-bold" x-text="filtered.length"></span> members
+{{--            of <span class="text-white/60 font-bold" x-text="filtered.length"></span> members--}}
         </p>
     </div>
 
@@ -103,7 +103,6 @@
             class="flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary rounded-full px-8 py-2.5 text-sm font-bold active:scale-95 transition-transform">
             <span class="material-symbols-outlined text-base">expand_more</span>
             Load more
-            <span class="text-primary/50 text-xs" x-text="'(' + (filtered.length - paginated.length) + ' left)'"></span>
         </button>
         <p x-show="!hasMore && filtered.length > 0" class="text-white/20 text-xs self-center"
            x-text="'All ' + filtered.length + ' members loaded'"></p>
@@ -196,14 +195,29 @@
                 if (f !== 'All') {
                     list = list.filter(function(m) { return m.category === f; });
                 }
-                var q = this.search.trim().toLowerCase();
+                var q = this.normalizeSearch(this.search);
                 if (q) {
-                    list = list.filter(function(m) {
-                        return m.name.toLowerCase().indexOf(q) !== -1
-                            || m.id.indexOf(q) !== -1;
+                    var rawQuery = this.search.trim().toLowerCase();
+
+                    list = list.filter((m) => {
+                        var normalizedName = this.normalizeSearch(m.name);
+                        var normalizedId = this.normalizeSearch(m.id);
+                        var rawName = (m.name || '').toLowerCase();
+                        var rawId = (m.id || '').toLowerCase();
+
+                        return normalizedName.indexOf(q) !== -1
+                            || normalizedId.indexOf(q) !== -1
+                            || rawName.indexOf(rawQuery) !== -1
+                            || rawId.indexOf(rawQuery) !== -1;
                     });
                 }
                 return list;
+            },
+
+            normalizeSearch(value) {
+                return String(value || '')
+                    .toLowerCase()
+                    .replace(/[\s-]+/g, '');
             },
 
             get paginated() {
@@ -277,7 +291,7 @@
                     this.suppressClickUntil = Date.now() + 350;
 
                     if (deltaX < 0) {
-                        this.handleEmailAction(member);
+                        this.handleCallAction(member);
                     } else {
                         this.handleSmsAction(member);
                     }
@@ -377,6 +391,18 @@
                 }
 
                 this.showToast('Trying to open Gmail for ' + email + '.');
+            },
+
+            handleCallAction: function(member) {
+                var mobile = (member.mobile || '').trim();
+
+                if (!mobile) {
+                    this.showToast('No mobile number found for this member.');
+                    return;
+                }
+
+                window.location.href = 'tel:' + mobile.replace(/\s+/g, '');
+                this.showToast('Calling ' + mobile + '.');
             },
 
             handleSmsAction: function(member) {

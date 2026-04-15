@@ -41,7 +41,7 @@
             </div>
         </div>
         <h1 class="text-4xl font-extrabold tracking-tight text-center mb-2">
-            <span class="gold-text-gradient">Chittagong Club</span>
+            <span class="gold-text-gradient">Chittagong Club Ltd.</span>
         </h1>
         <p class="text-white/60 text-sm font-light tracking-widest uppercase text-center">
             Exclusive Member Access

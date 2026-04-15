@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
 use App\Support\PortalCache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 
@@ -50,9 +51,7 @@ class DashboardController extends Controller
         }
 
         $member->hasProfilePhoto = PortalCache::hasMemberPhoto($member->PrvCusID);
-        $member->profilePhotoUrl = $member->hasProfilePhoto
-            ? asset('images/' . $member->PrvCusID . '.jpg')
-            : null;
+        $member->profilePhotoUrl = PortalCache::memberPhotoUrl($member->PrvCusID);
         $creditBal = null;
         $totalDue = null;
 
@@ -67,31 +66,51 @@ class DashboardController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $ledger = PortalCache::rememberResilient(
-            "dashboard_ledger_totals_{$memberId}_v1",
-            "dashboard_ledger_totals_{$memberId}_stale_v1",
-            now()->addMinutes(5),
-            now()->addDay(),
-            function () use ($memberId) {
-                return DB::table('Customer_Ledger')
+        try {
+            $ledger = PortalCache::rememberResilient(
+                "dashboard_ledger_totals_{$memberId}_v2",
+                "dashboard_ledger_totals_{$memberId}_stale_v2",
+                now()->addMinutes(5),
+                now()->addDay(),
+                function () use ($memberId) {
+                    return DB::table('Customer_ledger')
+                        ->where('PrvCusId', $memberId)
+                        ->where('InvMRN', '<>', '0')
+                        ->selectRaw('COALESCE(SUM(COALESCE(DrAmt, 0) - COALESCE(CrAmt, 0)), 0) as Due')
+                        ->first();
+                },
+                (object) ['Due' => 0]
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Unable to load dashboard ledger totals.', [
+                'member_id' => $memberId,
+                'error' => $e->getMessage(),
+            ]);
+
+            $ledger = (object) ['Due' => 0];
+        }
+
+        $totalDue = max(0, (float) ($ledger->Due ?? 0));
+
+        try {
+            $member = PortalCache::rememberResilient(
+                "dashboard_member_{$memberId}_v1",
+                "dashboard_member_{$memberId}_stale_v1",
+                now()->addMinutes(10),
+                now()->addDay(),
+                fn () => DB::table('CustomerMst')
                     ->where('PrvCusID', $memberId)
-                    ->whereNot('ACode', 'Opening')
-                    ->selectRaw('SUM(DrAmt) as total_debit, SUM(CrAmt) as total_credit')
-                    ->first();
-            },
-            (object) ['total_debit' => 0, 'total_credit' => 0]
-        );
+                    ->select('CreditAmt', 'CreditBal')->first(),
+                (object) ['CreditAmt' => 0, 'CreditBal' => 0]
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Unable to load dashboard member credit data.', [
+                'member_id' => $memberId,
+                'error' => $e->getMessage(),
+            ]);
 
-        $totalDue = max(0, (float) ($ledger->total_debit ?? 0) - (float) ($ledger->total_credit ?? 0));
-
-        $member = PortalCache::rememberResilient(
-            "dashboard_member_{$memberId}_v1",
-            "dashboard_member_{$memberId}_stale_v1",
-            now()->addMinutes(10),
-            now()->addDay(),
-            fn () => DB::table('CustomerMst')->where('PrvCusID', $memberId)->select('CreditAmt')->first(),
-            (object) ['CreditAmt' => 0]
-        );
+            $member = (object) ['CreditAmt' => 0, 'CreditBal' => 0];
+        }
 
         $creditLimit = (float) ($member->CreditAmt ?? 0);
         $creditBal = $creditLimit - $totalDue;

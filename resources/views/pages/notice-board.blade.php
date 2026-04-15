@@ -33,7 +33,7 @@
                 <span class="material-symbols-outlined">arrow_back_ios</span>
             </a>
             <div class="text-center">
-                <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Chittagong Club Ltd</p>
+                <p class="text-primary text-[14px] uppercase tracking-[0.2em] font-bold">Chittagong Club Ltd</p>
                 <h1 class="text-white text-lg font-bold">Notice Board</h1>
             </div>
             <div class="size-10"></div>
@@ -110,7 +110,7 @@
 
     {{-- ── Modal: notice detail ──────────────────────────── --}}
     <template x-if="activeNotice !== null">
-        <div class="fixed inset-0 z-[100] flex items-end justify-center"
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4"
              @keydown.escape.window="closeNotice()">
 
             {{-- Backdrop --}}
@@ -119,14 +119,14 @@
 
             {{-- Sheet --}}
             <div
-                class="relative w-full max-w-[425px] bg-[#0a3d62] rounded-t-3xl border-t border-white/10 flex flex-col"
+                class="relative w-full max-w-[425px] bg-[#0a3d62] rounded-3xl border border-white/10 flex flex-col"
                 style="max-height: 88dvh;"
                 x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="transform translate-y-full"
-                x-transition:enter-end="transform translate-y-0"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
                 x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="transform translate-y-0"
-                x-transition:leave-end="transform translate-y-full"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
             >
                 {{-- Handle --}}
                 <div class="flex justify-center pt-3 pb-2 shrink-0">

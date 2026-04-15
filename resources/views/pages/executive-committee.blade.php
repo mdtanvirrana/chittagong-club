@@ -13,7 +13,7 @@
         </a>
         <div class="text-center">
             <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Chittagong Club Ltd</p>
-            <h1 class="text-white text-lg font-bold">Chittagong Club Limited – Executive Committee</h1>
+            <h1 class="text-white text-lg font-bold">Chittagong Club Limited – General Committee</h1>
         </div>
         <div class="size-10"></div>
     </header>

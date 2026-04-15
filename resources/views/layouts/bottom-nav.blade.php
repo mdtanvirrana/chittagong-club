@@ -27,11 +27,11 @@
         </a>
 
         {{-- Shop --}}
-        <a href="{{ route('shop') }}"
-           class="flex flex-col items-center gap-1 transition-colors {{ Route::currentRouteName() === 'shop' ? 'text-club-gold' : 'text-white/40' }}">
-            <span class="material-symbols-outlined">shopping_bag</span>
-            <span class="text-[10px] font-bold uppercase tracking-wider">Shop</span>
-        </a>
+{{--        <a href="{{ route('shop') }}"--}}
+{{--           class="flex flex-col items-center gap-1 transition-colors {{ Route::currentRouteName() === 'shop' ? 'text-club-gold' : 'text-white/40' }}">--}}
+{{--            <span class="material-symbols-outlined">shopping_bag</span>--}}
+{{--            <span class="text-[10px] font-bold uppercase tracking-wider">Shop</span>--}}
+{{--        </a>--}}
 
         {{-- Profile --}}
         <a href="{{ route('profile') }}"

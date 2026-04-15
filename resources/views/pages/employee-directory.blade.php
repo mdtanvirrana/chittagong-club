@@ -203,19 +203,19 @@
 
     {{-- ── Detail Modal ─────────────────────────────────── --}}
     <template x-if="activeEmp !== null">
-        <div class="fixed inset-0 z-[100] flex items-end justify-center">
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
 
             <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="close()"></div>
 
             <div
-                class="relative w-full max-w-[425px] bg-[#0a3d62] rounded-t-3xl border-t border-white/10 flex flex-col"
+                class="relative w-full max-w-[425px] bg-[#0a3d62] rounded-3xl border border-white/10 flex flex-col"
                 style="max-height: 80dvh;"
                 x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="transform translate-y-full"
-                x-transition:enter-end="transform translate-y-0"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
                 x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="transform translate-y-0"
-                x-transition:leave-end="transform translate-y-full"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
             >
                 {{-- Handle --}}
                 <div class="flex justify-center pt-3 pb-2 shrink-0">

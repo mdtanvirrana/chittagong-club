@@ -70,20 +70,20 @@
         @endphp
 
         <div class="grid grid-cols-3 gap-3">
-            @foreach ($contactActions as $action)
-                @if ($action['href'])
-                    <a href="{{ $action['href'] }}"
-                       class="flex flex-col items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 px-3 py-4 text-center active:scale-95 transition-transform">
-                        <span class="material-symbols-outlined text-primary text-2xl">{{ $action['icon'] }}</span>
-                        <span class="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white">{{ $action['label'] }}</span>
-                    </a>
-                @else
-                    <div class="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-3 py-4 text-center opacity-40">
-                        <span class="material-symbols-outlined text-white text-2xl">{{ $action['icon'] }}</span>
-                        <span class="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white">{{ $action['label'] }}</span>
-                    </div>
-                @endif
-            @endforeach
+{{--            @foreach ($contactActions as $action)--}}
+{{--                @if ($action['href'])--}}
+{{--                    <a href="{{ $action['href'] }}"--}}
+{{--                       class="flex flex-col items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 px-3 py-4 text-center active:scale-95 transition-transform">--}}
+{{--                        <span class="material-symbols-outlined text-primary text-2xl">{{ $action['icon'] }}</span>--}}
+{{--                        <span class="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white">{{ $action['label'] }}</span>--}}
+{{--                    </a>--}}
+{{--                @else--}}
+{{--                    <div class="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-3 py-4 text-center opacity-40">--}}
+{{--                        <span class="material-symbols-outlined text-white text-2xl">{{ $action['icon'] }}</span>--}}
+{{--                        <span class="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white">{{ $action['label'] }}</span>--}}
+{{--                    </div>--}}
+{{--                @endif--}}
+{{--            @endforeach--}}
         </div>
 
         {{-- ── Personal Info ─────────────────────────────── --}}
@@ -272,10 +272,10 @@
 
         {{-- ── Quick Actions ─────────────────────────────── --}}
         <div class="grid grid-cols-2 gap-4 pb-4">
-            <button class="flex flex-col items-center justify-center p-4 bg-brand-blue rounded-xl shadow-lg border-b-4 border-primary/40 active:scale-95 transition-transform">
-                <span class="material-symbols-outlined text-primary mb-2 text-3xl">qr_code_2</span>
-                <span class="text-white text-xs font-bold uppercase tracking-tight">Show ID Card</span>
-            </button>
+{{--            <button class="flex flex-col items-center justify-center p-4 bg-brand-blue rounded-xl shadow-lg border-b-4 border-primary/40 active:scale-95 transition-transform">--}}
+{{--                <span class="material-symbols-outlined text-primary mb-2 text-3xl">qr_code_2</span>--}}
+{{--                <span class="text-white text-xs font-bold uppercase tracking-tight">Show ID Card</span>--}}
+{{--            </button>--}}
             <a href="{{ route('ledger') }}"
                class="flex flex-col items-center justify-center p-4 bg-white/10 rounded-xl border border-white/10 active:scale-95 transition-transform">
                 <span class="material-symbols-outlined text-white/60 mb-2 text-3xl">receipt_long</span>

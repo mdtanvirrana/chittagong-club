@@ -1,4 +1,10 @@
-<div class="flex flex-col min-h-screen pb-24">
+@php
+    $memberPhotoUrl = \App\Support\PortalCache::memberPhotoUrl($member->PrvCusID);
+@endphp
+
+<div x-data="{ previewOpen: false }"
+     x-on:keydown.escape.window="previewOpen = false"
+     class="flex flex-col min-h-screen pb-24">
 
     {{-- Blue Header --}}
     <div class="bg-brand-blue w-full pt-4 pb-14 px-4 rounded-b-[2.5rem] shadow-2xl">
@@ -7,20 +13,27 @@
                class="text-white flex size-10 items-center justify-center rounded-full bg-white/10 ios-blur">
                 <span class="material-symbols-outlined">arrow_back</span>
             </a>
-            <h2 class="text-white text-lg font-bold tracking-tight">Member Detail</h2>
+            <h2 class="text-white text-lg font-bold tracking-tight">Member Details</h2>
             <div class="size-10"></div>
         </div>
 
         {{-- Avatar --}}
         <div class="flex flex-col items-center">
             <div class="relative">
-                <div class="rounded-full h-28 w-28 mb-4 overflow-hidden flex items-center justify-center bg-brand-blue/80"
-                     style="border: 4px solid #f2d00d; box-shadow: 0 0 15px rgba(242,208,13,0.3);">
-                    <img class="size-full rounded-full object-cover object-top"
-     src="{{ asset('images/' . $member->PrvCusID . '.jpg') }}"
-     alt="Profile Image">
-                </div>
-
+                <button type="button"
+                        @if ($memberPhotoUrl) x-on:click="previewOpen = true" @endif
+                        class="relative rounded-full h-28 w-28 mb-4 overflow-hidden flex items-center justify-center bg-brand-blue/80"
+                        :class="{ 'active:scale-95 transition-transform': {{ $memberPhotoUrl ? 'true' : 'false' }} }"
+                        style="border: 4px solid #f2d00d; box-shadow: 0 0 15px rgba(242,208,13,0.3);"
+                        aria-label="Preview profile picture">
+                    @if ($memberPhotoUrl)
+                        <img class="size-full rounded-full object-cover object-top"
+                             src="{{ $memberPhotoUrl }}"
+                             alt="{{ $fullName }} profile picture">
+                    @else
+                        <span class="text-primary font-extrabold text-3xl">{{ $initials }}</span>
+                    @endif
+                </button>
             </div>
             <div class="text-center mt-3">
                 <h1 class="text-white text-2xl font-extrabold tracking-tight">{{ $fullName }}</h1>
@@ -203,6 +216,39 @@
 
 
     </div>
+
+    @if ($memberPhotoUrl)
+        <div x-show="previewOpen"
+             x-transition.opacity
+             class="fixed inset-0 z-[80] flex items-center justify-center p-4"
+             style="display: none;">
+            <button type="button"
+                    x-on:click="previewOpen = false"
+                    class="absolute inset-0 bg-slate-950/35"
+                    aria-label="Close image preview"></button>
+
+            <div class="relative w-full max-w-sm">
+                <button type="button"
+                        x-on:click="previewOpen = false"
+                        class="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full border border-white/10 bg-slate-950/25 text-white">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+
+                <div class="rounded-[2rem] border border-white/10 bg-brand-blue/90 p-4 shadow-2xl">
+                    <div class="aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-primary/20 bg-white/5">
+                        <img src="{{ $memberPhotoUrl }}"
+                             alt="{{ $fullName }} full-size profile picture"
+                             class="size-full object-cover object-top">
+                    </div>
+
+                    <div class="pt-4 text-center">
+                        <p class="text-white text-base font-bold">{{ $fullName }}</p>
+                        <p class="mt-1 text-xs text-white/40">Member ID: {{ $member->PrvCusID }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     @include('layouts.bottom-nav')
 </div>

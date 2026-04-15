@@ -145,9 +145,7 @@ class MemberProfile extends Component
         $this->emailHref = $this->buildEmailHref($m->Email ?? null);
 
         $this->hasProfilePhoto = PortalCache::hasMemberPhoto($m->PrvCusID);
-        $this->profilePhotoUrl = $this->hasProfilePhoto
-            ? asset('images/' . $m->PrvCusID . '.jpg')
-            : null;
+        $this->profilePhotoUrl = PortalCache::memberPhotoUrl($m->PrvCusID);
 
         $this->childrenCount = (int) $this->normalizeZeroValue($m->NoChild);
         $this->hasMoreChildren = $this->toBool($m->MoreChild ?? false);

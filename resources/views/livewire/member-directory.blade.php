@@ -1,6 +1,10 @@
 <div
     class="flex flex-col min-h-screen pb-24"
     x-data="{
+        previewOpen: false,
+        previewName: '',
+        previewId: '',
+        previewUrl: null,
         init() {
             // Intersection Observer watches the sentinel div at bottom
             const observer = new IntersectionObserver((entries) => {
@@ -21,8 +25,22 @@
                     if (sentinel) observer.observe(sentinel);
                 });
             });
+        },
+        openPreview(name, id, url) {
+            if (!url) return;
+            this.previewName = name;
+            this.previewId = id;
+            this.previewUrl = url;
+            this.previewOpen = true;
+        },
+        closePreview() {
+            this.previewOpen = false;
+            this.previewName = '';
+            this.previewId = '';
+            this.previewUrl = null;
         }
     }"
+    x-on:keydown.escape.window="closePreview()"
 >
     {{-- Sticky Header --}}
     <header class="sticky top-0 z-50 bg-background-dark/95 ios-blur border-b border-white/10">
@@ -97,10 +115,24 @@
             <a href="{{ route('directory.show', $member->PrvCusID) }}"
                class="flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl p-4 active:scale-[0.98] transition-transform">
 
+                @php
+                    $memberPhotoUrl = \App\Support\PortalCache::memberPhotoUrl($member->PrvCusID);
+                @endphp
                 <div class="shrink-0 size-14 rounded-full overflow-hidden border-2 border-primary/30 bg-primary/10 flex items-center justify-center">
-                    <img class="size-full rounded-full object-cover object-top"
-     src="{{ asset('images/' .  $member->PrvCusID . '.jpg') }}"
-     alt="Profile Image">
+                    @if ($memberPhotoUrl)
+                        <button type="button"
+                                x-on:click.prevent.stop="openPreview(@js($member->CusName), @js($member->PrvCusID), @js($memberPhotoUrl))"
+                                class="size-full rounded-full overflow-hidden active:scale-95 transition-transform"
+                                aria-label="Preview {{ $member->CusName }} profile picture">
+                            <img class="size-full rounded-full object-cover object-top"
+                                 src="{{ $memberPhotoUrl }}"
+                                 alt="Profile Image">
+                        </button>
+                    @else
+                        <div class="size-full rounded-full bg-primary/10 flex items-center justify-center">
+                            <span class="text-primary font-bold text-sm">{{ $initials }}</span>
+                        </div>
+                    @endif
                 </div>
 
                 <div class="flex-1 min-w-0">
@@ -135,6 +167,37 @@
     @else
         <p class="text-center text-white/20 text-xs py-6">All {{ $total }} members loaded</p>
     @endif
+
+    <div x-show="previewOpen"
+         x-transition.opacity
+         class="fixed inset-0 z-[80] flex items-center justify-center p-4"
+         style="display: none;">
+        <button type="button"
+                x-on:click="closePreview()"
+                class="absolute inset-0 bg-slate-950/35"
+                aria-label="Close image preview"></button>
+
+        <div class="relative w-full max-w-sm">
+            <button type="button"
+                    x-on:click="closePreview()"
+                    class="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full border border-white/10 bg-slate-950/25 text-white">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <div class="rounded-[2rem] border border-white/10 bg-brand-blue/90 p-4 shadow-2xl">
+                <div class="aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-primary/20 bg-white/5">
+                    <img :src="previewUrl"
+                         :alt="previewName ? previewName + ' full-size profile picture' : 'Profile picture preview'"
+                         class="size-full object-cover object-top">
+                </div>
+
+                <div class="pt-4 text-center">
+                    <p class="text-white text-base font-bold" x-text="previewName"></p>
+                    <p class="mt-1 text-xs text-white/40" x-text="previewId ? 'Member ID: ' + previewId : ''"></p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     @include('layouts.bottom-nav')
 </div>

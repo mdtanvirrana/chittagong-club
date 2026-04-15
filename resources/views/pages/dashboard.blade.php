@@ -22,7 +22,7 @@
         sidebarOpen: false,
         previewOpen: false,
         balanceLoading: true,
-        creditBal: null,
+        creditBal: {{ (float) ($member->CreditBal ?? 0) }},
         totalDue: null,
         creditLimit: {{ (float) ($member->CreditAmt ?? 0) }},
         async loadSummary() {
@@ -41,8 +41,7 @@
                 this.totalDue = Number(data.totalDue ?? 0);
                 this.creditLimit = Number(data.creditLimit ?? this.creditLimit);
             } catch (error) {
-                this.creditBal = 0;
-                this.totalDue = 0;
+                this.totalDue = this.totalDue ?? 0;
             } finally {
                 this.balanceLoading = false;
             }
@@ -89,7 +88,7 @@
                 <div class="flex items-center gap-3">
                     <img src="{{ asset('logo.jpg') }}" alt="CCL" class="size-9 rounded-full object-contain" />
                     <div>
-                        <p class="text-white font-bold text-sm leading-tight">Chittagong Club</p>
+                        <p class="text-white font-bold text-sm leading-tight">Chittagong Club Ltd.</p>
                         <p class="text-primary text-[10px] font-bold uppercase tracking-wider">Est. 1878</p>
                     </div>
                 </div>
@@ -120,7 +119,6 @@
                     'heading' => 'Services',
                     'items' => [
                         ['label' => 'Facilities',          'icon' => 'apartment',         'route' => 'facilities'],
-                        ['label' => 'Club Shop',           'icon' => 'shopping_bag',      'route' => 'shop'],
                         ['label' => 'Gallery',             'icon' => 'photo_library',     'route' => 'gallery'],
                         ['label' => 'Greetings Calendar',  'icon' => 'calendar_month',    'route' => null],
                     ],
@@ -239,20 +237,22 @@
             </div>
             <div class="h-10 w-px bg-white/10"></div>
             <div class="space-y-1 text-right">
-                <p class="text-xs uppercase tracking-widest text-white/50">Credit Balance</p>
+                <p class="text-xs uppercase tracking-widest text-white/50">Total Due</p>
                 <a href="{{ route('ledger') }}">
                     <div x-show="balanceLoading" class="flex justify-end">
                         <span class="inline-flex size-5 animate-spin rounded-full border-2 border-white/15 border-t-primary"></span>
                     </div>
                     <p x-show="!balanceLoading"
                        class="text-lg font-bold"
-                       :class="(creditBal ?? 0) >= 0 ? 'text-white' : 'text-red-400'"
-                       x-text="formatMoney(Math.abs(creditBal ?? 0), 2)"></p>
+                       :class="(totalDue ?? 0) > 0 ? 'text-red-400' : 'text-white'"
+                       x-text="formatMoney(totalDue ?? 0, 2)"></p>
                 </a>
                 <p class="text-white/30 text-xs">
-                    <span x-show="balanceLoading">Due: -- / Limit: ৳{{ number_format($member->CreditAmt ?? 0, 0) }}</span>
+                    <span x-show="balanceLoading">Remain: -- / Credit Limit: ৳{{ number_format($member->CreditAmt ??
+                    0, 0)
+                    }}</span>
                     <span x-show="!balanceLoading"
-                          x-text="'Due: ' + formatMoney(totalDue ?? 0, 0) + ' / Limit: ' + formatMoney(creditLimit ?? 0, 0)"></span>
+                          x-text="'Remain: ' + formatMoney(creditBal ?? 0, 0) + ' / Credit Limit: ' + formatMoney(creditLimit ?? 0, 0)"></span>
                 </p>
             </div>
         </div>
@@ -302,10 +302,9 @@
                 ['route' => 'notice-board', 'icon' => 'campaign',               'label' => 'Notice Board'],
                 ['route' => 'ledger',       'icon' => 'account_balance_wallet', 'label' => 'Ledger'],
                 ['route' => 'directory',    'icon' => 'group',                  'label' => 'Directory'],
-                ['route' => 'shop',         'icon' => 'shopping_bag',           'label' => 'Club Shop'],
                 ['route' => 'executive',    'icon' => 'gavel',                  'label' => 'Committee'],
                 ['route' => 'contact',      'icon' => 'call',                   'label' => 'Contact'],
-                ['route' => 'profile',      'icon' => 'badge',                  'label' => 'My Profile'],
+//                ['route' => 'profile',      'icon' => 'badge',                  'label' => 'My Profile'],
             ];
             @endphp
 

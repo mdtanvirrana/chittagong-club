@@ -195,7 +195,7 @@
     ════════════════════════════════════════════════════════ --}}
     @if ($showModal)
     <div
-        class="fixed inset-0 z-[100] flex items-end justify-center"
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4"
         x-data
         @keydown.escape.window="$wire.closeModal()"
     >
@@ -207,10 +207,10 @@
 
         {{-- Sheet --}}
         <div
-            class="relative w-full max-w-[425px] bg-[#0a3d62] rounded-t-3xl border-t border-white/10 overflow-hidden"
+            class="relative w-full max-w-[425px] bg-[#0a3d62] rounded-3xl border border-white/10 overflow-hidden"
             style="max-height: 85dvh;"
             x-data
-            x-init="$el.style.transform='translateY(100%)'; setTimeout(() => { $el.style.transition='transform 0.3s ease'; $el.style.transform='translateY(0)'; }, 10)"
+            x-init=\"$el.style.opacity='0'; $el.style.transform='scale(0.95)'; setTimeout(() => { $el.style.transition='opacity 0.3s ease, transform 0.3s ease'; $el.style.opacity='1'; $el.style.transform='scale(1)'; }, 10)\"
         >
             {{-- Handle --}}
             <div class="flex justify-center pt-3 pb-1">
