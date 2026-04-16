@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Contact — Chittagong Club Ltd.')
+@section('page_title', 'Contact')
 @section('show_nav', true)
 @section('content')
 
@@ -13,7 +13,7 @@
                     <span class="material-symbols-outlined text-white">arrow_back_ios</span>
                 </a>
                 <div class="text-center">
-                    <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Chittagong Club Ltd</p>
+                    <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">{{ $companyName }}</p>
                     <h1 class="text-white text-lg font-bold">Contact Us</h1>
                 </div>
                 <div class="size-10"></div>
@@ -23,7 +23,7 @@
         <main class="px-4 py-5 space-y-5">
 
             {{-- Address card --}}
-            <a href="https://maps.google.com/?q=Chittagong+Club+Ltd+S.S.+Khaled+Road+Chittagong+Bangladesh"
+            <a href="{{ 'https://maps.google.com/?q=' . urlencode($companyAddressMapQuery) }}"
                target="_blank"
                class="flex items-start gap-4 bg-white/5 border border-white/10 rounded-2xl p-4">
                 <div class="shrink-0 size-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
@@ -32,9 +32,10 @@
                 <div class="flex-1 min-w-0">
                     <p class="text-white/40 text-[10px] uppercase tracking-wider font-bold mb-1">Address</p>
                     <p class="text-white font-semibold text-sm leading-relaxed">
-                        Chittagong Club Ltd.<br>
-                        S.S. Khaled Road,<br>
-                        Chittagong, Bangladesh.
+                        {{ $companyName }}@if ($companyAddressLines)<br>@endif
+                        @foreach ($companyAddressLines as $line)
+                            {{ $line }}@if (! $loop->last)<br>@endif
+                        @endforeach
                     </p>
                 </div>
                 <span class="material-symbols-outlined text-white/20 shrink-0 mt-1">open_in_new</span>
@@ -174,7 +175,7 @@
             {{-- Footer note --}}
             <div class="flex flex-col items-center text-center py-4 opacity-40">
                 <span class="material-symbols-outlined text-2xl text-primary mb-2">verified_user</span>
-                <p class="text-xs italic">Upholding the prestige and legacy of Chittagong Club Ltd since 1878.</p>
+                <p class="text-xs italic">Upholding the prestige and legacy of {{ $companyName }} since 1878.</p>
             </div>
 
         </main>

@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'My Profile — Chittagong Club Ltd.')
+@section('page_title', 'My Profile')
 @section('show_nav', true)
 
 @push('styles')

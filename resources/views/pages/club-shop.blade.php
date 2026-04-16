@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Club Shop — Chittagong Club Ltd.')
+@section('page_title', 'Club Shop')
 @section('show_nav', true)
 
 @section('content')
@@ -24,7 +24,7 @@
         },
         get cartCount() { return this.cart.reduce((s, i) => s + i.qty, 0); },
         get cartTotal() { return this.cart.reduce((s, i) => s + i.price * i.qty, 0); },
-        formatPrice(p) { return '৳ ' + p.toLocaleString('en-BD'); },
+        formatPrice(p) { return ' ' + p.toLocaleString('en-BD'); },
     }"
     class="flex flex-col min-h-screen pb-24"
 >
@@ -64,7 +64,7 @@
                 <div class="h-8 w-px bg-white/10 mx-4"></div>
                 <div class="flex flex-col items-end">
                     <span class="text-xs text-white/50">Credit Balance</span>
-                    <span class="text-sm font-bold text-white">৳ 45,200</span>
+                    <span class="text-sm font-bold text-white"> 45,200</span>
                 </div>
             </div>
         </div>

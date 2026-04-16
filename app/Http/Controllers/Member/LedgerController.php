@@ -42,12 +42,14 @@ class LedgerController extends Controller
             ->join('List_Department as ld', 'cl.DepartmentID', '=', 'ld.Departmentid')
             ->where('cl.PrvCusID', $memberId)
             ->where('cl.InvMRN', '<>', '0')
+            ->whereNot('ACode','Opening')
             ->select([
                 'cl.InvMRN',
                 'cl.DrAmt',
                 'cl.CrAmt',
                 'cl.EDate',
                 'cl.Remarks',
+                'cl.Note',
                 'ld.Departmentname as DeptName',
             ])
             ->get();
@@ -74,31 +76,39 @@ class LedgerController extends Controller
             ->values();
 
         $now = Carbon::now();
+        [$currentMonthStart, $currentMonthEnd] = $this->monthDateRange($now->format('Y-m'));
         $currentMonth = $monthlyHistory->firstWhere('month_key', $now->format('Y-m'));
         $deptBreakdown = DB::table('Customer_Ledger as a')
             ->join('List_Department as b', 'a.DepartmentID', '=', 'b.Departmentid')
             ->where('a.PrvCusID', $memberId)
             ->where('a.InvMRN', '<>', '0')
-            ->whereRaw("CONVERT(char(7), a.EDate, 120) = ?", [$now->format('Y-m')])
+            ->whereBetween('a.EDate', [$currentMonthStart, $currentMonthEnd])
             ->selectRaw('b.Departmentname as dept')
-            ->selectRaw('SUM(COALESCE(a.DrAmt, 0)) as amount')
+            ->selectRaw('SUM(COALESCE(a.DrAmt, 0)) as debit_amount')
+            ->selectRaw('SUM(COALESCE(a.CrAmt, 0)) as credit_amount')
             ->selectRaw('COUNT(*) as count')
             ->groupBy('b.Departmentname')
-            ->orderBy('b.Departmentname')
             ->get()
             ->map(fn ($row) => [
-                'dept' => $row->dept,
-                'amount' => (float) ($row->amount ?? 0),
+                'dept' => $row->dept ?: 'General',
+                'debit_amount' => (float) ($row->debit_amount ?? 0),
+                'credit_amount' => (float) ($row->credit_amount ?? 0),
                 'count' => (int) ($row->count ?? 0),
             ])
+            ->filter(fn (array $row) => $row['debit_amount'] > 0 || $row['credit_amount'] > 0)
+            ->sortByDesc(fn (array $row) => max($row['debit_amount'], $row['credit_amount']))
             ->values();
 
-        $thisMonthDebit = (float) $deptBreakdown->sum('amount');
-        $thisMonthCredit = (float) DB::table('Customer_Ledger as a')
-            ->join('List_Department as b', 'a.DepartmentID', '=', 'b.Departmentid')
+        $thisMonthDebit = (float) DB::table('Customer_Ledger as a')
             ->where('a.PrvCusID', $memberId)
             ->where('a.InvMRN', '<>', '0')
-            ->whereRaw("CONVERT(char(7), a.EDate, 120) = ?", [$now->format('Y-m')])
+            ->whereBetween('a.EDate', [$currentMonthStart, $currentMonthEnd])
+            ->sum('a.DrAmt');
+
+        $thisMonthCredit = (float) DB::table('Customer_Ledger as a')
+            ->where('a.PrvCusID', $memberId)
+            ->where('a.InvMRN', '<>', '0')
+            ->whereBetween('a.EDate', [$currentMonthStart, $currentMonthEnd])
             ->sum('a.CrAmt');
 
         if ($thisMonthDebit <= 0 && $currentMonth) {
@@ -144,17 +154,20 @@ class LedgerController extends Controller
             return response()->json(['message' => 'Invalid month.'], 422);
         }
 
+        [$monthStart, $monthEnd] = $this->monthDateRange($monthKey);
+
         $monthRows = DB::table('Customer_Ledger as cl')
             ->join('List_Department as ld', 'cl.DepartmentID', '=', 'ld.Departmentid')
             ->where('cl.PrvCusID', $memberId)
             ->where('cl.InvMRN', '<>', '0')
-            ->whereRaw("CONVERT(char(7), cl.EDate, 120) = ?", [$monthKey])
+            ->whereBetween('cl.EDate', [$monthStart, $monthEnd])
             ->select([
                 'cl.InvMRN',
                 'cl.DrAmt',
                 'cl.CrAmt',
                 'cl.EDate',
                 'cl.Remarks',
+                'cl.Note',
                 'ld.Departmentname as DeptName',
             ])
             ->orderByDesc('cl.EDate')
@@ -163,7 +176,7 @@ class LedgerController extends Controller
         if ($monthRows->isEmpty()) {
             $monthData = DB::table('SMS_MonthlyBill')
             ->where('Prvcusid', $memberId)
-            ->whereRaw("CONVERT(char(7), sMonth, 120) = ?", [$monthKey])
+            ->whereBetween('sMonth', [$monthStart, $monthEnd])
             ->select('MBill', 'Bal', 'sMonth')
             ->first();
             return response()->json([
@@ -181,12 +194,14 @@ class LedgerController extends Controller
                         'CrAmt' => 0.0,
                         'EDate' => Carbon::parse($monthData->sMonth)->format('M Y'),
                         'Remarks' => 'Monthly billed amount',
+                        'Note' => null,
                     ], [
                         'InvMRN' => null,
                         'DrAmt' => 0.0,
                         'CrAmt' => 0.0,
                         'EDate' => Carbon::parse($monthData->sMonth)->format('M Y'),
                         'Remarks' => 'Closing balance: ' . number_format((float) ($monthData->Bal ?? 0), 2),
+                        'Note' => null,
                     ]],
                 ]] : [])->values(),
             ]);
@@ -204,6 +219,7 @@ class LedgerController extends Controller
                     'CrAmt' => (float) ($row->CrAmt ?? 0),
                     'EDate' => Carbon::parse($row->EDate)->format('d M Y'),
                     'Remarks' => $row->Remarks ?: 'Ledger transaction',
+                    'Note' => $row->Note,
                 ])->values(),
             ])
             ->sortByDesc('total_debit')
@@ -280,5 +296,13 @@ class LedgerController extends Controller
 
             return collect();
         }
+    }
+
+    private function monthDateRange(string $monthKey): array
+    {
+        $monthStart = Carbon::createFromFormat('Y-m', $monthKey)->startOfMonth()->startOfDay();
+        $monthEnd = $monthStart->copy()->endOfMonth()->endOfDay();
+
+        return [$monthStart, $monthEnd];
     }
 }

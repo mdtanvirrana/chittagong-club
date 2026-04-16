@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Circulars — Chittagong Club Ltd.')
+@section('page_title', 'Circulars')
 @section('show_nav', true)
 
 @section('content')
@@ -12,7 +12,7 @@
                 <span class="material-symbols-outlined">arrow_back_ios</span>
             </a>
             <div class="text-center">
-                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Chittagong Club Ltd</p>
+                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{{ $companyName }}</p>
                 <h1 class="text-lg font-bold text-white">Circulars</h1>
             </div>
             <div class="size-10"></div>

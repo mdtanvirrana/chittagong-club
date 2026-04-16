@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Dashboard — Chittagong Club Ltd.')
+@section('page_title', 'Dashboard')
 @section('show_nav', true)
 
 @php
@@ -47,7 +47,7 @@
             }
         },
         formatMoney(value, decimals = 2) {
-            return '৳' + Number(value || 0).toLocaleString(undefined, {
+            return '' + Number(value || 0).toLocaleString(undefined, {
                 minimumFractionDigits: decimals,
                 maximumFractionDigits: decimals,
             });
@@ -88,7 +88,7 @@
                 <div class="flex items-center gap-3">
                     <img src="{{ asset('logo.jpg') }}" alt="CCL" class="size-9 rounded-full object-contain" />
                     <div>
-                        <p class="text-white font-bold text-sm leading-tight">Chittagong Club Ltd.</p>
+                        <p class="text-white font-bold text-sm leading-tight">{{ $companyName }}</p>
                         <p class="text-primary text-[10px] font-bold uppercase tracking-wider">Est. 1878</p>
                     </div>
                 </div>
@@ -126,7 +126,7 @@
                 [
                     'heading' => 'Members',
                     'items' => [
-                        ['label' => 'Chittagong Club Limited – Executive Committee', 'icon' => 'groups', 'route' => 'executive'],
+                        ['label' => $companyName . ' – Executive Committee', 'icon' => 'groups', 'route' => 'executive'],
                         ['label' => 'Former Chairmen',     'icon' => 'history_edu',       'route' => 'former-chairman'],
                         ['label' => 'Employee Directory',  'icon' => 'badge',             'route' => 'employee-directory'],
 
@@ -183,7 +183,7 @@
             <img class="w-8 h-8 object-contain rounded-full"
                  src="{{ asset('logo.jpg') }}"
                  alt="Chittagong Club Logo" />
-            <h1 class="text-base font-bold tracking-tight leading-tight">Chittagong Club Ltd.</h1>
+            <h1 class="text-base font-bold tracking-tight leading-tight">{{ $companyName }}</h1>
         </div>
         <div class="flex gap-1">
             <a href="{{ route('notice-board') }}"
@@ -244,11 +244,11 @@
                     </div>
                     <p x-show="!balanceLoading"
                        class="text-lg font-bold"
-                       :class="(totalDue ?? 0) > 0 ? 'text-red-400' : 'text-white'"
+                       :class="text-white"
                        x-text="formatMoney(totalDue ?? 0, 2)"></p>
                 </a>
-                <p class="text-white/30 text-xs">
-                    <span x-show="balanceLoading">Remain: -- / Credit Limit: ৳{{ number_format($member->CreditAmt ??
+                <p class="text-white/50 text-xs">
+                    <span x-show="balanceLoading">Remain: -- / Credit Limit: {{ number_format($member->CreditAmt ??
                     0, 0)
                     }}</span>
                     <span x-show="!balanceLoading"

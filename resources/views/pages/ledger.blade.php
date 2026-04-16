@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'My Ledger — Chittagong Club Ltd.')
+@section('page_title', 'My Ledger')
 @section('show_nav', true)
 
 @php
@@ -35,7 +35,7 @@
                     <span class="material-symbols-outlined text-white">arrow_back_ios</span>
                 </a>
                 <div class="text-center">
-                    <p class="text-[14px] font-bold uppercase tracking-[0.2em] text-primary">Chittagong Club Ltd</p>
+                    <p class="text-[14px] font-bold uppercase tracking-[0.2em] text-primary">{{ $companyName }}</p>
                     <h1 class="text-lg font-bold text-white">My Ledger</h1>
                 </div>
                 <button
@@ -79,10 +79,10 @@
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-primary/80">Quick Payment</p>
-                        <h2 class="mt-1 text-lg font-extrabold text-white">Pay outstanding dues with Online</h2>
-                        <p class="mt-2 text-sm text-white/60">Enter amount and note, then continue to the hosted payment page.</p>
+                        <h2 class="mt-1 font-extrabold text-white">Pay outstanding dues with Online</h2>
+
                     </div>
-                    <div class="rounded-2xl bg-white/10 p-3">
+                    <div class="rounded-2xl bg-white/10 py-2 px-3">
                         <span class="material-symbols-outlined text-2xl text-primary">payments</span>
                     </div>
                 </div>
@@ -90,7 +90,7 @@
                 <div class="mt-4 flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3">
                     <div>
                         <p class="text-[10px] uppercase tracking-widest text-white/40">Current Due</p>
-                        <p class="text-base font-extrabold text-red-400" x-text="loading ? '--' : formatMoney(state.totalDue, 2)"></p>
+                        <p class="text-base font-extrabold " x-text="loading ? '--' : formatMoney(state.totalDue, 2)"></p>
                     </div>
                     <button
                         @click="openPaymentModal()"
@@ -144,11 +144,11 @@
                         <span class="material-symbols-outlined text-lg text-primary">insights</span>
                     </div>
                     <div>
-                        <p class="text-sm font-bold text-white" x-text="loading ? 'Loading insights...' : state.currentMonthLabel + ' Insights'"></p>
-                        <p class="text-xs text-white/40">Spending by department</p>
+                        <p class="text-sm font-bold text-white" x-text="loading ? 'Loading insights...' : 'Monthly Insights'"></p>
+                        <p class="text-xs text-white/40">Department-wise activity</p>
                     </div>
                     <div class="ml-auto text-right">
-                        <p class="text-[10px] uppercase tracking-wider text-white/40">Spend</p>
+                        <p class="text-[10px] uppercase tracking-wider text-white/40" x-text="loading ? 'Loading insights...' : state.currentMonthLabel ">Spend</p>
                         <p class="text-sm font-bold text-white" x-text="loading ? '--' : formatMaybeMoney(state.thisMonthDebit, 0)"></p>
                     </div>
                 </div>
@@ -164,7 +164,7 @@
                 <template x-if="!loading && state.deptBreakdown.length === 0">
                     <div class="flex flex-col items-center py-8">
                         <span class="material-symbols-outlined mb-2 text-3xl text-white/20">receipt_long</span>
-                        <p class="text-sm text-white/30" x-text="state.thisMonthDebit === null ? 'No monthly billing data available' : 'No spending this month'"></p>
+                        <p class="text-sm text-white/30" x-text="state.thisMonthDebit === null ? 'No monthly billing data available' : 'No department activity this month'"></p>
                     </div>
                 </template>
 
@@ -176,13 +176,17 @@
                                     <div class="mb-1.5 flex items-center justify-between">
                                         <p class="text-sm font-medium text-white" x-text="dept.dept"></p>
                                         <div class="text-right">
-                                            <p class="text-sm font-bold text-white" x-text="formatMoney(dept.amount, 0)"></p>
+                                            <p class="text-sm font-bold" :class="deptAmountClass(dept)" x-text="deptAmountLabel(dept)"></p>
+                                            <p class="text-[10px] text-green-400"
+                                               x-show="Number(dept.debit_amount ?? 0) > 0 && Number(dept.credit_amount ?? 0) > 0"
+                                               x-text="'+' + formatMoney(dept.credit_amount, 0) + ' credited'"></p>
                                             <p class="text-[10px] text-white/30" x-text="dept.count + ' txn' + (dept.count > 1 ? 's' : '')"></p>
                                         </div>
                                     </div>
                                     <div class="h-1.5 overflow-hidden rounded-full bg-white/10">
-                                        <div class="h-1.5 rounded-full bg-primary/70"
-                                             :style="'width: ' + deptPercent(dept.amount) + '%'"></div>
+                                        <div class="h-1.5 rounded-full"
+                                             :class="deptBarClass(dept)"
+                                             :style="'width: ' + deptPercent(dept) + '%'"></div>
                                     </div>
                                 </div>
                             </template>
@@ -266,17 +270,13 @@
                     <div class="min-w-0 flex-1">
                         <p class="text-sm font-bold text-white" x-text="month.month_label"></p>
                         <p class="mt-0.5 text-xs text-white/40" x-text="month.row_count + ' transactions'"></p>
-                        <p class="mt-0.5 text-xs text-green-400"
-                           x-show="month.total_credit > 0"
-                           x-text="'+' + formatMoney(month.total_credit, 0) + ' credited'"></p>
+
                     </div>
 
                     <div class="shrink-0 text-right">
-                        <p class="text-sm font-bold"
-                           :class="month.net > 0 ? 'text-red-400' : 'text-green-400'"
-                           x-text="formatMoney(Math.abs(month.net), 0)"></p>
-                        <p class="mt-0.5 text-xs text-white/20"
-                           x-text="formatMoney(month.total_debit, 0) + ' spent'"></p>
+                        <p class="text-sm font-bold "
+                           x-text="formatMoney(month.total_debit, 0)"></p>
+                        <p class="mt-0.5 text-xs text-white/50">spent</p>
                     </div>
 
                     <span class="material-symbols-outlined shrink-0 text-white/20">chevron_right</span>
@@ -321,13 +321,13 @@
                                     <p class="mt-1 text-[10px] text-white/35" x-text="transaction.card_type || transaction.ssl_status || 'Pending gateway data'"></p>
                                 </td>
                                 <td class="px-3 py-3 font-semibold text-white" x-text="formatMoney(transaction.amount, 2)"></td>
-                                <td class="px-3 py-3 text-white/60" x-text="transaction.note || '—'"></td>
+                                <td class="px-3 py-3 text-white/60" x-text="transaction.note || '?'"></td>
                                 <td class="px-3 py-3">
                                     <span class="rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider"
                                           :class="paymentStatusClasses(transaction.status)"
                                           x-text="transaction.status"></span>
                                 </td>
-                                <td class="px-3 py-3 text-white/50" x-text="transaction.paid_at || transaction.updated_at || '—'"></td>
+                                <td class="px-3 py-3 text-white/50" x-text="transaction.paid_at || transaction.updated_at || '?'"></td>
                             </tr>
                         </template>
                         </tbody>
@@ -365,9 +365,9 @@
                                     <p class="mt-1 text-[10px] text-green-400">Validated</p>
                                 </td>
                                 <td class="px-3 py-3 font-semibold text-white" x-text="formatMoney(transaction.amount, 2)"></td>
-                                <td class="px-3 py-3 text-white/60" x-text="transaction.note || '—'"></td>
-                                <td class="px-3 py-3 text-white/50" x-text="transaction.bank_transaction_id || transaction.card_type || '—'"></td>
-                                <td class="px-3 py-3 text-white/50" x-text="transaction.paid_at || '—'"></td>
+                                <td class="px-3 py-3 text-white/60" x-text="transaction.note || '?'"></td>
+                                <td class="px-3 py-3 text-white/50" x-text="transaction.bank_transaction_id || transaction.card_type || '?'"></td>
+                                <td class="px-3 py-3 text-white/50" x-text="transaction.paid_at || '?'"></td>
                             </tr>
                         </template>
                         </tbody>
@@ -413,17 +413,6 @@
 
                     <template x-if="!monthModalLoading && monthModalData">
                         <div>
-                            <div class="grid grid-cols-2 gap-3 border-b border-white/10 px-5 py-4">
-                                <div class="rounded-xl bg-red-500/10 p-3 text-center">
-                                    <p class="mb-1 text-[10px] uppercase tracking-wider text-white/40">Total Spent</p>
-                                    <p class="text-base font-bold text-red-400" x-text="formatMoney(monthModalData.total_debit, 0)"></p>
-                                </div>
-                                <div class="rounded-xl bg-green-500/10 p-3 text-center">
-                                    <p class="mb-1 text-[10px] uppercase tracking-wider text-white/40">Total Credit</p>
-                                    <p class="text-base font-bold text-green-400" x-text="formatMoney(monthModalData.total_credit, 0)"></p>
-                                </div>
-                            </div>
-
                             <div class="max-h-[calc(85dvh-180px)] overflow-y-auto divide-y divide-white/10 px-5">
                                 <template x-for="dept in monthModalData.depts" :key="dept.dept">
                                     <div class="py-4">
@@ -444,12 +433,18 @@
                                             <template x-for="(entry, i) in dept.entries" :key="i">
                                                 <div class="flex items-center justify-between">
                                                     <div class="min-w-0 flex-1 pr-3">
-                                                        <p class="truncate text-xs text-white/60" x-text="entry.Remarks"></p>
-                                                        <p class="text-[10px] text-white/30" x-text="entry.EDate"></p>
+                                                        <div class="flex items-center gap-2">
+                                                            <p class="truncate text-xs text-white/60" x-text="entry.InvMRN">
+
+                                                            </p>
+                                                        </div>
+                                                        <p class="text-[10px] text-white/30" x-text="entry.Note"></p>
                                                     </div>
                                                     <div class="shrink-0 text-right">
+
                                                         <p class="text-xs font-medium text-white" x-show="entry.DrAmt > 0" x-text="formatMoney(entry.DrAmt, 0)"></p>
                                                         <p class="text-xs font-medium text-green-400" x-show="entry.CrAmt > 0" x-text="'+' + formatMoney(entry.CrAmt, 0)"></p>
+                                                        <p class="text-[10px] text-white/30" x-text="entry.EDate"></p>
                                                     </div>
                                                 </div>
                                             </template>
@@ -558,19 +553,19 @@
                     successfulTransactions: [],
                 },
 
-            get filteredHistory() {
-                const history = this.state.monthlyHistory.filter((month) => {
-                    if (this.fromDate && month.month_key < this.fromDate) return false;
-                    if (this.toDate && month.month_key > this.toDate) return false;
-                    return true;
-                });
+                get filteredHistory() {
+                    const history = this.state.monthlyHistory.filter((month) => {
+                        if (this.fromDate && month.month_key < this.fromDate) return false;
+                        if (this.toDate && month.month_key > this.toDate) return false;
+                        return true;
+                    });
 
-                if (!this.fromDate && !this.toDate) {
-                    return history.slice(0, 12);
-                }
+                    if (!this.fromDate && !this.toDate) {
+                        return history.slice(0, 12);
+                    }
 
-                return history;
-            },
+                    return history;
+                },
 
                 init() {
                     this.fetchLedgerData();
@@ -707,7 +702,7 @@
 
                 formatMoney(value, decimals = 0) {
                     const amount = Number(value ?? 0);
-                    return '৳' + amount.toLocaleString(undefined, {
+                    return  '' + amount.toLocaleString(undefined, {
                         minimumFractionDigits: decimals,
                         maximumFractionDigits: decimals,
                     });
@@ -726,12 +721,12 @@
                         {
                             label: 'Total Due',
                             value: this.formatMoney(this.state.totalDue, 0),
-                            className: 'text-red-400',
+                            className: '',
                         },
                         {
                             label: 'Remaining',
                             value: this.formatMoney(Math.abs(this.state.remaining ?? 0), 0),
-                            className: (this.state.remaining ?? 0) >= 0 ? 'text-green-400' : 'text-red-400',
+                            className: '',
                         },
                         {
                             label: 'This Month',
@@ -741,9 +736,36 @@
                     ];
                 },
 
-                deptPercent(amount) {
-                    const total = Number(this.state.thisMonthDebit ?? 0);
-                    return total > 0 ? Math.round((Number(amount ?? 0) / total) * 100) : 0;
+                deptAmountLabel(dept) {
+                    const debit = Number(dept?.debit_amount ?? 0);
+                    const credit = Number(dept?.credit_amount ?? 0);
+
+                    if (debit > 0) {
+                        return this.formatMoney(debit, 0);
+                    }
+
+                    return '+' + this.formatMoney(credit, 0);
+                },
+
+                deptAmountClass(dept) {
+                    return Number(dept?.debit_amount ?? 0) > 0 ? 'text-white' : 'text-green-400';
+                },
+
+                deptPercent(dept) {
+                    const debit = Number(dept?.debit_amount ?? 0);
+                    const credit = Number(dept?.credit_amount ?? 0);
+
+                    if (debit > 0) {
+                        const totalDebit = Number(this.state.thisMonthDebit ?? 0);
+                        return totalDebit > 0 ? Math.round((debit / totalDebit) * 100) : 0;
+                    }
+
+                    const totalCredit = Number(this.state.thisMonthCredit ?? 0);
+                    return totalCredit > 0 ? Math.round((credit / totalCredit) * 100) : 0;
+                },
+
+                deptBarClass(dept) {
+                    return Number(dept?.debit_amount ?? 0) > 0 ? 'bg-primary/70' : 'bg-green-400/70';
                 },
 
                 usageBadgeClass() {

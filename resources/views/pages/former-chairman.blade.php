@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Former Chairmen — Chittagong Club Ltd.')
+@section('page_title', 'Former Chairmen')
 @section('show_nav', true)
 
 @section('content')
@@ -12,7 +12,7 @@
             <span class="material-symbols-outlined">arrow_back_ios_new</span>
         </a>
         <div class="text-center">
-            <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Chittagong Club Ltd</p>
+            <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">{{ $companyName }}</p>
             <h1 class="text-white text-lg font-bold">Former Chairmen</h1>
         </div>
         <div class="size-10"></div>
@@ -118,7 +118,7 @@
         {{-- Footer --}}
         <div class="mt-4 flex flex-col items-center text-center opacity-40 px-8">
             <span class="material-symbols-outlined text-2xl mb-2 text-primary">verified_user</span>
-            <p class="text-xs italic">Upholding the prestige and legacy of Chittagong Club Ltd </p>
+            <p class="text-xs italic">Upholding the prestige and legacy of {{ $companyName }}</p>
         </div>
 
     </main>

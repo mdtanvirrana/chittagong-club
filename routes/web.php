@@ -15,6 +15,7 @@ use App\Http\Controllers\AffiliatedClubsController;
 use App\Http\Controllers\FormerChairmanController;
 use App\Http\Controllers\EmployeeDirectoryController;
 use App\Http\Controllers\CircularController;
+use App\Http\Controllers\ClubFacilitiesController;
 
 // ─── Guest routes (no auth needed) ──────────────────────────────────────────
 Route::middleware('guest.member')->group(function () {
@@ -38,7 +39,7 @@ Route::middleware('auth.member')->group(function () {
         ->name('ledger.payments.sslcommerz.initiate');
     Route::get('/directory', [MemberDirectoryController::class, 'index'])->name('directory');
     Route::get('/directory/{id}', MemberDetail::class)->name('directory.show');
-    Route::get('/facilities', fn() => view('pages.club-facilities'))->name('facilities');
+    Route::get('/facilities', [ClubFacilitiesController::class, 'index'])->name('facilities');
     Route::get('/shop', fn() => view('pages.club-shop'))->name('shop');
     Route::get('/executive', [CommitteeController::class, 'index'])->name('executive');
     Route::get('/contact', fn() => view('pages.contact'))->name('contact');

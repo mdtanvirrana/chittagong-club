@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@yield('title', 'Chittagong Club Ltd.')</title>
+    <title>@hasSection('page_title')@yield('page_title') — {{ $companyName }}@else{{ $companyName }}@endif</title>
 
     {{-- Livewire Styles --}}
     @livewireStyles

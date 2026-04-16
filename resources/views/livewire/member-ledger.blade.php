@@ -8,7 +8,7 @@
                 <span class="material-symbols-outlined text-white">arrow_back_ios</span>
             </a>
             <div class="text-center">
-                <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Chittagong Club Ltd</p>
+                <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">{{ $companyName }}</p>
                 <h1 class="text-white text-lg font-bold">My Ledger</h1>
             </div>
             <div class="size-10"></div>
@@ -46,7 +46,7 @@
                 </span>
             </div>
             <p class="text-3xl font-extrabold text-primary mt-1">
-                ৳{{ number_format($creditLimit, 2) }}
+                {{ number_format($creditLimit, 2) }}
             </p>
 
             {{-- Usage bar --}}
@@ -62,17 +62,17 @@
             <div class="grid grid-cols-3 gap-3 mt-4">
                 <div class="bg-white/5 rounded-xl p-3 text-center">
                     <p class="text-white/40 text-[10px] uppercase tracking-wider mb-1">Total Due</p>
-                    <p class="text-red-400 text-sm font-bold">৳{{ number_format($totalDue, 0) }}</p>
+                    <p class="text-red-400 text-sm font-bold">{{ number_format($totalDue, 0) }}</p>
                 </div>
                 <div class="bg-white/5 rounded-xl p-3 text-center">
                     <p class="text-white/40 text-[10px] uppercase tracking-wider mb-1">Remaining</p>
                     <p class="{{ $remaining >= 0 ? 'text-green-400' : 'text-red-400' }} text-sm font-bold">
-                        ৳{{ number_format(abs($remaining), 0) }}
+                        {{ number_format(abs($remaining), 0) }}
                     </p>
                 </div>
                 <div class="bg-white/5 rounded-xl p-3 text-center">
                     <p class="text-white/40 text-[10px] uppercase tracking-wider mb-1">This Month</p>
-                    <p class="text-white text-sm font-bold">৳{{ number_format($thisMonthDebit, 0) }}</p>
+                    <p class="text-white text-sm font-bold">{{ number_format($thisMonthDebit, 0) }}</p>
                 </div>
             </div>
         </div>
@@ -89,7 +89,7 @@
                 </div>
                 <div class="ml-auto text-right">
                     <p class="text-white/40 text-[10px] uppercase tracking-wider">Spend</p>
-                    <p class="text-white font-bold text-sm">৳{{ number_format($thisMonthDebit, 0) }}</p>
+                    <p class="text-white font-bold text-sm">{{ number_format($thisMonthDebit, 0) }}</p>
                 </div>
             </div>
 
@@ -108,7 +108,7 @@
                     <div class="flex items-center justify-between mb-1.5">
                         <p class="text-white text-sm font-medium">{{ $dept['dept'] }}</p>
                         <div class="text-right">
-                            <p class="text-white text-sm font-bold">৳{{ number_format($dept['amount'], 0) }}</p>
+                            <p class="text-white text-sm font-bold">{{ number_format($dept['amount'], 0) }}</p>
                             <p class="text-white/30 text-[10px]">{{ $dept['count'] }} transaction{{ $dept['count'] > 1 ? 's' : '' }}</p>
                         </div>
                     </div>
@@ -126,7 +126,7 @@
                     <span class="material-symbols-outlined text-green-400 text-base">add_circle</span>
                     <p class="text-white/60 text-sm">Credits received</p>
                 </div>
-                <p class="text-green-400 font-bold text-sm">+৳{{ number_format($thisMonthCredit, 0) }}</p>
+                <p class="text-green-400 font-bold text-sm">+{{ number_format($thisMonthCredit, 0) }}</p>
             </div>
             @endif
             @endif
@@ -170,16 +170,16 @@
                 <p class="text-white font-bold text-sm">{{ $month['month_label'] }}</p>
                 <p class="text-white/40 text-xs mt-0.5">{{ $month['row_count'] }} transactions</p>
                 @if ($month['total_credit'] > 0)
-                <p class="text-green-400 text-xs mt-0.5">+৳{{ number_format($month['total_credit'], 0) }} credited</p>
+                <p class="text-green-400 text-xs mt-0.5">+{{ number_format($month['total_credit'], 0) }} credited</p>
                 @endif
             </div>
 
             {{-- Amount + chevron --}}
             <div class="text-right shrink-0">
                 <p class="{{ $net > 0 ? 'text-red-400' : 'text-green-400' }} font-bold text-sm">
-                    {{ $net > 0 ? '-' : '+' }}৳{{ number_format(abs($net), 0) }}
+                    {{ $net > 0 ? '-' : '+' }}{{ number_format(abs($net), 0) }}
                 </p>
-                <p class="text-white/20 text-xs mt-0.5">৳{{ number_format($month['total_debit'], 0) }} spent</p>
+                <p class="text-white/20 text-xs mt-0.5">{{ number_format($month['total_debit'], 0) }} spent</p>
             </div>
 
             <span class="material-symbols-outlined text-white/20 shrink-0">chevron_right</span>
@@ -248,11 +248,11 @@
                 <div class="grid grid-cols-2 gap-3 px-5 py-4 border-b border-white/10">
                     <div class="bg-red-500/10 rounded-xl p-3 text-center">
                         <p class="text-white/40 text-[10px] uppercase tracking-wider mb-1">Total Spent</p>
-                        <p class="text-red-400 font-bold text-base">৳{{ number_format($modalTotalDebit, 0) }}</p>
+                        <p class="text-red-400 font-bold text-base">{{ number_format($modalTotalDebit, 0) }}</p>
                     </div>
                     <div class="bg-green-500/10 rounded-xl p-3 text-center">
                         <p class="text-white/40 text-[10px] uppercase tracking-wider mb-1">Total Credit</p>
-                        <p class="text-green-400 font-bold text-base">৳{{ number_format($modalTotalCredit, 0) }}</p>
+                        <p class="text-green-400 font-bold text-base">{{ number_format($modalTotalCredit, 0) }}</p>
                     </div>
                 </div>
 
@@ -271,10 +271,10 @@
                             </div>
                             <div class="text-right">
                                 @if ($dept['total_debit'] > 0)
-                                <p class="text-white font-bold text-sm">৳{{ number_format($dept['total_debit'], 0) }}</p>
+                                <p class="text-white font-bold text-sm">{{ number_format($dept['total_debit'], 0) }}</p>
                                 @endif
                                 @if ($dept['total_credit'] > 0)
-                                <p class="text-green-400 text-xs">+৳{{ number_format($dept['total_credit'], 0) }}</p>
+                                <p class="text-green-400 text-xs">+{{ number_format($dept['total_credit'], 0) }}</p>
                                 @endif
                             </div>
                         </div>
@@ -293,10 +293,10 @@
                                 </div>
                                 <div class="text-right shrink-0">
                                     @if ($entry->DrAmt > 0)
-                                    <p class="text-white text-xs font-medium">৳{{ number_format($entry->DrAmt, 0) }}</p>
+                                    <p class="text-white text-xs font-medium">{{ number_format($entry->DrAmt, 0) }}</p>
                                     @endif
                                     @if ($entry->CrAmt > 0)
-                                    <p class="text-green-400 text-xs font-medium">+৳{{ number_format($entry->CrAmt, 0) }}</p>
+                                    <p class="text-green-400 text-xs font-medium">+{{ number_format($entry->CrAmt, 0) }}</p>
                                     @endif
                                 </div>
                             </div>
