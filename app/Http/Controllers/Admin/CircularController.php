@@ -202,7 +202,7 @@ class CircularController extends Controller
             return $currentUrl;
         }
 
-        $directory = public_path('circlular');
+        $directory = public_path('circular');
         File::ensureDirectoryExists($directory);
 
         $extension = strtolower($image->getClientOriginalExtension() ?: $image->extension() ?: 'jpg');
@@ -212,7 +212,7 @@ class CircularController extends Controller
 
         $this->deleteManagedImage($currentUrl);
 
-        return asset('circlular/'.$filename);
+        return asset('circular/'.$filename);
     }
 
     private function deleteManagedImage(?string $url): void
