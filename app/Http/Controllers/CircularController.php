@@ -31,6 +31,8 @@ class CircularController extends Controller
                             'title' => trim((string) ($circular->tx_title ?: 'Circular')),
                             'body' => $circular->body_text,
                             'excerpt' => $circular->excerpt,
+                            'image_url' => $circular->image_url,
+                            'fallback_image_url' => asset('logo.jpg'),
                             'source_url' => $circular->action_url,
                             'start_date' => $circular->start_date_label,
                             'close_date' => $circular->close_date_label,

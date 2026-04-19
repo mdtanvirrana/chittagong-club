@@ -26,6 +26,7 @@ class CircularRequest extends FormRequest
             'body' => 'required|string',
             'publish_at' => 'required|date',
             'close_at' => 'nullable|date|after_or_equal:publish_at',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'external_url' => 'nullable|string|max:255',
             'hash' => 'nullable|string|max:255',
             'tag' => 'nullable|string|max:255',

@@ -32,6 +32,16 @@
     <main class="flex-1 space-y-4 px-4 py-5">
         @forelse ($circulars as $circular)
             <article class="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-2xl">
+                <div class="aspect-[16/9] overflow-hidden border-b border-white/8 bg-slate-950/30">
+                    <img
+                        src="{{ $circular['image_url'] ?: $circular['fallback_image_url'] }}"
+                        alt="{{ $circular['title'] }}"
+                        class="h-full w-full object-cover"
+                        loading="lazy"
+                        onerror="this.onerror=null;this.src=@js($circular['fallback_image_url'])"
+                    >
+                </div>
+
                 <div class="border-b border-white/8 bg-[linear-gradient(135deg,rgba(242,208,13,0.12),rgba(255,255,255,0.02),rgba(12,92,139,0.18))] px-5 py-4">
                     <div class="flex items-start justify-between gap-4">
                         <div class="min-w-0">

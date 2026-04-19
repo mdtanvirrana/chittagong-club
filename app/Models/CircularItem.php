@@ -75,4 +75,14 @@ class CircularItem extends Model
     {
         return PortalContent::cleanedOptionalField($this->tx_url);
     }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return PortalContent::cleanedOptionalField($this->getAttribute('image_path'));
+    }
+
+    public function getDisplayImageUrlAttribute(): string
+    {
+        return $this->image_url ?: asset('logo.jpg');
+    }
 }

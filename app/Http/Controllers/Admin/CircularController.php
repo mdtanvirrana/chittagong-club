@@ -9,6 +9,8 @@ use App\Support\PortalContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class CircularController extends Controller
 {
@@ -87,6 +89,7 @@ class CircularController extends Controller
                 'flt_max_salary' => 0,
                 'ct_seen' => 0,
                 'ct_interval' => 0,
+                'image_path' => $this->storeImage($request, $nextId),
             ]);
         });
 
@@ -126,6 +129,7 @@ class CircularController extends Controller
             'tx_email' => $this->resolveMetadataField($request, 'email', $circularRow->tx_email),
             'dtt_ad_start' => $request->date('publish_at'),
             'dtt_ad_close' => $request->filled('close_at') ? $request->date('close_at') : null,
+            'image_path' => $this->storeImage($request, (int) $circularRow->id_career_key, $circularRow->image_url),
         ])->save();
 
         PortalContent::clearCircularCaches();
@@ -184,5 +188,51 @@ class CircularController extends Controller
         }
 
         return $currentValue ?? '?';
+    }
+
+    private function storeImage(Request $request, int $circularId, ?string $currentUrl = null): ?string
+    {
+        if (! $request->hasFile('image')) {
+            return $currentUrl;
+        }
+
+        $image = $request->file('image');
+
+        if ($image === null || ! $image->isValid()) {
+            return $currentUrl;
+        }
+
+        $directory = public_path('circlular');
+        File::ensureDirectoryExists($directory);
+
+        $extension = strtolower($image->getClientOriginalExtension() ?: $image->extension() ?: 'jpg');
+        $filename = sprintf('circular-%d-%s.%s', $circularId, Str::lower(Str::random(12)), $extension);
+
+        $image->move($directory, $filename);
+
+        $this->deleteManagedImage($currentUrl);
+
+        return asset('circlular/'.$filename);
+    }
+
+    private function deleteManagedImage(?string $url): void
+    {
+        $path = parse_url((string) $url, PHP_URL_PATH);
+
+        if (! is_string($path) || ! str_starts_with($path, '/circlular/')) {
+            return;
+        }
+
+        $filename = basename($path);
+
+        if ($filename === '' || $filename === '.' || $filename === '..') {
+            return;
+        }
+
+        $fullPath = public_path('circlular/'.$filename);
+
+        if (is_file($fullPath)) {
+            File::delete($fullPath);
+        }
     }
 }
