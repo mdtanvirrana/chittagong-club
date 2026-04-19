@@ -4,8 +4,7 @@
 
 @section('content')
 <div class="flex min-h-screen flex-col pb-24">
-
-    <header class="sticky top-0 z-50 border-b border-white/10 bg-brand-blue/90 px-4 pb-4 pt-12 backdrop-blur-sm">
+    <header class="sticky top-0 z-50 border-b border-white/10 bg-brand-blue/90 px-4 pb-5 pt-12 backdrop-blur-sm">
         <div class="mb-4 flex items-center justify-between">
             <a href="{{ route('dashboard') }}"
                class="flex size-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/15">
@@ -20,7 +19,8 @@
 
         <div class="flex items-end justify-between gap-4">
             <div>
-                <p class="text-sm font-semibold text-white/75">Club Circulars</p>
+                <p class="text-sm font-semibold text-white/75">Member Circular Archive</p>
+                <p class="mt-1 text-xs text-white/45">Published directly from the admin panel.</p>
             </div>
             <div class="rounded-2xl border border-primary/20 bg-primary/10 px-3 py-2 text-right">
                 <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Showing</p>
@@ -29,47 +29,55 @@
         </div>
     </header>
 
-    <main class="flex-1 space-y-5 px-4 py-5">
+    <main class="flex-1 space-y-4 px-4 py-5">
         @forelse ($circulars as $circular)
             <article class="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-2xl">
-                <div class="relative">
-                    <div class="absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4">
-                        <span class="rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 backdrop-blur-sm">
-                            Uploaded {{ $circular['uploaded_date'] }}
-                        </span>
+                <div class="border-b border-white/8 bg-[linear-gradient(135deg,rgba(242,208,13,0.12),rgba(255,255,255,0.02),rgba(12,92,139,0.18))] px-5 py-4">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="min-w-0">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">Circular</p>
+                            <h2 class="mt-2 text-lg font-extrabold tracking-tight text-white">{{ $circular['title'] }}</h2>
+                        </div>
 
                         @if ($circular['source_url'])
                             <a href="{{ $circular['source_url'] }}"
                                target="_blank"
                                rel="noreferrer"
-                               class="flex size-10 items-center justify-center rounded-full border border-white/10 bg-slate-950/25 text-white backdrop-blur-sm">
+                               class="flex size-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-slate-950/20 text-white backdrop-blur-sm">
                                 <span class="material-symbols-outlined text-[20px]">open_in_new</span>
                             </a>
                         @endif
                     </div>
-
-                    <div class="flex min-h-[68vh] items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(242,208,13,0.16),_rgba(9,37,60,0.92)_58%)] p-4 pt-20">
-                        <img src="{{ $circular['image_url'] }}"
-                             alt="{{ $circular['title'] }} circular poster"
-                             loading="lazy"
-                             class="max-h-[72vh] w-full rounded-[1.5rem] bg-white object-contain shadow-[0_24px_60px_rgba(0,0,0,0.35)]">
-                    </div>
                 </div>
 
-                <div class="space-y-2 border-t border-white/10 px-5 py-4">
-                    <h2 class="text-lg font-extrabold tracking-tight text-white">{{ $circular['title'] }}</h2>
-                    <p class="text-xs font-medium uppercase tracking-[0.18em] text-white/35">{{ $circular['uploaded_date_full'] }}</p>
+                <div class="space-y-4 px-5 py-5">
+                    <div class="grid gap-3 sm:grid-cols-3">
+                        <div class="rounded-2xl border border-white/8 bg-slate-950/20 px-4 py-3">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">Uploaded</p>
+                            <p class="mt-2 text-sm font-semibold text-white">{{ $circular['uploaded_date'] }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-white/8 bg-slate-950/20 px-4 py-3">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">Starts</p>
+                            <p class="mt-2 text-sm font-semibold text-white">{{ $circular['start_date'] }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-white/8 bg-slate-950/20 px-4 py-3">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">Closes</p>
+                            <p class="mt-2 text-sm font-semibold text-white">{{ $circular['close_date'] }}</p>
+                        </div>
+                    </div>
 
                     @if ($circular['body'])
-                        <p class="text-sm leading-relaxed text-white/65">{{ $circular['body'] }}</p>
+                        <p class="whitespace-pre-wrap text-sm leading-relaxed text-white/75">{{ $circular['body'] }}</p>
+                    @else
+                        <p class="text-sm leading-relaxed text-white/45">No additional circular details were provided.</p>
                     @endif
                 </div>
             </article>
         @empty
             <div class="rounded-[2rem] border border-dashed border-white/10 bg-white/[0.03] px-6 py-16 text-center">
                 <span class="material-symbols-outlined text-5xl text-primary/70">article</span>
-                <p class="mt-4 text-lg font-bold text-white">No circular posters found</p>
-                <p class="mt-2 text-sm leading-relaxed text-white/50">No circular entries with poster images are available right now.</p>
+                <p class="mt-4 text-lg font-bold text-white">No circulars available</p>
+                <p class="mt-2 text-sm leading-relaxed text-white/50">Published circulars will appear here as soon as they are made visible from the admin panel.</p>
             </div>
         @endforelse
 
@@ -99,7 +107,5 @@
             </div>
         @endif
     </main>
-
-    @include('layouts.bottom-nav')
 </div>
 @endsection

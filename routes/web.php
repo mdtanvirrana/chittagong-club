@@ -1,26 +1,61 @@
 <?php
 
-use App\Livewire\MemberDetail;
-use App\Livewire\MemberDirectory;
-use App\Livewire\MemberProfile;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\Member\LedgerController;
-use App\Http\Controllers\Payments\SSLCommerzPaymentController;
-use App\Http\Controllers\Member\DashboardController;
-use App\Http\Controllers\Member\MemberDirectoryController;
-use App\Http\Controllers\NoticeController;
-use App\Http\Controllers\CommitteeController;
+use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\CircularController as AdminCircularController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\NoticeController as AdminNoticeController;
 use App\Http\Controllers\AffiliatedClubsController;
-use App\Http\Controllers\FormerChairmanController;
-use App\Http\Controllers\EmployeeDirectoryController;
+use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CircularController;
 use App\Http\Controllers\ClubFacilitiesController;
+use App\Http\Controllers\CommitteeController;
+use App\Http\Controllers\EmployeeDirectoryController;
+use App\Http\Controllers\FormerChairmanController;
+use App\Http\Controllers\Member\DashboardController;
+use App\Http\Controllers\Member\LedgerController;
+use App\Http\Controllers\Member\MemberDirectoryController;
+use App\Http\Controllers\NoticeController;
+use App\Http\Controllers\Payments\SSLCommerzPaymentController;
+use App\Livewire\MemberDetail;
+use App\Livewire\MemberProfile;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Route;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 // ─── Guest routes (no auth needed) ──────────────────────────────────────────
 Route::middleware('guest.member')->group(function () {
     Route::get('/', [AuthController::class, 'login'])->name('login');
     Route::post('/login', [AuthController::class, 'authenticate'])->name('login.post');
+});
+
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::middleware('guest.admin')->group(function () {
+        Route::get('/login', [AdminAuthController::class, 'create'])->name('login');
+        Route::post('/login', [AdminAuthController::class, 'store'])->name('login.store');
+    });
+
+    Route::middleware('auth.admin')->group(function () {
+        Route::get('/', fn () => redirect()->route('admin.dashboard'));
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+        Route::post('/logout', [AdminAuthController::class, 'destroy'])->name('logout');
+
+        Route::get('/notices', [AdminNoticeController::class, 'index'])->name('notices.index');
+        Route::get('/notices/create', [AdminNoticeController::class, 'create'])->name('notices.create');
+        Route::post('/notices', [AdminNoticeController::class, 'store'])->name('notices.store');
+        Route::get('/notices/{notice}/edit', [AdminNoticeController::class, 'edit'])->name('notices.edit');
+        Route::put('/notices/{notice}', [AdminNoticeController::class, 'update'])->name('notices.update');
+        Route::patch('/notices/{notice}/online', [AdminNoticeController::class, 'toggleOnline'])->name('notices.online');
+        Route::patch('/notices/{notice}/active', [AdminNoticeController::class, 'toggleActive'])->name('notices.active');
+
+        Route::get('/circulars', [AdminCircularController::class, 'index'])->name('circulars.index');
+        Route::get('/circulars/create', [AdminCircularController::class, 'create'])->name('circulars.create');
+        Route::post('/circulars', [AdminCircularController::class, 'store'])->name('circulars.store');
+        Route::get('/circulars/{circular}/edit', [AdminCircularController::class, 'edit'])->name('circulars.edit');
+        Route::put('/circulars/{circular}', [AdminCircularController::class, 'update'])->name('circulars.update');
+        Route::patch('/circulars/{circular}/online', [AdminCircularController::class, 'toggleOnline'])->name('circulars.online');
+        Route::patch('/circulars/{circular}/active', [AdminCircularController::class, 'toggleActive'])->name('circulars.active');
+    });
 });
 
 // ─── Authenticated routes ────────────────────────────────────────────────────
@@ -40,9 +75,9 @@ Route::middleware('auth.member')->group(function () {
     Route::get('/directory', [MemberDirectoryController::class, 'index'])->name('directory');
     Route::get('/directory/{id}', MemberDetail::class)->name('directory.show');
     Route::get('/facilities', [ClubFacilitiesController::class, 'index'])->name('facilities');
-    Route::get('/shop', fn() => view('pages.club-shop'))->name('shop');
+    Route::get('/shop', fn () => view('pages.club-shop'))->name('shop');
     Route::get('/executive', [CommitteeController::class, 'index'])->name('executive');
-    Route::get('/contact', fn() => view('pages.contact'))->name('contact');
+    Route::get('/contact', fn () => view('pages.contact'))->name('contact');
     Route::get('/affiliated-clubs', [AffiliatedClubsController::class, 'index'])->name(
         'affiliated-clubs'
     );
@@ -52,17 +87,25 @@ Route::middleware('auth.member')->group(function () {
     Route::get('/employee-directory', [EmployeeDirectoryController::class, 'index'])->name(
         'employee-directory'
     );
-    Route::get('/about',             fn() => view('pages.about'))->name('about');
-    Route::get('/dress-code',        fn() => view('pages.dress-code'))->name('dress-code');
-    Route::get('/general-rules',     fn() => view('pages.general-rules'))->name('general-rules');
-    Route::get('/gallery',           fn() => view('pages.gallery'))->name('gallery');
+    Route::get('/about', fn () => view('pages.about'))->name('about');
+    Route::get('/dress-code', fn () => view('pages.dress-code'))->name('dress-code');
+    Route::get('/general-rules', fn () => view('pages.general-rules'))->name('general-rules');
+    Route::get('/gallery', fn () => view('pages.gallery'))->name('gallery');
 });
 
-Route::match(['get', 'post'], '/payments/sslcommerz/success', [SSLCommerzPaymentController::class, 'success'])
-    ->name('payments.sslcommerz.success');
-Route::match(['get', 'post'], '/payments/sslcommerz/fail', [SSLCommerzPaymentController::class, 'fail'])
-    ->name('payments.sslcommerz.fail');
-Route::match(['get', 'post'], '/payments/sslcommerz/cancel', [SSLCommerzPaymentController::class, 'cancel'])
-    ->name('payments.sslcommerz.cancel');
-Route::match(['get', 'post'], '/payments/sslcommerz/ipn', [SSLCommerzPaymentController::class, 'ipn'])
-    ->name('payments.sslcommerz.ipn');
+Route::controller(SSLCommerzPaymentController::class)
+    ->withoutMiddleware([
+        StartSession::class,
+        ShareErrorsFromSession::class,
+        ValidateCsrfToken::class,
+    ])
+    ->group(function () {
+        Route::match(['get', 'post'], '/payments/sslcommerz/success', 'success')
+            ->name('payments.sslcommerz.success');
+        Route::match(['get', 'post'], '/payments/sslcommerz/fail', 'fail')
+            ->name('payments.sslcommerz.fail');
+        Route::match(['get', 'post'], '/payments/sslcommerz/cancel', 'cancel')
+            ->name('payments.sslcommerz.cancel');
+        Route::match(['get', 'post'], '/payments/sslcommerz/ipn', 'ipn')
+            ->name('payments.sslcommerz.ipn');
+    });

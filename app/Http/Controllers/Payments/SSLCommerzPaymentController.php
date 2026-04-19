@@ -8,6 +8,7 @@ use App\Models\PaymentTransaction;
 use App\Models\SuccessfulPaymentTransaction;
 use App\Services\Payments\SSLCommerzService;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,9 +19,7 @@ use Throwable;
 
 class SSLCommerzPaymentController extends Controller
 {
-    public function __construct(private readonly SSLCommerzService $sslCommerz)
-    {
-    }
+    public function __construct(private readonly SSLCommerzService $sslCommerz) {}
 
     public function initiate(InitiateSslCommerzPaymentRequest $request): JsonResponse
     {
@@ -289,10 +288,10 @@ class SSLCommerzPaymentController extends Controller
 
     private function makeTransactionId(string $memberId): string
     {
-        return Str::upper('CCL-' . $memberId . '-' . now()->format('YmdHis') . '-' . Str::random(6));
+        return Str::upper('CCL-'.$memberId.'-'.now()->format('YmdHis').'-'.Str::random(6));
     }
 
-    private function parsePaidAt(?string $value): ?Carbon
+    private function parsePaidAt(?string $value): CarbonInterface
     {
         if (! $value) {
             return now();
@@ -325,7 +324,7 @@ class SSLCommerzPaymentController extends Controller
         $phone = preg_replace('/\D+/', '', (string) ($member->Mobile ?? $member->Phone ?? '')) ?: '01700000000';
         $email = filter_var((string) ($member->Email ?? ''), FILTER_VALIDATE_EMAIL)
             ? (string) $member->Email
-            : 'member' . preg_replace('/\W+/', '', $memberId) . '@example.com';
+            : 'member'.preg_replace('/\W+/', '', $memberId).'@example.com';
 
         return [
             'name' => $name !== '' ? $name : 'Member',

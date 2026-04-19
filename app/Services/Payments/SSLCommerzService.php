@@ -2,12 +2,17 @@
 
 namespace App\Services\Payments;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 class SSLCommerzService
 {
+    /**
+     * @throws RequestException
+     * @throws ConnectionException
+     */
     public function initiate(array $payload): array
     {
         $response = Http::asForm()
@@ -81,12 +86,12 @@ class SSLCommerzService
 
     private function initUrl(): string
     {
-        return $this->baseUrl() . '/gwprocess/v4/api.php';
+        return $this->baseUrl().'/gwprocess/v4/api.php';
     }
 
     private function validationUrl(): string
     {
-        return $this->baseUrl() . '/validator/api/validationserverAPI.php';
+        return $this->baseUrl().'/validator/api/validationserverAPI.php';
     }
 
     private function baseUrl(): string
