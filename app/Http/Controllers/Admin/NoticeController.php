@@ -13,15 +13,25 @@ use Illuminate\Support\Facades\DB;
 
 class NoticeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $search = trim((string) $request->input('q', ''));
+
         $notices = NoticeMessage::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($builder) use ($search) {
+                    $builder
+                        ->where('tx_title', 'like', "%{$search}%")
+                        ->orWhere('tx_post_mgs', 'like', "%{$search}%")
+                        ->orWhere('id_message_key', 'like', "%{$search}%");
+                });
+            })
             ->orderByDesc('Edate')
             ->orderByDesc('id_message_key')
             ->paginate(12)
             ->withQueryString();
 
-        return view('admin.notices.index', compact('notices'));
+        return view('admin.notices.index', compact('notices', 'search'));
     }
 
     public function create()
@@ -59,15 +69,15 @@ class NoticeController extends Controller
                 'Edate' => Carbon::parse($request->input('publish_date'))->toDateString(),
                 'Etime' => $request->input('publish_time').':00',
                 'is_online' => $request->boolean('is_online'),
-                'tx_img_src' => PortalContent::optionalField($request->input('image_url')),
-                'tx_post_url' => PortalContent::optionalField($request->input('post_url')),
+                'tx_img_src' => $this->resolveMetadataField($request, 'image_url'),
+                'tx_post_url' => $this->resolveMetadataField($request, 'post_url'),
                 'tx_mac' => '?',
                 'tx_ip6' => $this->resolveIpv6($request),
                 'tx_ip4' => $this->resolveIpv4($request),
                 'tx_title' => trim((string) $request->input('title')),
                 'tx_post_mgs' => PortalContent::plainTextToDelta($request->input('body')),
                 'id_user_key' => $userId,
-                'tx_comment' => PortalContent::optionalField($request->input('comment')),
+                'tx_comment' => $this->resolveMetadataField($request, 'comment'),
             ]);
         });
 
@@ -98,11 +108,11 @@ class NoticeController extends Controller
             'Edate' => Carbon::parse($request->input('publish_date'))->toDateString(),
             'Etime' => $request->input('publish_time').':00',
             'is_online' => $request->boolean('is_online'),
-            'tx_img_src' => PortalContent::optionalField($request->input('image_url')),
-            'tx_post_url' => PortalContent::optionalField($request->input('post_url')),
+            'tx_img_src' => $this->resolveMetadataField($request, 'image_url', $noticeRow->tx_img_src),
+            'tx_post_url' => $this->resolveMetadataField($request, 'post_url', $noticeRow->tx_post_url),
             'tx_title' => trim((string) $request->input('title')),
             'tx_post_mgs' => PortalContent::plainTextToDelta($request->input('body')),
-            'tx_comment' => PortalContent::optionalField($request->input('comment')),
+            'tx_comment' => $this->resolveMetadataField($request, 'comment', $noticeRow->tx_comment),
             'id_user_key' => $this->resolveAuditUserId(),
         ])->save();
 
@@ -167,5 +177,14 @@ class NoticeController extends Controller
         $ip = (string) $request->ip();
 
         return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) ? $ip : '?';
+    }
+
+    private function resolveMetadataField(Request $request, string $key, ?string $currentValue = null): ?string
+    {
+        if ($request->exists($key)) {
+            return PortalContent::optionalField($request->input($key));
+        }
+
+        return $currentValue ?? '?';
     }
 }

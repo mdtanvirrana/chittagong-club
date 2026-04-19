@@ -17,12 +17,12 @@
                 extend: {
                     colors: {
                         admin: {
-                            ink: '#07131d',
-                            panel: '#0d2233',
-                            soft: '#122d41',
-                            line: '#1c425d',
-                            gold: '#f0c441',
-                            teal: '#64d2c7',
+                            ink: '#0b1220',
+                            panel: '#101826',
+                            soft: '#172235',
+                            line: '#30384a',
+                            mist: '#e2e8f0',
+                            gold: '#d9b24c',
                         },
                     },
                     fontFamily: {
@@ -30,7 +30,7 @@
                         body: ['Instrument Sans', 'sans-serif'],
                     },
                     boxShadow: {
-                        panel: '0 28px 60px rgba(4, 11, 17, 0.28)',
+                        panel: '0 18px 42px rgba(2, 6, 23, 0.22)',
                     },
                 },
             },
@@ -38,12 +38,15 @@
     </script>
 
     <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
         body {
             font-family: 'Instrument Sans', sans-serif;
             background:
-                radial-gradient(circle at top left, rgba(100, 210, 199, 0.10), transparent 28%),
-                radial-gradient(circle at top right, rgba(240, 196, 65, 0.10), transparent 24%),
-                linear-gradient(180deg, #07131d 0%, #0a1b28 100%);
+                radial-gradient(circle at top right, rgba(217, 178, 76, 0.07), transparent 20%),
+                linear-gradient(180deg, #08111b 0%, #0d1724 100%);
         }
     </style>
 
@@ -52,6 +55,19 @@
 <body class="min-h-screen text-slate-100 antialiased">
 @php
     $adminUser = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+    $adminDisplayName = $adminUser?->display_name ?? 'Admin User';
+    $adminId = $adminUser?->userid ?? 'N/A';
+    $adminDesignation = $adminUser?->Designation ?? 'Admin User';
+    $adminNameParts = preg_split('/\s+/', trim($adminDisplayName)) ?: [];
+    $adminInitials = '';
+
+    foreach (array_slice(array_values(array_filter($adminNameParts)), 0, 2) as $part) {
+        $adminInitials .= strtoupper(substr((string) $part, 0, 1));
+    }
+
+    $adminInitials = $adminInitials !== '' ? $adminInitials : 'AU';
+    $headerContainerClass = trim($__env->yieldContent('header_container_class', 'w-full'));
+    $mainContainerClass = trim($__env->yieldContent('main_container_class', 'w-full'));
     $navItems = [
         ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'match' => 'admin.dashboard', 'icon' => 'space_dashboard'],
         ['label' => 'Notices', 'route' => 'admin.notices.index', 'match' => 'admin.notices.*', 'icon' => 'campaign'],
@@ -59,7 +75,7 @@
     ];
 @endphp
 
-<div x-data="{ sidebarOpen: false }" class="min-h-screen lg:grid lg:grid-cols-[18.5rem_minmax(0,1fr)]">
+<div x-data="{ sidebarOpen: false, profileOpen: false }" class="min-h-screen lg:grid lg:grid-cols-[17rem_minmax(0,1fr)]">
     <div
         x-show="sidebarOpen"
         x-transition.opacity
@@ -69,37 +85,28 @@
 
     <aside
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-        class="fixed inset-y-0 left-0 z-40 flex w-[18.5rem] flex-col border-r border-admin-line/80 bg-admin-panel/95 px-5 py-5 shadow-panel transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen"
+        class="fixed inset-y-0 left-0 z-40 flex w-[17rem] flex-col border-r border-admin-line/10 bg-admin-panel/95 px-4 py-4 shadow-panel transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen"
     >
         <div class="flex items-center justify-between">
             <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
-                <img src="{{ asset('logo.jpg') }}" alt="{{ $companyName }}" class="size-12 rounded-2xl bg-white/5 object-contain p-1.5">
+                <img src="{{ asset('logo.jpg') }}" alt="{{ $companyName }}" class="size-11 rounded-lg bg-white/5 object-contain p-1.5">
                 <div>
-                    <p class="font-display text-lg font-bold tracking-tight text-white">Admin Panel</p>
-                    <p class="text-xs uppercase tracking-[0.24em] text-admin-gold">{{ $companyName }}</p>
+                    <p class="font-display text-base font-bold tracking-tight text-white">Admin Panel</p>
+                    <p class="text-[10px] uppercase tracking-[0.24em] text-admin-gold">{{ $companyName }}</p>
                 </div>
             </a>
-            <button @click="sidebarOpen = false" class="flex size-10 items-center justify-center rounded-2xl border border-white/10 text-white/60 lg:hidden">
+            <button @click="sidebarOpen = false" class="flex size-9 items-center justify-center rounded-md border border-[#30384a] text-white/60 lg:hidden">
                 <span class="material-symbols-outlined">close</span>
             </button>
         </div>
 
-        <div class="mt-8 rounded-[1.75rem] border border-white/8 bg-white/[0.03] p-4">
-            <p class="text-xs uppercase tracking-[0.2em] text-white/35">Signed In As</p>
-            <p class="mt-2 font-display text-xl font-bold text-white">{{ $adminUser?->display_name ?? 'Admin' }}</p>
-            <div class="mt-3 flex flex-wrap gap-2 text-xs text-white/65">
-                <span class="rounded-full border border-white/10 px-3 py-1">{{ $adminUser?->userid ?? 'N/A' }}</span>
-                <span class="rounded-full border border-white/10 px-3 py-1">{{ $adminUser?->Designation ?? 'Admin User' }}</span>
-            </div>
-        </div>
-
-        <nav class="mt-8 space-y-2">
+        <nav class="mt-8 space-y-1.5">
             @foreach ($navItems as $item)
                 <a
                     href="{{ route($item['route']) }}"
-                    class="flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors {{ request()->routeIs($item['match']) ? 'border-admin-gold/35 bg-admin-gold/10 text-white' : 'border-white/8 bg-white/[0.02] text-white/70 hover:border-white/15 hover:bg-white/[0.05] hover:text-white' }}"
+                    class="flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors {{ request()->routeIs($item['match']) ? 'border-[#3b4557] bg-white/[0.05] text-white' : 'border-[#30384a] bg-white/[0.02] text-white/68 hover:border-[#3b4557] hover:bg-white/[0.04] hover:text-white' }}"
                 >
-                    <span class="material-symbols-outlined {{ request()->routeIs($item['match']) ? 'text-admin-gold' : 'text-white/45' }}">{{ $item['icon'] }}</span>
+                    <span class="material-symbols-outlined text-[18px] {{ request()->routeIs($item['match']) ? 'text-admin-gold' : 'text-white/45' }}">{{ $item['icon'] }}</span>
                     <span class="font-medium">{{ $item['label'] }}</span>
                 </a>
             @endforeach
@@ -110,9 +117,9 @@
                 href="{{ route('login') }}"
                 target="_blank"
                 rel="noreferrer"
-                class="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3 text-white/70 transition-colors hover:border-white/15 hover:bg-white/[0.05] hover:text-white"
+                class="flex items-center gap-3 rounded-lg border border-[#30384a] bg-white/[0.02] px-3 py-2.5 text-sm text-white/70 transition-colors hover:border-[#3b4557] hover:bg-white/[0.04] hover:text-white"
             >
-                <span class="material-symbols-outlined text-white/45">open_in_new</span>
+                <span class="material-symbols-outlined text-[18px] text-white/45">open_in_new</span>
                 <span class="font-medium">Open Member Login</span>
             </a>
 
@@ -120,9 +127,9 @@
                 @csrf
                 <button
                     type="submit"
-                    class="flex w-full items-center justify-center gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 font-medium text-red-200 transition-colors hover:bg-red-500/15"
+                    class="flex w-full items-center justify-center gap-3 rounded-lg border border-[#30384a] bg-white/[0.02] px-3 py-2.5 text-sm font-medium text-white/70 transition-colors hover:border-[#3b4557] hover:bg-white/[0.04] hover:text-white"
                 >
-                    <span class="material-symbols-outlined text-[20px]">logout</span>
+                    <span class="material-symbols-outlined text-[18px]">logout</span>
                     <span>Sign Out</span>
                 </button>
             </form>
@@ -130,28 +137,72 @@
     </aside>
 
     <div class="min-w-0">
-        <header class="sticky top-0 z-20 border-b border-white/8 bg-slate-950/55 backdrop-blur-xl">
-            <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 lg:px-8">
+        <header class="sticky top-0 z-20 border-b border-admin-line/10 bg-slate-950/55 backdrop-blur-xl">
+            <div class="{{ $headerContainerClass }} flex items-center justify-between gap-4 px-3 py-3 lg:px-6">
                 <div class="flex items-center gap-3">
-                    <button @click="sidebarOpen = true" class="flex size-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] lg:hidden">
+                    <button @click="sidebarOpen = true" class="flex size-10 items-center justify-center rounded-md border border-[#30384a] bg-white/[0.03] lg:hidden">
                         <span class="material-symbols-outlined">menu</span>
                     </button>
                     <div>
-                        <p class="text-xs uppercase tracking-[0.24em] text-admin-gold">@yield('page_eyebrow', 'Operations')</p>
-                        <h1 class="font-display text-2xl font-bold tracking-tight text-white">@yield('page_title', 'Admin Panel')</h1>
+                        <p class="text-[10px] uppercase tracking-[0.24em] text-admin-gold">@yield('page_eyebrow', 'Operations')</p>
+                        <h1 class="font-display text-xl font-bold tracking-tight text-white lg:text-[1.35rem]">@yield('page_title', 'Admin Panel')</h1>
                     </div>
                 </div>
 
-                <div class="hidden rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-right lg:block">
-                    <p class="text-xs uppercase tracking-[0.18em] text-white/35">Portal Sync</p>
-                    <p class="text-sm font-semibold text-white/85">Admin updates flow into the member panel</p>
+                <div
+                    class="relative"
+                    @mouseenter="profileOpen = true"
+                    @mouseleave="profileOpen = false"
+                >
+                    <button
+                        type="button"
+                        @click="profileOpen = ! profileOpen"
+                        :aria-expanded="profileOpen.toString()"
+                        aria-haspopup="true"
+                        class="flex items-center gap-3 rounded-lg border border-[#30384a] bg-white/[0.03] px-3 py-2 text-left transition hover:border-[#3b4557] hover:bg-white/[0.05]"
+                    >
+                        <div class="hidden text-right sm:block">
+                            <p class="text-[10px] uppercase tracking-[0.2em] text-white/35">Signed In As</p>
+                            <p class="mt-0.5 max-w-[10rem] truncate text-xs font-semibold text-white">{{ $adminDisplayName }}</p>
+                        </div>
+                        <span class="flex size-10 items-center justify-center rounded-lg border border-[#30384a] bg-admin-soft/80 font-display text-xs font-bold text-admin-gold">
+                            {{ $adminInitials }}
+                        </span>
+                    </button>
+
+                    <div
+                        x-cloak
+                        x-show="profileOpen"
+                        x-transition.origin.top.right
+                        @click.outside="profileOpen = false"
+                        class="absolute right-0 top-[calc(100%+0.65rem)] w-[19rem] rounded-xl border border-[#30384a] bg-[#0d1724]/95 p-4 shadow-panel backdrop-blur-xl"
+                    >
+                        <div class="flex items-start gap-4">
+                            <span class="flex size-12 shrink-0 items-center justify-center rounded-lg border border-[#30384a] bg-admin-soft/75 font-display text-sm font-bold text-admin-gold">
+                                {{ $adminInitials }}
+                            </span>
+                            <div class="min-w-0">
+                                <p class="text-[10px] uppercase tracking-[0.2em] text-white/35">Signed In As</p>
+                                <p class="mt-1.5 font-display text-lg font-bold text-white">{{ $adminDisplayName }}</p>
+                                <p class="mt-1.5 text-xs text-white/55">User ID {{ $adminId }}</p>
+                                <p class="mt-1 text-xs text-white/55">{{ $adminDesignation }}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 rounded-lg border border-[#30384a] bg-white/[0.03] px-3.5 py-3">
+                            <div class="flex items-center gap-3 text-white/72">
+                                <span class="material-symbols-outlined text-[18px] text-admin-gold">settings</span>
+                                <p class="text-xs font-semibold uppercase tracking-[0.16em]">Profile Settings</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
 
-        <main class="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">
+        <main class="{{ $mainContainerClass }} px-3 py-4 lg:px-6 lg:py-5">
             @if (session('status'))
-                <div class="mb-6 rounded-[1.5rem] border border-emerald-400/20 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-100">
+                <div class="mb-5 rounded-lg border border-admin-line/12 bg-white/[0.04] px-4 py-3 text-xs text-white/75">
                     {{ session('status') }}
                 </div>
             @endif

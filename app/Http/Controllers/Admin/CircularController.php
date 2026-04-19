@@ -6,20 +6,32 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CircularRequest;
 use App\Models\CircularItem;
 use App\Support\PortalContent;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CircularController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $search = trim((string) $request->input('q', ''));
+
         $circulars = CircularItem::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($builder) use ($search) {
+                    $builder
+                        ->where('tx_title', 'like', "%{$search}%")
+                        ->orWhere('tx_body', 'like', "%{$search}%")
+                        ->orWhere('tx_tag', 'like', "%{$search}%")
+                        ->orWhere('id_career_key', 'like', "%{$search}%");
+                });
+            })
             ->orderByDesc('dtt_ad_start')
             ->orderByDesc('id_career_key')
             ->paginate(12)
             ->withQueryString();
 
-        return view('admin.circulars.index', compact('circulars'));
+        return view('admin.circulars.index', compact('circulars', 'search'));
     }
 
     public function create()
@@ -55,14 +67,14 @@ class CircularController extends Controller
                 'dtt_added' => $now,
                 'is_online' => $request->boolean('is_online'),
                 'tx_title' => trim((string) $request->input('title')),
-                'tx_url' => PortalContent::optionalField($request->input('external_url')),
+                'tx_url' => $this->resolveMetadataField($request, 'external_url'),
                 'tx_body' => PortalContent::plainTextToDelta($request->input('body')),
-                'tx_hash' => PortalContent::optionalField($request->input('hash')),
-                'tx_tag' => PortalContent::optionalField($request->input('tag')),
-                'tx_career_type' => PortalContent::optionalField($request->input('career_type')),
-                'tx_address' => PortalContent::optionalField($request->input('address')),
-                'tx_phone' => PortalContent::optionalField($request->input('phone')),
-                'tx_email' => PortalContent::optionalField($request->input('email')),
+                'tx_hash' => $this->resolveMetadataField($request, 'hash'),
+                'tx_tag' => $this->resolveMetadataField($request, 'tag'),
+                'tx_career_type' => $this->resolveMetadataField($request, 'career_type'),
+                'tx_address' => $this->resolveMetadataField($request, 'address'),
+                'tx_phone' => $this->resolveMetadataField($request, 'phone'),
+                'tx_email' => $this->resolveMetadataField($request, 'email'),
                 'flt_cost' => 0,
                 'flt_cpc' => 0,
                 'flt_cpc_max' => 0,
@@ -104,14 +116,14 @@ class CircularController extends Controller
             'id_user_mod' => $this->resolveAuditUserId(),
             'is_online' => $request->boolean('is_online'),
             'tx_title' => trim((string) $request->input('title')),
-            'tx_url' => PortalContent::optionalField($request->input('external_url')),
+            'tx_url' => $this->resolveMetadataField($request, 'external_url', $circularRow->tx_url),
             'tx_body' => PortalContent::plainTextToDelta($request->input('body')),
-            'tx_hash' => PortalContent::optionalField($request->input('hash')),
-            'tx_tag' => PortalContent::optionalField($request->input('tag')),
-            'tx_career_type' => PortalContent::optionalField($request->input('career_type')),
-            'tx_address' => PortalContent::optionalField($request->input('address')),
-            'tx_phone' => PortalContent::optionalField($request->input('phone')),
-            'tx_email' => PortalContent::optionalField($request->input('email')),
+            'tx_hash' => $this->resolveMetadataField($request, 'hash', $circularRow->tx_hash),
+            'tx_tag' => $this->resolveMetadataField($request, 'tag', $circularRow->tx_tag),
+            'tx_career_type' => $this->resolveMetadataField($request, 'career_type', $circularRow->tx_career_type),
+            'tx_address' => $this->resolveMetadataField($request, 'address', $circularRow->tx_address),
+            'tx_phone' => $this->resolveMetadataField($request, 'phone', $circularRow->tx_phone),
+            'tx_email' => $this->resolveMetadataField($request, 'email', $circularRow->tx_email),
             'dtt_ad_start' => $request->date('publish_at'),
             'dtt_ad_close' => $request->filled('close_at') ? $request->date('close_at') : null,
         ])->save();
@@ -163,5 +175,14 @@ class CircularController extends Controller
         $identifier = Auth::guard('admin')->user()?->userid;
 
         return is_numeric($identifier) ? (int) $identifier : 0;
+    }
+
+    private function resolveMetadataField(Request $request, string $key, ?string $currentValue = null): ?string
+    {
+        if ($request->exists($key)) {
+            return PortalContent::optionalField($request->input($key));
+        }
+
+        return $currentValue ?? '?';
     }
 }
