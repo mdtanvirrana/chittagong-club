@@ -320,29 +320,51 @@
 
         </div>
 
-        {{-- Upcoming Event --}}
         <div class="mt-12">
-            <h3 class="text-sm font-bold uppercase tracking-[0.2em] text-white/40 mb-6">Upcoming Highlight</h3>
-            <div class="bg-white/10 rounded-xl overflow-hidden border border-white/5">
-                <div class="h-40 w-full bg-center bg-cover"
-                     style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAnT7AHaLAQLOvqNQ227xQBwjRJIjM-qXBPDh0JSkhCGeeFwcnUeyeC_9rQBP1l8XTUFaVW7-aoU5SRpflqOn0-moqgF40JPYbXBm2Ipe3ruwmfduF8-CssyYPAHqx81RoRZQZnhtBChfNj4plnfKLJjJ8mZoQ9FYtohcSAxa41skc9_dcOlWYKbfjX9rTAKouok7TdZVNe8xdqhLtDtJARje4g26fdQATUOqnbOwYm5_NJj3NDhZInWfA3guJMAoIJmkmKsRq2Cao')">
-                </div>
-                <div class="p-5 space-y-3">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h4 class="text-lg font-bold">Annual Grand Gala Dinner</h4>
-                            <p class="text-white/60 text-sm">Dec 24 • Grand Ballroom • 7:00 PM</p>
-                        </div>
-                        <div class="bg-primary text-brand-blue rounded-lg px-3 py-1 flex flex-col items-center leading-tight">
-                            <span class="text-[10px] font-bold">DEC</span>
-                            <span class="text-lg font-black">24</span>
-                        </div>
-                    </div>
-                    <button class="w-full bg-primary py-3 rounded-full text-brand-blue font-bold text-sm tracking-wide transition-all active:scale-95">
-                        RESERVE A TABLE
-                    </button>
-                </div>
+            <div class="mb-6 flex items-center justify-between gap-4">
+                <h3 class="text-sm font-bold uppercase tracking-[0.2em] text-white/40">Circular Highlight</h3>
+                <a href="{{ route('circulars') }}" class="text-xs font-bold uppercase tracking-[0.16em] text-primary">View All</a>
             </div>
+
+            @if ($dashboardHighlight)
+                <div class="bg-white/10 rounded-xl overflow-hidden border border-white/5">
+                    @if ($dashboardHighlight['image_url'])
+                        <img
+                            src="{{ $dashboardHighlight['image_url'] }}"
+                            alt="{{ $dashboardHighlight['title'] }}"
+                            class="h-40 w-full object-cover"
+                        >
+                    @endif
+                    <div class="p-5 space-y-3">
+                        <div class="flex justify-between items-start gap-4">
+                            <div class="min-w-0">
+                                <h4 class="text-lg font-bold">{{ $dashboardHighlight['title'] }}</h4>
+                                <p class="text-white/60 text-sm">{{ $dashboardHighlight['start_date'] }}</p>
+                                @if ($dashboardHighlight['close_date'])
+                                    <p class="mt-1 text-white/45 text-xs">Close: {{ $dashboardHighlight['close_date'] }}</p>
+                                @endif
+                            </div>
+                            <div class="bg-primary text-brand-blue rounded-lg px-3 py-1 flex flex-col items-center leading-tight shrink-0">
+                                <span class="text-[10px] font-bold">{{ $dashboardHighlight['badge_month'] }}</span>
+                                <span class="text-lg font-black">{{ $dashboardHighlight['badge_day'] }}</span>
+                            </div>
+                        </div>
+                        <p class="text-sm leading-relaxed text-white/75">
+                            {{ $dashboardHighlight['excerpt'] ?: 'Latest published circular from the club.' }}
+                        </p>
+                        <a href="{{ $dashboardHighlight['source_url'] ?: route('circulars') }}"
+                           @if ($dashboardHighlight['source_url']) target="_blank" rel="noreferrer" @endif
+                           class="block w-full bg-primary py-3 rounded-full text-center text-brand-blue font-bold text-sm tracking-wide transition-all active:scale-95">
+                            {{ $dashboardHighlight['source_url'] ? 'OPEN LINK' : 'VIEW CIRCULAR' }}
+                        </a>
+                    </div>
+                </div>
+            @else
+                <div class="bg-white/10 rounded-xl border border-white/5 p-5">
+                    <p class="text-sm font-bold text-white">No circular available</p>
+                    <p class="mt-2 text-sm leading-relaxed text-white/55">Latest visible circular will appear here automatically.</p>
+                </div>
+            @endif
         </div>
     </section>
 

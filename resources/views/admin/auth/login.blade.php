@@ -46,40 +46,11 @@
     x-data="{ showPassword: false, loading: false }"
     class="mx-auto grid min-h-screen max-w-7xl items-center gap-8 px-4 py-6 lg:grid-cols-[1.15fr_minmax(420px,520px)] lg:px-8"
 >
-    <section class="hidden rounded-[2.5rem] border border-white/10 bg-white/[0.04] p-10 shadow-2xl lg:block">
-        <div class="max-w-xl">
-            <div class="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-white/75">
-                <img src="{{ asset('logo.jpg') }}" alt="{{ $companyName }}" class="size-8 rounded-full bg-white/5 object-contain p-1">
-                <span>{{ $companyName }}</span>
-            </div>
-
-            <h1 class="mt-8 font-display text-5xl font-bold leading-tight text-white">
-                Manage notices and circulars from one wide-screen admin workspace.
-            </h1>
-
-            <p class="mt-5 max-w-lg text-lg leading-8 text-white/65">
-                This admin area writes directly to the same SQL Server tables used by the member portal, so published updates show up in the members panel without duplicate entry.
-            </p>
-
-            <div class="mt-10 grid gap-4 sm:grid-cols-2">
-                <div class="rounded-[1.75rem] border border-white/10 bg-slate-950/25 p-5">
-                    <p class="text-xs uppercase tracking-[0.24em] text-admin-gold">Notices</p>
-                    <p class="mt-3 text-sm leading-7 text-white/70">Create announcements with publish date, status, and member-facing message content.</p>
-                </div>
-                <div class="rounded-[1.75rem] border border-white/10 bg-slate-950/25 p-5">
-                    <p class="text-xs uppercase tracking-[0.24em] text-admin-gold">Circulars</p>
-                    <p class="mt-3 text-sm leading-7 text-white/70">Manage circular schedule windows, external links, and archive visibility for members.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <section class="rounded-[2rem] border border-white/10 bg-slate-950/45 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
         <div class="mb-8">
             <p class="text-xs uppercase tracking-[0.24em] text-admin-gold">Admin Access</p>
             <h2 class="mt-3 font-display text-3xl font-bold text-white">Sign in</h2>
-            <p class="mt-2 text-sm text-white/55">Use `userid` or `username` from the `Users` table.</p>
-        </div>
+               </div>
 
         <form method="POST" action="{{ route('admin.login.store') }}" class="space-y-5" @submit="loading = true">
             @csrf

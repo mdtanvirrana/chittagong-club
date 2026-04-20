@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
+use App\Models\CircularItem;
 use App\Support\PortalCache;
+use App\Support\PortalContent;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
@@ -19,8 +21,8 @@ class DashboardController extends Controller
         }
 
         $member = PortalCache::rememberResilient(
-            "dashboard_member_{$memberId}_v1",
-            "dashboard_member_{$memberId}_stale_v1",
+            "dashboard_member_{$memberId}_v2",
+            "dashboard_member_{$memberId}_stale_v2",
             now()->addMinutes(10),
             now()->addDay(),
             function () use ($memberId) {
@@ -50,12 +52,44 @@ class DashboardController extends Controller
                 ->with('session_expired', 'Unable to load your member data. Please sign in again.');
         }
 
+        $member->PrvCusID = data_get($member, 'PrvCusID', $memberId);
+        $member->CusName = data_get($member, 'CusName', data_get(session('member'), 'name', 'Member'));
+
         $member->hasProfilePhoto = PortalCache::hasMemberPhoto($member->PrvCusID);
         $member->profilePhotoUrl = PortalCache::memberPhotoUrl($member->PrvCusID);
+        $dashboardHighlight = PortalCache::rememberResilient(
+            PortalContent::DASHBOARD_CIRCULAR_HIGHLIGHT_CACHE_KEY,
+            PortalContent::DASHBOARD_CIRCULAR_HIGHLIGHT_STALE_CACHE_KEY,
+            now()->addMinutes(5),
+            now()->addDay(),
+            function (): ?array {
+                $circular = CircularItem::query()
+                    ->visible()
+                    ->orderByDesc('dtt_ad_start')
+                    ->orderByDesc('id_career_key')
+                    ->first();
+
+                if (! $circular) {
+                    return null;
+                }
+
+                return [
+                    'title' => trim((string) ($circular->tx_title ?: 'Circular')),
+                    'excerpt' => $circular->excerpt,
+                    'image_url' => $circular->display_image_url,
+                    'source_url' => $circular->action_url,
+                    'start_date' => $circular->start_date_label,
+                    'close_date' => $circular->has_distinct_close_date ? $circular->close_date_label : null,
+                    'badge_month' => $circular->dtt_ad_start?->format('M') ?? 'NOW',
+                    'badge_day' => $circular->dtt_ad_start?->format('d') ?? '--',
+                ];
+            },
+            null
+        );
         $creditBal = null;
         $totalDue = null;
 
-        return view('pages.dashboard', compact('member', 'totalDue', 'creditBal'));
+        return view('pages.dashboard', compact('member', 'totalDue', 'creditBal', 'dashboardHighlight'));
     }
 
     public function summary()
@@ -94,8 +128,8 @@ class DashboardController extends Controller
 
         try {
             $member = PortalCache::rememberResilient(
-                "dashboard_member_{$memberId}_v1",
-                "dashboard_member_{$memberId}_stale_v1",
+                "dashboard_member_credit_{$memberId}_v1",
+                "dashboard_member_credit_{$memberId}_stale_v1",
                 now()->addMinutes(10),
                 now()->addDay(),
                 fn () => DB::table('CustomerMst')

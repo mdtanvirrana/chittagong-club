@@ -71,6 +71,15 @@ class CircularItem extends Model
             : 'Open ended';
     }
 
+    public function getHasDistinctCloseDateAttribute(): bool
+    {
+        if (! $this->dtt_ad_start instanceof Carbon || ! $this->dtt_ad_close instanceof Carbon) {
+            return ! is_null($this->dtt_ad_close);
+        }
+
+        return ! $this->dtt_ad_start->equalTo($this->dtt_ad_close);
+    }
+
     public function getActionUrlAttribute(): ?string
     {
         return PortalContent::cleanedOptionalField($this->tx_url);
@@ -81,8 +90,8 @@ class CircularItem extends Model
         return PortalContent::cleanedOptionalField($this->getAttribute('image_path'));
     }
 
-    public function getDisplayImageUrlAttribute(): string
+    public function getDisplayImageUrlAttribute(): ?string
     {
-        return $this->image_url ?: asset('logo.jpg');
+        return $this->image_url;
     }
 }

@@ -32,10 +32,11 @@ class CircularController extends Controller
                             'body' => $circular->body_text,
                             'excerpt' => $circular->excerpt,
                             'image_url' => $circular->image_url,
-                            'fallback_image_url' => asset('logo.jpg'),
+                            'display_image_url' => $circular->display_image_url,
                             'source_url' => $circular->action_url,
                             'start_date' => $circular->start_date_label,
-                            'close_date' => $circular->close_date_label,
+                            'close_date' => $circular->has_distinct_close_date ? $circular->close_date_label : null,
+                            'date_label' => $circular->has_distinct_close_date ? $circular->close_date_label : $circular->start_date_label,
                             'uploaded_date' => $circular->dtt_added?->format('M d, Y') ?? 'Unknown',
                             'is_online' => (bool) $circular->is_online,
                         ];
