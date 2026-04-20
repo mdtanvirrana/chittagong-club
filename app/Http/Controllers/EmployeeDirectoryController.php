@@ -9,7 +9,7 @@ class EmployeeDirectoryController extends Controller
 {
     public function index()
     {
-        $employees = collect(PortalCache::remember('employee_directory_v1', now()->addMinutes(30), function (): array {
+        $employees = collect(PortalCache::remember('employee_directory_v2', now()->addMinutes(30), function (): array {
             return DB::table('EmployeesDetails')
                 ->where('is_active', '1')
                 ->where('PreStatus', 'Y')
@@ -48,6 +48,8 @@ class EmployeeDirectoryController extends Controller
                         'id' => $e->EmpID,
                         'name' => $name,
                         'initials' => $initials,
+                        'has_photo' => PortalCache::hasEmployeePhoto($e->EmpID),
+                        'photo_url' => PortalCache::employeePhotoUrl($e->EmpID),
                         'branch' => $e->Branch ?? '',
                         'section' => ($e->Sec && $e->Sec !== $e->Branch) ? $e->Sec : '',
                         'desig' => $e->Desig ?? '',

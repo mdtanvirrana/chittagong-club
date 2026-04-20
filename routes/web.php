@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\CircularController as AdminCircularController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\NoticeController as AdminNoticeController;
+use App\Http\Controllers\Admin\PictureUploadController as AdminPictureUploadController;
 use App\Http\Controllers\AffiliatedClubsController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CircularController;
@@ -39,6 +40,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', fn () => redirect()->route('admin.dashboard'));
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
         Route::post('/logout', [AdminAuthController::class, 'destroy'])->name('logout');
+        Route::get('/pictures', [AdminPictureUploadController::class, 'index'])->name('pictures.index');
+        Route::post('/pictures', [AdminPictureUploadController::class, 'store'])->name('pictures.store');
+        Route::delete('/pictures', [AdminPictureUploadController::class, 'destroy'])->name('pictures.destroy');
 
         Route::get('/notices', [AdminNoticeController::class, 'index'])->name('notices.index');
         Route::get('/notices/create', [AdminNoticeController::class, 'create'])->name('notices.create');

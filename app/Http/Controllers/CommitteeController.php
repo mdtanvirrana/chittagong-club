@@ -14,7 +14,7 @@ class CommitteeController extends Controller
         $previousYear = $currentYear - 1;
 
         $members = collect(PortalCache::remember(
-            "committee_members_{$currentYear}_{$previousYear}_v1",
+            "committee_members_{$currentYear}_{$previousYear}_v2",
             now()->addMinutes(30),
             function () use ($currentYear, $previousYear): array {
                 return DB::table('T_ORG_COMMITTEE as oc')
@@ -62,6 +62,7 @@ class CommitteeController extends Controller
                             'year_from' => $m->ct_from_year,
                             'year_to' => $m->ct_to_year,
                             'has_photo' => PortalCache::hasMemberPhoto($m->PrvCusID),
+                            'photo_url' => PortalCache::memberPhotoUrl($m->PrvCusID),
                         ];
                     })
                     ->values()

@@ -9,7 +9,7 @@ class FormerChairmanController extends Controller
 {
     public function index()
     {
-        $members = collect(PortalCache::remember('former_chairman_v1', now()->addMinutes(30), function (): array {
+        $members = collect(PortalCache::remember('former_chairman_v2', now()->addMinutes(30), function (): array {
             return DB::table('T_ORG_COMMITTEE as oc')
                 ->join('CustomerMst as c', 'oc.PrvcusID', '=', 'c.PrvCusID')
                 ->where('oc.is_active', 1)
@@ -52,6 +52,7 @@ class FormerChairmanController extends Controller
                         'year_from' => $m->ct_from_year,
                         'year_to' => $m->ct_to_year,
                         'has_photo' => PortalCache::hasMemberPhoto($m->PrvCusID),
+                        'photo_url' => PortalCache::memberPhotoUrl($m->PrvCusID),
                     ];
                 })
                 ->values()

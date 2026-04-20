@@ -72,6 +72,7 @@
         ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'match' => 'admin.dashboard', 'icon' => 'space_dashboard'],
         ['label' => 'Notices', 'route' => 'admin.notices.index', 'match' => 'admin.notices.*', 'icon' => 'campaign'],
         ['label' => 'Circulars', 'route' => 'admin.circulars.index', 'match' => 'admin.circulars.*', 'icon' => 'article'],
+        ['label' => 'Upload Pictures', 'route' => 'admin.pictures.index', 'match' => 'admin.pictures.*', 'icon' => 'upload_file'],
     ];
 @endphp
 

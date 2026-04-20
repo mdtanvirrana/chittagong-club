@@ -339,7 +339,7 @@
                         <div class="flex justify-between items-start gap-4">
                             <div class="min-w-0">
                                 <h4 class="text-lg font-bold">{{ $dashboardHighlight['title'] }}</h4>
-                                <p class="text-white/60 text-sm">{{ $dashboardHighlight['start_date'] }}</p>
+                                <p class="mt-1 text-white/45 text-xs">Start: {{ $dashboardHighlight['start_date'] }}</p>
                                 @if ($dashboardHighlight['close_date'])
                                     <p class="mt-1 text-white/45 text-xs">Close: {{ $dashboardHighlight['close_date'] }}</p>
                                 @endif

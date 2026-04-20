@@ -10,7 +10,7 @@ class MemberDirectoryController extends Controller
 {
     public function index()
     {
-        $members = PortalCache::remember('member_directory_v3', now()->addMinutes(15), function (): array {
+        $members = PortalCache::remember('member_directory_v4', now()->addMinutes(15), function (): array {
             return DB::table('CustomerMst as c')
                 ->leftJoin('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.Cardid')
                 ->where('c.MemExpTypeID', 100)

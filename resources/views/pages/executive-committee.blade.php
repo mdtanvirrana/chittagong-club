@@ -54,9 +54,7 @@
         {{-- Avatar: Shrink-0 prevents the image from squishing --}}
         <div class="shrink-0 size-14 sm:size-16 rounded-xl overflow-hidden border border-primary/20">
             @if ($m['has_photo'])
-                <div class="size-full bg-center bg-cover"
-                     style="background-image: url('{{ asset('images/' . $m['member_id'] . '.jpg') }}')">
-                </div>
+                <img src="{{ $m['photo_url'] }}" alt="{{ $m['name'] }}" class="size-full object-cover">
             @else
                 <div class="size-full bg-primary/10 flex items-center justify-center">
                     <span class="text-primary font-extrabold text-base">{{ $m['initials'] }}</span>

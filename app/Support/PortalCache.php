@@ -4,9 +4,12 @@ namespace App\Support;
 
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 
 class PortalCache
 {
+    private const PUBLIC_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+
     public static function store(): Repository
     {
         return Cache::store('file');
@@ -48,23 +51,30 @@ class PortalCache
 
     public static function memberPhotoIndex(): array
     {
-        return static::remember('member_photo_index_v1', now()->addMinutes(30), function (): array {
+        return static::remember('public_image_index_v1', now()->addMinutes(30), function (): array {
             $imageDir = public_path('images');
 
             if (! is_dir($imageDir)) {
                 return [];
             }
 
-            $paths = glob($imageDir . '/*.jpg') ?: [];
             $index = [];
+            collect(File::files($imageDir))
+                ->filter(
+                    fn ($file) => in_array(
+                        strtolower($file->getExtension()),
+                        self::PUBLIC_IMAGE_EXTENSIONS,
+                        true
+                    )
+                )
+                ->sortByDesc(fn ($file) => $file->getMTime())
+                ->each(function ($file) use (&$index): void {
+                    $basename = pathinfo($file->getFilename(), PATHINFO_FILENAME);
 
-            foreach ($paths as $path) {
-                $filename = pathinfo($path, PATHINFO_FILENAME);
-
-                if ($filename !== '') {
-                    $index[$filename] = true;
-                }
-            }
+                    if ($basename !== '' && ! isset($index[$basename])) {
+                        $index[$basename] = $file->getFilename();
+                    }
+                });
 
             return $index;
         });
@@ -81,12 +91,53 @@ class PortalCache
 
     public static function memberPhotoUrl(string|int|null $memberId): ?string
     {
-        if (! static::hasMemberPhoto($memberId)) {
+        return static::publicImageUrl($memberId);
+    }
+
+    public static function hasEmployeePhoto(string|int|null $employeeId): bool
+    {
+        if ($employeeId === null || $employeeId === '') {
+            return false;
+        }
+
+        return isset(static::memberPhotoIndex()[(string) $employeeId]);
+    }
+
+    public static function employeePhotoUrl(string|int|null $employeeId): ?string
+    {
+        return static::publicImageUrl($employeeId);
+    }
+
+    public static function clearPhotoRelatedCaches(): void
+    {
+        $cache = static::store();
+        $currentYear = (int) now()->format('Y');
+        $previousYear = $currentYear - 1;
+
+        foreach ([
+            'public_image_index_v1',
+            'member_directory_v4',
+            'employee_directory_v2',
+            'former_chairman_v2',
+            "committee_members_{$currentYear}_{$previousYear}_v2",
+        ] as $key) {
+            $cache->forget($key);
+        }
+    }
+
+    private static function publicImageUrl(string|int|null $identifier): ?string
+    {
+        if ($identifier === null || $identifier === '') {
             return null;
         }
 
-        $memberId = (string) $memberId;
-        $path = public_path('images/' . $memberId . '.jpg');
+        $filename = static::memberPhotoIndex()[(string) $identifier] ?? null;
+
+        if ($filename === null) {
+            return null;
+        }
+
+        $path = public_path('images/' . $filename);
 
         if (! is_file($path)) {
             return null;
@@ -96,6 +147,6 @@ class PortalCache
         $ctime = @filectime($path) ?: 0;
         $version = max($mtime, $ctime);
 
-        return asset('images/' . $memberId . '.jpg') . '?v=' . $version;
+        return asset('images/' . $filename) . '?v=' . $version;
     }
 }
