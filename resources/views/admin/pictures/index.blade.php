@@ -150,12 +150,18 @@
             <div>
                 <p class="text-[10px] uppercase tracking-[0.2em] text-white/35">Recent Files</p>
             </div>
-            <p class="text-xs text-white/45">{{ $pictures->count() }} shown</p>
+            <p class="text-xs text-white/45">
+                @if ($pictures->total() > 0)
+                    {{ $pictures->firstItem() }}-{{ $pictures->lastItem() }} of {{ $pictures->total() }}
+                @else
+                    0 shown
+                @endif
+            </p>
         </div>
 
         @if ($pictures->isEmpty())
             <div class="px-4 py-12 text-center text-sm text-white/45">
-                No image files found in.
+                No image files found in `public/images`.
             </div>
         @else
             <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
@@ -176,6 +182,7 @@
                                     @csrf
                                     @method('DELETE')
                                     <input type="hidden" name="filename" value="{{ $picture['name'] }}">
+                                    <input type="hidden" name="page" value="{{ $pictures->currentPage() }}">
                                     <button type="submit" class="inline-flex h-7 w-full items-center justify-center border border-red-400/25 px-2 text-[11px] text-red-200 transition hover:border-red-300/40 hover:bg-red-500/10">
                                         Delete
                                     </button>
@@ -185,6 +192,40 @@
                     </article>
                 @endforeach
             </div>
+
+            @if ($pictures->hasPages())
+                <div class="mt-4 flex flex-col gap-3 border-t border-admin-line/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p class="text-xs text-white/45">
+                        Page {{ $pictures->currentPage() }} of {{ $pictures->lastPage() }}
+                    </p>
+
+                    <div class="flex items-center gap-2">
+                        @if ($pictures->onFirstPage())
+                            <span class="inline-flex h-8 items-center justify-center border border-[#30384a] px-3 text-xs text-white/30">
+                                Previous
+                            </span>
+                        @else
+                            <a href="{{ $pictures->previousPageUrl() }}" class="inline-flex h-8 items-center justify-center border border-[#30384a] px-3 text-xs text-white/72 transition hover:border-[#3b4557] hover:bg-white/[0.04]">
+                                Previous
+                            </a>
+                        @endif
+
+                        <span class="inline-flex h-8 items-center justify-center border border-admin-gold/20 bg-admin-gold/10 px-3 text-xs font-semibold text-admin-gold">
+                            {{ $pictures->currentPage() }}
+                        </span>
+
+                        @if ($pictures->hasMorePages())
+                            <a href="{{ $pictures->nextPageUrl() }}" class="inline-flex h-8 items-center justify-center border border-[#30384a] px-3 text-xs text-white/72 transition hover:border-[#3b4557] hover:bg-white/[0.04]">
+                                Next
+                            </a>
+                        @else
+                            <span class="inline-flex h-8 items-center justify-center border border-[#30384a] px-3 text-xs text-white/30">
+                                Next
+                            </span>
+                        @endif
+                    </div>
+                </div>
+            @endif
         @endif
     </section>
 </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Support\PortalCache;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -14,16 +15,21 @@ use Illuminate\View\View;
 class PictureUploadController extends Controller
 {
     private const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    private const PER_PAGE = 48;
 
     public function index(): View
     {
         $directory = public_path('images');
         File::ensureDirectoryExists($directory);
 
-        $pictures = collect(File::files($directory))
+        $files = collect(File::files($directory))
             ->filter(fn ($file) => in_array(strtolower($file->getExtension()), self::IMAGE_EXTENSIONS, true))
             ->sortByDesc(fn ($file) => $file->getMTime())
-            ->take(60)
+            ->values();
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $pageItems = $files
+            ->forPage($currentPage, self::PER_PAGE)
             ->map(fn ($file) => [
                 'name' => $file->getFilename(),
                 'url' => asset('images/'.$file->getFilename()),
@@ -31,6 +37,17 @@ class PictureUploadController extends Controller
                 'updated_at' => date('M d, Y g:i A', $file->getMTime()),
             ])
             ->values();
+
+        $pictures = new LengthAwarePaginator(
+            $pageItems,
+            $files->count(),
+            self::PER_PAGE,
+            $currentPage,
+            [
+                'path' => route('admin.pictures.index'),
+                'pageName' => 'page',
+            ]
+        );
 
         return view('admin.pictures.index', compact('pictures'));
     }
@@ -74,6 +91,7 @@ class PictureUploadController extends Controller
     {
         $validated = $request->validate([
             'filename' => ['required', 'string'],
+            'page' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $requestedFilename = trim((string) $validated['filename']);
@@ -86,7 +104,7 @@ class PictureUploadController extends Controller
             || ! in_array($extension, self::IMAGE_EXTENSIONS, true)
         ) {
             return redirect()
-                ->route('admin.pictures.index')
+                ->route('admin.pictures.index', ['page' => $validated['page'] ?? 1])
                 ->with('status', 'Invalid image filename.');
         }
 
@@ -94,7 +112,7 @@ class PictureUploadController extends Controller
 
         if (! is_file($targetPath)) {
             return redirect()
-                ->route('admin.pictures.index')
+                ->route('admin.pictures.index', ['page' => $validated['page'] ?? 1])
                 ->with('status', $filename.' was not found in public/images.');
         }
 
@@ -102,7 +120,7 @@ class PictureUploadController extends Controller
         PortalCache::clearPhotoRelatedCaches();
 
         return redirect()
-            ->route('admin.pictures.index')
+            ->route('admin.pictures.index', ['page' => $validated['page'] ?? 1])
             ->with('status', $filename.' deleted from public/images.');
     }
 
