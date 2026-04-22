@@ -4,12 +4,21 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - {{ $companyName }}</title>
+    @php
+        $adminTheme = config('theme.admin', []);
+        $adminDisplayFont = data_get($adminTheme, 'fonts.display.family', 'Space Grotesk');
+        $adminDisplayWeights = data_get($adminTheme, 'fonts.display.weights', '500;700');
+        $adminBodyFont = data_get($adminTheme, 'fonts.body.family', 'Instrument Sans');
+        $adminBodyWeights = data_get($adminTheme, 'fonts.body.weights', '400;500;600;700');
+        $adminDisplayFontUrl = str_replace(' ', '+', $adminDisplayFont) . ':wght@' . $adminDisplayWeights;
+        $adminBodyFontUrl = str_replace(' ', '+', $adminBodyFont) . ':wght@' . $adminBodyWeights;
+    @endphp
 
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family={{ $adminBodyFontUrl }}&family={{ $adminDisplayFontUrl }}&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -17,14 +26,14 @@
                 extend: {
                     colors: {
                         admin: {
-                            ink: '#07131d',
-                            gold: '#f0c441',
-                            teal: '#64d2c7',
+                            ink: @js(data_get($adminTheme, 'colors.ink', '#0b1220')),
+                            gold: @js(data_get($adminTheme, 'colors.accent', '#d9b24c')),
+                            teal: @js(data_get($adminTheme, 'colors.login_support', '#64d2c7')),
                         },
                     },
                     fontFamily: {
-                        display: ['Space Grotesk', 'sans-serif'],
-                        body: ['Instrument Sans', 'sans-serif'],
+                        display: [@js($adminDisplayFont), 'sans-serif'],
+                        body: [@js($adminBodyFont), 'sans-serif'],
                     },
                 },
             },
@@ -33,11 +42,17 @@
 
     <style>
         body {
-            font-family: 'Instrument Sans', sans-serif;
+            font-family: '{{ $adminBodyFont }}', sans-serif;
             background:
-                radial-gradient(circle at top left, rgba(100, 210, 199, 0.12), transparent 32%),
-                radial-gradient(circle at bottom right, rgba(240, 196, 65, 0.10), transparent 28%),
-                linear-gradient(135deg, #07131d 0%, #0f2436 100%);
+                radial-gradient(circle at top left, {{ data_get($adminTheme, 'colors.login_glow_primary', 'rgba(100, 210, 199, 0.12)') }}, transparent 32%),
+                radial-gradient(circle at bottom right, {{ data_get($adminTheme, 'colors.login_glow_accent', 'rgba(240, 196, 65, 0.10)') }}, transparent 28%),
+                linear-gradient(135deg, {{ data_get($adminTheme, 'colors.login_background_start', '#07131d') }} 0%, {{ data_get($adminTheme, 'colors.login_background_end', '#0f2436') }} 100%);
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: #94a3b8 !important;
+            opacity: 1;
         }
     </style>
 </head>

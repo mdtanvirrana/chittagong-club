@@ -8,7 +8,7 @@ use Livewire\Attributes\Title;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.userpanel')]
 #[Title('My Ledger — Chittagong Club Ltd.')]
 class MemberLedgerHistory extends Component
 {

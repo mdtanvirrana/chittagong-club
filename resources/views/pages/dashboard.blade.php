@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.userpanel')
 @section('page_title', 'Dashboard')
 @section('show_nav', true)
 
@@ -10,16 +10,15 @@
     $fullName = trim(($member->Title ? $member->Title . ' ' : '') . $member->CusName);
 
     $statusColor = match(strtolower($member->MemExpTypeName ?? '')) {
-        'active'  => 'text-green-400',
-        'expired' => 'text-red-400',
-        default   => 'text-amber-400',
+        'active'  => 'text-primary',
+        'expired' => 'text-slate-500',
+        default   => 'text-slate-600',
     };
 @endphp
 
-@section('content')
+@section('userpanel_content')
 <div
     x-data="{
-        sidebarOpen: false,
         previewOpen: false,
         balanceLoading: true,
         creditBal: {{ (float) ($member->CreditBal ?? 0) }},
@@ -54,146 +53,9 @@
         }
     }"
     x-init="loadSummary()"
-    @keydown.escape.window="sidebarOpen = false; previewOpen = false"
+    @keydown.escape.window="previewOpen = false"
     class="flex flex-col min-h-screen pb-24"
 >
-
-    {{-- ── Sidebar Backdrop ─────────────────────────────── --}}
-    <div
-        x-show="sidebarOpen"
-        x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0"
-        x-transition:enter-end="opacity-100"
-        x-transition:leave="transition ease-in duration-150"
-        x-transition:leave-start="opacity-100"
-        x-transition:leave-end="opacity-0"
-        @click="sidebarOpen = false"
-        class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
-    ></div>
-
-    {{-- ── Sidebar Panel ────────────────────────────────── --}}
-    <aside
-        x-show="sidebarOpen"
-        x-transition:enter="transition ease-out duration-300"
-        x-transition:enter-start="-translate-x-full"
-        x-transition:enter-end="translate-x-0"
-        x-transition:leave="transition ease-in duration-200"
-        x-transition:leave-start="translate-x-0"
-        x-transition:leave-end="-translate-x-full"
-        class="fixed top-0 left-0 z-[70] h-full w-72 bg-[#071e33] border-r border-white/10 flex flex-col overflow-hidden"
-    >
-        {{-- Sidebar header --}}
-        <div class="px-5 pt-5 pb-5 border-b border-white/10 bg-brand-blue/60">
-            <div class="flex items-center justify-between ">
-                <div class="flex items-center gap-3">
-                    <img src="{{ asset('logo.jpg') }}" alt="CCL" class="size-9 rounded-full object-contain" />
-                    <div>
-                        <p class="text-white font-bold text-sm leading-tight">{{ $companyName }}</p>
-                        <p class="text-primary text-[10px] font-bold uppercase tracking-wider">Est. 1878</p>
-                    </div>
-                </div>
-                <button @click="sidebarOpen = false"
-                        class="size-8 flex items-center justify-center rounded-full bg-white/10 text-white/60">
-                    <span class="material-symbols-outlined text-lg">close</span>
-                </button>
-            </div>
-
-        </div>
-
-        {{-- Sidebar nav --}}
-        <nav class="flex-1 overflow-y-auto py-4 hide-scrollbar">
-
-            @php
-            $sidebarSections = [
-                [
-                    'heading' => 'Club Info',
-                    'items' => [
-                        ['label' => 'About CCL',           'icon' => 'info',              'route' => 'about'],
-                        ['label' => 'Affiliated Clubs',    'icon' => 'handshake',         'route' => 'affiliated-clubs'],
-                        ['label' => 'Contact Information', 'icon' => 'contacts',          'route' => 'contact'],
-                        ['label' => 'Dress Code',          'icon' => 'checkroom',         'route' => 'dress-code'],
-                        ['label' => 'General Rules',       'icon' => 'gavel',             'route' => 'general-rules'],
-                    ],
-                ],
-                [
-                    'heading' => 'Services',
-                    'items' => [
-                        ['label' => 'Facilities',          'icon' => 'apartment',         'route' => 'facilities'],
-                        ['label' => 'Gallery',             'icon' => 'photo_library',     'route' => 'gallery'],
-                        ['label' => 'Greetings Calendar',  'icon' => 'calendar_month',    'route' => null],
-                    ],
-                ],
-                [
-                    'heading' => 'Members',
-                    'items' => [
-                        ['label' => $companyName . ' – Executive Committee', 'icon' => 'groups', 'route' => 'executive'],
-                        ['label' => 'Former Chairmen',     'icon' => 'history_edu',       'route' => 'former-chairman'],
-                        ['label' => 'Employee Directory',  'icon' => 'badge',             'route' => 'employee-directory'],
-
-                    ],
-                ],
-            ];
-            @endphp
-
-            @foreach ($sidebarSections as $section)
-            <div class="mb-2">
-                <p class="px-5 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/25">
-                    {{ $section['heading'] }}
-                </p>
-                @foreach ($section['items'] as $item)
-                @if ($item['route'])
-                    <a href="{{ route($item['route']) }}"
-                       class="flex items-center gap-3 px-5 py-3 text-white/70 hover:text-white hover:bg-white/5 transition-colors">
-                        <span class="material-symbols-outlined text-primary text-xl shrink-0">{{ $item['icon'] }}</span>
-                        <span class="text-sm font-medium">{{ $item['label'] }}</span>
-                    </a>
-                @else
-                    <div class="flex items-center gap-3 px-5 py-3 text-white/30 cursor-not-allowed">
-                        <span class="material-symbols-outlined text-white/20 text-xl shrink-0">{{ $item['icon'] }}</span>
-                        <span class="text-sm font-medium">{{ $item['label'] }}</span>
-                        <span class="ml-auto text-[9px] font-bold uppercase tracking-wider bg-white/10 text-white/30 px-2 py-0.5 rounded-full">Soon</span>
-                    </div>
-                @endif
-                @endforeach
-            </div>
-            @endforeach
-        </nav>
-
-        {{-- Sidebar footer --}}
-        <div class="px-5 py-4 border-t border-white/10 shrink-0">
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit"
-                        class="w-full flex items-center gap-3 py-3 px-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors">
-                    <span class="material-symbols-outlined text-lg">logout</span>
-                    <span class="text-sm font-bold">Sign Out</span>
-                </button>
-            </form>
-        </div>
-    </aside>
-
-    {{-- ── Sticky Top Bar ───────────────────────────────── --}}
-    <header class="sticky top-0 z-50 flex items-center justify-between px-4 py-4 bg-brand-blue/90 ios-blur">
-        <div class="flex items-center gap-3">
-            {{-- Hamburger --}}
-            <button @click="sidebarOpen = true"
-                    class="size-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-                <span class="material-symbols-outlined text-white">menu</span>
-            </button>
-            <img class="w-8 h-8 object-contain rounded-full"
-                 src="{{ asset('logo.jpg') }}"
-                 alt="Chittagong Club Logo" />
-            <h1 class="text-base font-bold tracking-tight leading-tight">{{ $companyName }}</h1>
-        </div>
-        <div class="flex gap-1">
-            <a href="{{ route('notice-board') }}"
-               class="relative p-2 rounded-full hover:bg-white/10 transition-colors">
-                <span class="material-symbols-outlined text-primary">notifications</span>
-                <span class="absolute top-2 right-2 flex h-2 w-2 rounded-full bg-red-500 border border-brand-blue"></span>
-            </a>
-        </div>
-    </header>
-
     {{-- ── Profile Hero ─────────────────────────────────── --}}
     <section class="px-6 py-6 flex flex-col gap-6">
         <div class="flex items-center gap-5">

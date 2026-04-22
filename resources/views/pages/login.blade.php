@@ -3,13 +3,46 @@
 
 @push('styles')
 <style>
-    .blue-depth-gradient { background: radial-gradient(circle at center, #116fa7 0%, #0c5c8b 100%); }
+    .blue-depth-gradient { background: var(--member-login-gradient); }
     .gold-text-gradient {
-        background: linear-gradient(135deg, #f2cc0d 0%, #fff3b0 50%, #d4af37 100%);
+        background: var(--member-accent-gradient);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
-    .gold-btn-gradient { background: linear-gradient(135deg, #f2cc0d 0%, #ffdf40 50%, #d4af37 100%); }
+    .gold-btn-gradient { background: var(--member-accent-gradient); }
+
+    .login-input {
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(197, 22, 46, 0.12);
+        color: #111827;
+        box-shadow: 0 18px 38px -34px rgba(185, 28, 28, 0.28);
+    }
+
+    .login-input::placeholder {
+        color: #94a3b8 !important;
+        opacity: 1;
+    }
+
+    .member-shell .blue-depth-gradient .login-input::placeholder {
+        color: #94a3b8 !important;
+        opacity: 1;
+    }
+
+    .login-icon {
+        color: #94a3b8;
+        transition: color 180ms ease;
+    }
+
+    .group:focus-within .login-icon,
+    .login-icon.is-active,
+    .login-toggle:hover {
+        color: var(--member-primary);
+    }
+
+    .login-toggle {
+        color: #94a3b8;
+        transition: color 180ms ease;
+    }
 </style>
 @endpush
 
@@ -75,7 +108,7 @@
                 </label>
                 <div class="relative group">
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <span class="material-symbols-outlined text-white/40 group-focus-within:text-primary transition-colors">badge</span>
+                        <span class="material-symbols-outlined login-icon">badge</span>
                     </div>
                     <input
                         name="member_id"
@@ -83,7 +116,7 @@
                         value="{{ old('member_id') }}"
                         placeholder="e.g. CCL-88291"
                         autocomplete="username"
-                        class="block w-full bg-white/5 border {{ $errors->has('member_id') ? 'border-red-500/50' : 'border-white/10' }} rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+                        class="login-input block w-full {{ $errors->has('member_id') ? 'border-red-500/50' : 'border-primary/10' }} rounded-xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
                     />
                 </div>
             </div>
@@ -93,21 +126,22 @@
                 <label class="block text-xs font-semibold text-primary/80 uppercase tracking-widest">Security Code</label>
                 <div class="relative group">
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <span class="material-symbols-outlined text-white/40 group-focus-within:text-primary transition-colors">lock</span>
+                        <span class="material-symbols-outlined login-icon">lock</span>
                     </div>
                     <input
                         name="password"
                         :type="showPassword ? 'text' : 'password'"
                         placeholder="••••••••"
                         autocomplete="current-password"
-                        class="block w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-12 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+                        class="login-input block w-full border border-primary/10 rounded-xl py-4 pl-12 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
                     />
                     <button
                         type="button"
                         @click="showPassword = !showPassword"
-                        class="absolute inset-y-0 right-0 pr-4 flex items-center"
+                        class="login-toggle absolute inset-y-0 right-0 pr-4 flex items-center"
                     >
-                        <span class="material-symbols-outlined text-white/40 hover:text-white"
+                        <span class="material-symbols-outlined"
+                              :class="{ 'is-active': showPassword }"
                               x-text="showPassword ? 'visibility' : 'visibility_off'">
                         </span>
                     </button>

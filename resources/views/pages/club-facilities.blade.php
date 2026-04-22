@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.userpanel')
 @section('page_title', 'Club Facilities')
 @section('show_nav', true)
 
@@ -40,9 +40,9 @@
     ];
 @endphp
 
-@section('content')
+@section('userpanel_content')
 <div class="flex flex-col min-h-screen pb-24">
-    <header class="sticky top-0 z-50 bg-background-dark/80 ios-blur border-b border-primary/20">
+    <header class="userpanel-subheader sticky top-0 z-50 bg-background-dark/80 ios-blur border-b border-primary/20">
         <div class="flex items-center justify-between px-4 h-16">
             <a href="{{ route('dashboard') }}" class="flex items-center justify-center p-2 rounded-full hover:bg-primary/10 transition-colors">
                 <span class="material-symbols-outlined text-primary">arrow_back_ios</span>

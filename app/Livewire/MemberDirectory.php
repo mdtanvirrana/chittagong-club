@@ -8,7 +8,7 @@ use Livewire\Attributes\Title;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.userpanel')]
 #[Title('Member Directory — Chittagong Club Ltd.')]
 class MemberDirectory extends Component
 {

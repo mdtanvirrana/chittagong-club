@@ -1,12 +1,12 @@
-@extends('layouts.app')
+@extends('layouts.userpanel')
 @section('page_title', 'My Profile')
 @section('show_nav', true)
 
 @push('styles')
     <style>
         .gold-border-thick {
-            border: 4px solid #f2d00d;
-            box-shadow: 0 0 15px rgba(242, 208, 13, 0.3);
+            border: 4px solid var(--member-primary);
+            box-shadow: 0 0 15px var(--member-primary-glow);
         }
     </style>
 @endpush
@@ -24,13 +24,13 @@
     $isMarried = in_array(strtolower($member->MaritalStatus ?? ''), ['m', 'married']);
 
     $statusColor = match(strtolower($member->MemExpTypeName ?? '')) {
-        'active'  => 'bg-green-500/20 text-green-400',
-        'expired' => 'bg-red-500/20 text-red-400',
-        default   => 'bg-amber-500/20 text-amber-400',
+        'active'  => 'bg-primary/10 text-primary',
+        'expired' => 'bg-slate-100 text-slate-500',
+        default   => 'bg-primary/5 text-slate-600',
     };
 @endphp
 
-@section('content')
+@section('userpanel_content')
     <div class="flex flex-col min-h-screen pb-24">
 
         {{-- Blue Header --}}

@@ -9,7 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.userpanel')]
 #[Title('My Profile — Chittagong Club Ltd.')]
 class MemberProfile extends Component
 {
@@ -133,9 +133,9 @@ class MemberProfile extends Component
         );
 
         $this->statusColor = match (strtolower($m->MemExpTypeName ?? '')) {
-            'active'  => 'bg-green-500/20 text-green-400',
-            'expired' => 'bg-red-500/20 text-red-400',
-            default   => 'bg-amber-500/20 text-amber-400',
+            'active'  => 'bg-primary/10 text-primary',
+            'expired' => 'bg-slate-100 text-slate-500',
+            default   => 'bg-primary/5 text-slate-600',
         };
 
         $callNumber = $m->Mobile ?: $m->Phone;

@@ -1,12 +1,12 @@
-@extends('layouts.app')
+@extends('layouts.userpanel')
 @section('page_title', 'Former Chairmen')
 @section('show_nav', true)
 
-@section('content')
+@section('userpanel_content')
 <div class="flex flex-col min-h-screen pb-24">
 
     {{-- Sticky Header --}}
-    <header class="sticky top-0 z-50 bg-brand-blue/90 ios-blur flex items-center px-4 pt-12 pb-4 justify-between border-b border-white/10">
+    <header class="userpanel-subheader sticky top-0 z-50 bg-brand-blue/90 ios-blur flex items-center px-4 pt-12 pb-4 justify-between border-b border-white/10">
         <a href="{{ route('dashboard') }}"
            class="text-white flex size-10 items-center justify-center rounded-full hover:bg-white/10 cursor-pointer">
             <span class="material-symbols-outlined">arrow_back_ios_new</span>

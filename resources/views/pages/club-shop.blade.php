@@ -1,8 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.userpanel')
 @section('page_title', 'Club Shop')
 @section('show_nav', true)
 
-@section('content')
+@section('userpanel_content')
 <div
     x-data="{
         activeCategory: 'All Items',
@@ -29,7 +29,7 @@
     class="flex flex-col min-h-screen pb-24"
 >
     {{-- Header --}}
-    <header class="flex items-center justify-between px-6 pt-12 pb-4 bg-brand-blue sticky top-0 z-30">
+    <header class="userpanel-subheader flex items-center justify-between px-6 pt-12 pb-4 bg-brand-blue sticky top-0 z-30">
         <div class="flex flex-col">
             <p class="text-[10px] uppercase tracking-[0.2em] text-primary/80 font-semibold">Established 1878</p>
             <h1 class="text-xl font-extrabold text-white tracking-tight">

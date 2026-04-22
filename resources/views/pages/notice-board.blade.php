@@ -1,8 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.userpanel')
 @section('page_title', 'Notice Board')
 @section('show_nav', true)
 
-@section('content')
+@section('userpanel_content')
 <div
     x-data="{
         search: '',
@@ -26,7 +26,7 @@
 >
 
     {{-- Header --}}
-    <header class="bg-brand-blue pt-12 pb-5 px-4 sticky top-0 z-50 rounded-b-xl shadow-lg">
+    <header class="userpanel-subheader bg-brand-blue pt-12 pb-5 px-4 sticky top-0 z-50 rounded-b-xl shadow-lg">
         <div class="flex items-center justify-between mb-4">
             <a href="{{ route('dashboard') }}"
                class="text-white flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">

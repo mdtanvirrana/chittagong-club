@@ -4,12 +4,21 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('page_title', 'Admin Panel') - {{ $companyName }}</title>
+    @php
+        $adminTheme = config('theme.admin', []);
+        $adminDisplayFont = data_get($adminTheme, 'fonts.display.family', 'Space Grotesk');
+        $adminDisplayWeights = data_get($adminTheme, 'fonts.display.weights', '500;700');
+        $adminBodyFont = data_get($adminTheme, 'fonts.body.family', 'Instrument Sans');
+        $adminBodyWeights = data_get($adminTheme, 'fonts.body.weights', '400;500;600;700');
+        $adminDisplayFontUrl = str_replace(' ', '+', $adminDisplayFont) . ':wght@' . $adminDisplayWeights;
+        $adminBodyFontUrl = str_replace(' ', '+', $adminBodyFont) . ':wght@' . $adminBodyWeights;
+    @endphp
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family={{ $adminBodyFontUrl }}&family={{ $adminDisplayFontUrl }}&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -17,20 +26,22 @@
                 extend: {
                     colors: {
                         admin: {
-                            ink: '#0b1220',
-                            panel: '#101826',
-                            soft: '#172235',
-                            line: '#30384a',
-                            mist: '#e2e8f0',
-                            gold: '#d9b24c',
+                            ink: @js(data_get($adminTheme, 'colors.ink', '#0b1220')),
+                            panel: @js(data_get($adminTheme, 'colors.panel', '#101826')),
+                            soft: @js(data_get($adminTheme, 'colors.soft', '#172235')),
+                            line: @js(data_get($adminTheme, 'colors.line', '#30384a')),
+                            active: @js(data_get($adminTheme, 'colors.line_active', '#3b4557')),
+                            overlay: @js(data_get($adminTheme, 'colors.overlay', '#0d1724')),
+                            mist: @js(data_get($adminTheme, 'colors.mist', '#e2e8f0')),
+                            gold: @js(data_get($adminTheme, 'colors.accent', '#d9b24c')),
                         },
                     },
                     fontFamily: {
-                        display: ['Space Grotesk', 'sans-serif'],
-                        body: ['Instrument Sans', 'sans-serif'],
+                        display: [@js($adminDisplayFont), 'sans-serif'],
+                        body: [@js($adminBodyFont), 'sans-serif'],
                     },
                     boxShadow: {
-                        panel: '0 18px 42px rgba(2, 6, 23, 0.22)',
+                        panel: @js(data_get($adminTheme, 'shadow.panel', '0 18px 42px rgba(2, 6, 23, 0.22)')),
                     },
                 },
             },
@@ -38,15 +49,59 @@
     </script>
 
     <style>
+        :root {
+            --admin-line: {{ data_get($adminTheme, 'colors.line', '#30384a') }};
+            --admin-line-active: {{ data_get($adminTheme, 'colors.line_active', '#3b4557') }};
+            --admin-overlay-95: {{ data_get($adminTheme, 'colors.overlay_95', 'rgba(13, 23, 36, 0.95)') }};
+            --admin-panel-55: {{ data_get($adminTheme, 'colors.panel_55', 'rgba(16, 24, 38, 0.55)') }};
+            --admin-soft-20: {{ data_get($adminTheme, 'colors.soft_20', 'rgba(23, 34, 53, 0.20)') }};
+            --admin-soft-40: {{ data_get($adminTheme, 'colors.soft_40', 'rgba(23, 34, 53, 0.40)') }};
+            --admin-backdrop-70: {{ data_get($adminTheme, 'colors.backdrop_70', 'rgba(11, 18, 32, 0.70)') }};
+        }
+
         [x-cloak] {
             display: none !important;
         }
 
         body {
-            font-family: 'Instrument Sans', sans-serif;
+            font-family: '{{ $adminBodyFont }}', sans-serif;
             background:
-                radial-gradient(circle at top right, rgba(217, 178, 76, 0.07), transparent 20%),
-                linear-gradient(180deg, #08111b 0%, #0d1724 100%);
+                radial-gradient(circle at top right, {{ data_get($adminTheme, 'colors.background_glow', 'rgba(217, 178, 76, 0.07)') }}, transparent 20%),
+                linear-gradient(180deg, {{ data_get($adminTheme, 'colors.background_start', '#08111b') }} 0%, {{ data_get($adminTheme, 'colors.background_end', '#0d1724') }} 100%);
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: #94a3b8 !important;
+            opacity: 1;
+        }
+
+        [class~="border-[#30384a]"] {
+            border-color: var(--admin-line) !important;
+        }
+
+        [class~="border-[#3b4557]"] {
+            border-color: var(--admin-line-active) !important;
+        }
+
+        [class~="bg-[#0d1724]/95"] {
+            background-color: rgba(255, 255, 255, 0.97) !important;
+        }
+
+        [class~="bg-slate-950/70"] {
+            background-color: var(--admin-backdrop-70) !important;
+        }
+
+        [class~="bg-slate-950/55"] {
+            background-color: var(--admin-panel-55) !important;
+        }
+
+        [class~="bg-slate-950/40"] {
+            background-color: var(--admin-soft-40) !important;
+        }
+
+        [class~="bg-slate-950/20"] {
+            background-color: var(--admin-soft-20) !important;
         }
     </style>
 
@@ -86,17 +141,17 @@
 
     <aside
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-        class="fixed inset-y-0 left-0 z-40 flex w-[17rem] flex-col border-r border-admin-line/10 bg-admin-panel/95 px-4 py-4 shadow-panel transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen"
+        class="admin-sidebar fixed inset-y-0 left-0 z-40 flex w-[17rem] flex-col border-r border-admin-line/20 bg-white/95 px-4 py-4 shadow-panel transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen"
     >
         <div class="flex items-center justify-between">
             <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
-                <img src="{{ asset('logo.jpg') }}" alt="{{ $companyName }}" class="size-11 rounded-lg bg-white/5 object-contain p-1.5">
+                <img src="{{ asset('logo.jpg') }}" alt="{{ $companyName }}" class="size-11 rounded-lg bg-admin-soft/80 object-contain p-1.5">
                 <div>
-                    <p class="font-display text-base font-bold tracking-tight text-white">Admin Panel</p>
+                    <p class="font-display text-base font-bold tracking-tight text-slate-900">Admin Panel</p>
                     <p class="text-[10px] uppercase tracking-[0.24em] text-admin-gold">{{ $companyName }}</p>
                 </div>
             </a>
-            <button @click="sidebarOpen = false" class="flex size-9 items-center justify-center rounded-md border border-[#30384a] text-white/60 lg:hidden">
+            <button @click="sidebarOpen = false" class="flex size-9 items-center justify-center rounded-md border border-admin-line/40 bg-admin-soft/60 text-admin-gold lg:hidden">
                 <span class="material-symbols-outlined">close</span>
             </button>
         </div>
@@ -105,9 +160,9 @@
             @foreach ($navItems as $item)
                 <a
                     href="{{ route($item['route']) }}"
-                    class="flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors {{ request()->routeIs($item['match']) ? 'border-[#3b4557] bg-white/[0.05] text-white' : 'border-[#30384a] bg-white/[0.02] text-white/68 hover:border-[#3b4557] hover:bg-white/[0.04] hover:text-white' }}"
+                    class="group flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors {{ request()->routeIs($item['match']) ? 'border-admin-line/60 bg-admin-soft/80 text-admin-gold' : 'border-admin-line/35 bg-white text-slate-700 hover:border-admin-line/60 hover:bg-admin-soft/60 hover:text-admin-gold' }}"
                 >
-                    <span class="material-symbols-outlined text-[18px] {{ request()->routeIs($item['match']) ? 'text-admin-gold' : 'text-white/45' }}">{{ $item['icon'] }}</span>
+                    <span class="material-symbols-outlined text-[18px] {{ request()->routeIs($item['match']) ? 'text-admin-gold' : 'text-slate-400 group-hover:text-admin-gold' }}">{{ $item['icon'] }}</span>
                     <span class="font-medium">{{ $item['label'] }}</span>
                 </a>
             @endforeach
@@ -118,9 +173,9 @@
                 href="{{ route('login') }}"
                 target="_blank"
                 rel="noreferrer"
-                class="flex items-center gap-3 rounded-lg border border-[#30384a] bg-white/[0.02] px-3 py-2.5 text-sm text-white/70 transition-colors hover:border-[#3b4557] hover:bg-white/[0.04] hover:text-white"
+                class="group flex items-center gap-3 rounded-lg border border-admin-line/35 bg-white px-3 py-2.5 text-sm text-slate-600 transition-colors hover:border-admin-line/60 hover:bg-admin-soft/60 hover:text-admin-gold"
             >
-                <span class="material-symbols-outlined text-[18px] text-white/45">open_in_new</span>
+                <span class="material-symbols-outlined text-[18px] text-slate-400 group-hover:text-admin-gold">open_in_new</span>
                 <span class="font-medium">Open Member Login</span>
             </a>
 
@@ -128,7 +183,7 @@
                 @csrf
                 <button
                     type="submit"
-                    class="flex w-full items-center justify-center gap-3 rounded-lg border border-[#30384a] bg-white/[0.02] px-3 py-2.5 text-sm font-medium text-white/70 transition-colors hover:border-[#3b4557] hover:bg-white/[0.04] hover:text-white"
+                    class="flex w-full items-center justify-center gap-3 rounded-lg border border-admin-line/40 bg-admin-soft/90 px-3 py-2.5 text-sm font-medium text-admin-gold transition-colors hover:bg-admin-soft"
                 >
                     <span class="material-symbols-outlined text-[18px]">logout</span>
                     <span>Sign Out</span>
@@ -176,22 +231,22 @@
                         x-show="profileOpen"
                         x-transition.origin.top.right
                         @click.outside="profileOpen = false"
-                        class="absolute right-0 top-[calc(100%+0.65rem)] w-[19rem] rounded-xl border border-[#30384a] bg-[#0d1724]/95 p-4 shadow-panel backdrop-blur-xl"
+                        class="absolute right-0 top-[calc(100%+0.65rem)] w-[19rem] rounded-xl border border-admin-line/35 bg-[#0d1724]/95 p-4 shadow-panel backdrop-blur-xl"
                     >
                         <div class="flex items-start gap-4">
-                            <span class="flex size-12 shrink-0 items-center justify-center rounded-lg border border-[#30384a] bg-admin-soft/75 font-display text-sm font-bold text-admin-gold">
+                            <span class="flex size-12 shrink-0 items-center justify-center rounded-lg border border-admin-line/35 bg-admin-soft/75 font-display text-sm font-bold text-admin-gold">
                                 {{ $adminInitials }}
                             </span>
                             <div class="min-w-0">
-                                <p class="text-[10px] uppercase tracking-[0.2em] text-white/35">Signed In As</p>
-                                <p class="mt-1.5 font-display text-lg font-bold text-white">{{ $adminDisplayName }}</p>
-                                <p class="mt-1.5 text-xs text-white/55">User ID {{ $adminId }}</p>
-                                <p class="mt-1 text-xs text-white/55">{{ $adminDesignation }}</p>
+                                <p class="text-[10px] uppercase tracking-[0.2em] text-slate-400">Signed In As</p>
+                                <p class="mt-1.5 font-display text-lg font-bold text-slate-900">{{ $adminDisplayName }}</p>
+                                <p class="mt-1.5 text-xs text-slate-500">User ID {{ $adminId }}</p>
+                                <p class="mt-1 text-xs text-slate-500">{{ $adminDesignation }}</p>
                             </div>
                         </div>
 
-                        <div class="mt-4 rounded-lg border border-[#30384a] bg-white/[0.03] px-3.5 py-3">
-                            <div class="flex items-center gap-3 text-white/72">
+                        <div class="mt-4 rounded-lg border border-admin-line/35 bg-admin-soft/60 px-3.5 py-3">
+                            <div class="flex items-center gap-3 text-slate-600">
                                 <span class="material-symbols-outlined text-[18px] text-admin-gold">settings</span>
                                 <p class="text-xs font-semibold uppercase tracking-[0.16em]">Profile Settings</p>
                             </div>

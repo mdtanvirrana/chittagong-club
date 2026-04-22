@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.userpanel')
 @section('page_title', 'My Ledger')
 @section('show_nav', true)
 
@@ -15,7 +15,7 @@
     };
 @endphp
 
-@section('content')
+@section('userpanel_content')
     <div
         x-data="ledgerPage({
         dataUrl: @js(route('ledger.data')),
@@ -28,7 +28,7 @@
         @keydown.escape.window="handleEscape()"
         class="flex min-h-screen flex-col pb-24"
     >
-        <header class="sticky top-0 z-50 border-b border-white/10 bg-brand-blue/90 px-4 pb-4 pt-12 ios-blur">
+        <header class="userpanel-subheader sticky top-0 z-50 border-b border-white/10 bg-brand-blue/90 px-4 pb-4 pt-12 ios-blur">
             <div class="mb-4 flex items-center justify-between">
                 <a href="{{ route('dashboard') }}"
                    class="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-white/10">

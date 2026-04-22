@@ -24,7 +24,7 @@
                         @if ($memberPhotoUrl) x-on:click="previewOpen = true" @endif
                         class="relative rounded-full h-28 w-28 mb-4 overflow-hidden flex items-center justify-center bg-brand-blue/80"
                         :class="{ 'active:scale-95 transition-transform': {{ $memberPhotoUrl ? 'true' : 'false' }} }"
-                        style="border: 4px solid #f2d00d; box-shadow: 0 0 15px rgba(242,208,13,0.3);"
+                        style="border: 4px solid var(--member-primary); box-shadow: 0 0 15px var(--member-primary-glow);"
                         aria-label="Preview profile picture">
                     @if ($memberPhotoUrl)
                         <img class="size-full rounded-full object-cover object-top"

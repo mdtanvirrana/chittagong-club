@@ -1,10 +1,10 @@
-@extends('layouts.app')
+@extends('layouts.userpanel')
 @section('page_title', 'Circulars')
 @section('show_nav', true)
 
-@section('content')
+@section('userpanel_content')
 <div class="flex min-h-screen flex-col pb-24">
-    <header class="sticky top-0 z-50 border-b border-white/10 bg-brand-blue/90 px-4 pb-5 pt-12 backdrop-blur-sm">
+    <header class="userpanel-subheader sticky top-0 z-50 border-b border-white/10 bg-brand-blue/90 px-4 pb-5 pt-12 backdrop-blur-sm">
         <div class="mb-4 flex items-center justify-between">
             <a href="{{ route('dashboard') }}"
                class="flex size-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/15">

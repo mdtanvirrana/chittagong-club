@@ -1,7 +1,7 @@
 <div class="flex flex-col min-h-screen pb-24">
 
     {{-- ── Header ──────────────────────────────────────── --}}
-    <header class="sticky top-0 z-50 bg-brand-blue/90 ios-blur border-b border-white/10 px-4 pt-12 pb-4">
+    <header class="userpanel-subheader sticky top-0 z-50 bg-brand-blue/90 ios-blur border-b border-white/10 px-4 pt-12 pb-4">
         <div class="flex items-center justify-between mb-4">
             <a href="{{ route('dashboard') }}"
                class="flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">

@@ -1,12 +1,12 @@
-@extends('layouts.app')
+@extends('layouts.userpanel')
 @section('page_title', 'Member Directory')
 @section('show_nav', true)
-@section('content')
+@section('userpanel_content')
 
 <div x-data="memberDirectory()" x-on:keydown.escape.window="closePreview()" class="flex flex-col min-h-screen pb-24">
 
     {{-- Header --}}
-    <header class="sticky top-0 z-50 bg-brand-blue/90 ios-blur border-b border-white/10">
+    <header class="userpanel-subheader sticky top-0 z-50 bg-brand-blue/90 ios-blur border-b border-white/10">
         <div class="flex items-center px-4 pt-12 pb-3 justify-between">
             <a href="{{ route('dashboard') }}" class="size-10 flex items-center justify-center rounded-full hover:bg-white/10">
                 <span class="material-symbols-outlined text-white">arrow_back_ios</span>

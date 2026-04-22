@@ -43,7 +43,7 @@
     x-on:keydown.escape.window="closePreview()"
 >
     {{-- Sticky Header --}}
-    <header class="sticky top-0 z-50 bg-background-dark/95 ios-blur border-b border-white/10">
+    <header class="userpanel-subheader sticky top-0 z-50 bg-background-dark/95 ios-blur border-b border-white/10">
         <div class="flex items-center p-4 justify-between">
             <div class="flex items-center gap-3">
                 <a href="{{ route('dashboard') }}"

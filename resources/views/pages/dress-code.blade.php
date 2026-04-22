@@ -1,11 +1,11 @@
-@extends('layouts.app')
+@extends('layouts.userpanel')
 @section('page_title', 'Dress Code')
 @section('show_nav', true)
-@section('content')
+@section('userpanel_content')
 
     <div class="flex flex-col min-h-screen pb-24">
 
-        <header class="sticky top-0 z-50 bg-brand-blue/90 ios-blur border-b border-white/10 px-4 pt-12 pb-4">
+        <header class="userpanel-subheader sticky top-0 z-50 bg-brand-blue/90 ios-blur border-b border-white/10 px-4 pt-12 pb-4">
             <div class="flex items-center justify-between">
                 <a href="{{ route('dashboard') }}"
                    class="flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
