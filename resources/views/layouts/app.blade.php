@@ -4,20 +4,46 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@hasSection('page_title')@yield('page_title') — {{ $companyName }}@else{{ $companyName }}@endif</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}" />
     @php
         $memberTheme = config('theme.member', []);
         $memberDisplayFont = data_get($memberTheme, 'fonts.display.family', 'Manrope');
         $memberDisplayWeights = data_get($memberTheme, 'fonts.display.weights', '300;400;500;600;700;800');
         $memberDisplayFontUrl = str_replace(' ', '+', $memberDisplayFont) . ':wght@' . $memberDisplayWeights;
-    @endphp
+        $hexToRgb = static function ($hex, $fallback) {
+            $hex = ltrim(trim((string) $hex), '#');
 
-    {{-- Livewire Styles --}}
-    @livewireStyles
+            if (strlen($hex) === 3) {
+                $hex = preg_replace('/(.)/', '$1$1', $hex);
+            }
+
+            if (! preg_match('/^[0-9a-fA-F]{6}$/', $hex)) {
+                return $fallback;
+            }
+
+            return implode(', ', [
+                hexdec(substr($hex, 0, 2)),
+                hexdec(substr($hex, 2, 2)),
+                hexdec(substr($hex, 4, 2)),
+            ]);
+        };
+        $memberPrimaryRgb = $hexToRgb(data_get($memberTheme, 'colors.primary', '#c5162e'), '197, 22, 46');
+        $memberInkRgb = $hexToRgb(data_get($memberTheme, 'colors.text', '#111827'), '17, 24, 39');
+        $memberInkSoftRgb = $hexToRgb(data_get($memberTheme, 'colors.text_soft', '#475569'), '71, 85, 105');
+        $memberInkMutedRgb = $hexToRgb(data_get($memberTheme, 'colors.text_muted', '#64748b'), '100, 116, 139');
+        $memberContrast = data_get($memberTheme, 'colors.text_contrast', '#fff7f7');
+        $memberContrastSoft = data_get($memberTheme, 'colors.text_contrast_soft', '#ffe2e2');
+        $memberContrastMuted = data_get($memberTheme, 'colors.text_contrast_muted', '#ffc9c9');
+        $memberContrastRgb = $hexToRgb($memberContrast, '255, 247, 247');
+        $memberContrastSoftRgb = $hexToRgb($memberContrastSoft, '255, 226, 226');
+        $memberContrastMutedRgb = $hexToRgb($memberContrastMuted, '255, 201, 201');
+    @endphp
 
     {{-- Tailwind CDN --}}
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 
-    {{-- Alpine.js CDN (for non-Livewire pages) --}}
+    {{-- Alpine.js CDN --}}
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     {{-- Google Fonts --}}
@@ -55,6 +81,7 @@
         :root {
             color-scheme: light;
             --member-primary: {{ data_get($memberTheme, 'colors.primary', '#c5162e') }};
+            --member-primary-rgb: {{ $memberPrimaryRgb }};
             --member-primary-glow: {{ data_get($memberTheme, 'colors.primary_glow', 'rgba(197, 22, 46, 0.28)') }};
             --member-secondary: {{ data_get($memberTheme, 'colors.secondary', '#ba1731') }};
             --member-secondary-deep: {{ data_get($memberTheme, 'colors.secondary_deep', '#8f1025') }};
@@ -69,8 +96,17 @@
             --member-border: {{ data_get($memberTheme, 'colors.surface_border', 'rgba(197, 22, 46, 0.12)') }};
             --member-border-soft: {{ data_get($memberTheme, 'colors.surface_border_soft', 'rgba(197, 22, 46, 0.08)') }};
             --member-ink: {{ data_get($memberTheme, 'colors.text', '#111827') }};
+            --member-ink-rgb: {{ $memberInkRgb }};
             --member-ink-soft: {{ data_get($memberTheme, 'colors.text_soft', '#475569') }};
+            --member-ink-soft-rgb: {{ $memberInkSoftRgb }};
             --member-ink-muted: {{ data_get($memberTheme, 'colors.text_muted', '#64748b') }};
+            --member-ink-muted-rgb: {{ $memberInkMutedRgb }};
+            --member-contrast: {{ $memberContrast }};
+            --member-contrast-rgb: {{ $memberContrastRgb }};
+            --member-contrast-soft: {{ $memberContrastSoft }};
+            --member-contrast-soft-rgb: {{ $memberContrastSoftRgb }};
+            --member-contrast-muted: {{ $memberContrastMuted }};
+            --member-contrast-muted-rgb: {{ $memberContrastMutedRgb }};
             --member-shell-gradient: {{ data_get($memberTheme, 'gradients.shell', 'radial-gradient(circle at top, rgba(197, 22, 46, 0.10), transparent 28%), linear-gradient(180deg, #ffffff 0%, #fff3f4 100%)') }};
             --member-accent-gradient: {{ data_get($memberTheme, 'gradients.accent', 'linear-gradient(135deg, #d61f3e 0%, #ad0f28 100%)') }};
             --member-login-gradient: {{ data_get($memberTheme, 'gradients.login', 'radial-gradient(circle at top, rgba(197, 22, 46, 0.16), transparent 34%), linear-gradient(180deg, #ffffff 0%, #fff4f5 100%)') }};
@@ -104,6 +140,27 @@
             z-index: 40 !important;
         }
 
+        /* Keep app headers on the exact primary red without recoloring other brand-blue panels. */
+        .member-shell header[class~="bg-brand-blue"] {
+            background-color: var(--member-primary) !important;
+        }
+
+        .member-shell header[class~="bg-brand-blue/95"] {
+            background-color: rgba(var(--member-primary-rgb), 0.95) !important;
+        }
+
+        .member-shell header[class~="bg-brand-blue/90"] {
+            background-color: rgba(var(--member-primary-rgb), 0.90) !important;
+        }
+
+        .member-shell header[class~="bg-brand-blue/80"] {
+            background-color: rgba(var(--member-primary-rgb), 0.80) !important;
+        }
+
+        .member-shell header[class~="bg-brand-blue/60"] {
+            background-color: rgba(var(--member-primary-rgb), 0.60) !important;
+        }
+
         .member-shell input::placeholder,
         .member-shell textarea::placeholder {
             color: var(--member-ink-muted) !important;
@@ -113,6 +170,11 @@
         .ios-blur {
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
+        }
+
+        .member-modal-backdrop {
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
         }
 
         .gold-gradient,
@@ -131,6 +193,22 @@
             background: var(--member-surface);
             backdrop-filter: blur(14px);
             border: 1px solid var(--member-border);
+        }
+
+        .member-shell .member-modal-surface {
+            background: #ffffff !important;
+            border-color: var(--member-border) !important;
+            color: var(--member-ink);
+            box-shadow: 0 32px 72px -44px rgba(var(--member-primary-rgb), 0.34);
+        }
+
+        .member-shell .member-modal-surface [class~="bg-white/10"] {
+            background-color: rgba(var(--member-primary-rgb), 0.08) !important;
+            box-shadow: none;
+        }
+
+        .member-shell .member-modal-surface [class~="bg-white/20"] {
+            background-color: rgba(var(--member-ink-muted-rgb), 0.18) !important;
         }
 
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -201,19 +279,34 @@
         }
 
         .member-shell [class~="text-white"] { color: var(--member-ink) !important; }
-        .member-shell [class~="text-white/80"] { color: color-mix(in srgb, var(--member-ink) 82%, transparent) !important; }
-        .member-shell [class~="text-white/75"] { color: color-mix(in srgb, var(--member-ink) 76%, transparent) !important; }
-        .member-shell [class~="text-white/70"] { color: color-mix(in srgb, var(--member-ink-soft) 82%, transparent) !important; }
-        .member-shell [class~="text-white/60"] { color: color-mix(in srgb, var(--member-ink-soft) 72%, transparent) !important; }
-        .member-shell [class~="text-white/55"] { color: color-mix(in srgb, var(--member-ink-muted) 82%, transparent) !important; }
-        .member-shell [class~="text-white/50"] { color: color-mix(in srgb, var(--member-ink-muted) 74%, transparent) !important; }
-        .member-shell [class~="text-white/45"] { color: color-mix(in srgb, var(--member-ink-muted) 66%, transparent) !important; }
-        .member-shell [class~="text-white/40"] { color: color-mix(in srgb, var(--member-ink-muted) 60%, transparent) !important; }
-        .member-shell [class~="text-white/30"] { color: color-mix(in srgb, var(--member-ink-muted) 48%, transparent) !important; }
-        .member-shell [class~="text-white/25"] { color: color-mix(in srgb, var(--member-ink-muted) 40%, transparent) !important; }
-        .member-shell [class~="text-white/20"] { color: color-mix(in srgb, var(--member-ink-muted) 32%, transparent) !important; }
+        .member-shell [class~="text-white/80"] { color: rgba(var(--member-ink-rgb), 0.82) !important; }
+        .member-shell [class~="text-white/75"] { color: rgba(var(--member-ink-rgb), 0.76) !important; }
+        .member-shell [class~="text-white/70"] { color: rgba(var(--member-ink-soft-rgb), 0.82) !important; }
+        .member-shell [class~="text-white/60"] { color: rgba(var(--member-ink-soft-rgb), 0.72) !important; }
+        .member-shell [class~="text-white/55"] { color: rgba(var(--member-ink-muted-rgb), 0.82) !important; }
+        .member-shell [class~="text-white/50"] { color: rgba(var(--member-ink-muted-rgb), 0.74) !important; }
+        .member-shell [class~="text-white/45"] { color: rgba(var(--member-ink-muted-rgb), 0.66) !important; }
+        .member-shell [class~="text-white/40"] { color: rgba(var(--member-ink-muted-rgb), 0.60) !important; }
+        .member-shell [class~="text-white/30"] { color: rgba(var(--member-ink-muted-rgb), 0.48) !important; }
+        .member-shell [class~="text-white/25"] { color: rgba(var(--member-ink-muted-rgb), 0.40) !important; }
+        .member-shell [class~="text-white/20"] { color: rgba(var(--member-ink-muted-rgb), 0.32) !important; }
+        .member-shell [class~="text-slate-900"],
+        .member-shell [class~="text-slate-800"],
+        .member-shell [class~="text-slate-700"] {
+            color: var(--member-ink) !important;
+        }
+
+        .member-shell [class~="text-slate-600"],
+        .member-shell [class~="text-slate-500"] {
+            color: var(--member-ink-soft) !important;
+        }
+
+        .member-shell [class~="text-slate-400"],
+        .member-shell [class~="text-slate-300"] {
+            color: var(--member-ink-muted) !important;
+        }
         .member-shell [class~="text-club-gold"] { color: var(--member-primary) !important; }
-        .member-shell [class~="text-brand-blue"] { color: #ffffff !important; }
+        .member-shell [class~="text-brand-blue"] { color: var(--member-contrast) !important; }
 
         .member-shell [class~="bg-[#071e33]"],
         .member-shell [class~="bg-[#0a3d62]"] {
@@ -259,19 +352,19 @@
         }
 
         .member-shell .member-sidebar [class~="text-white/80"] {
-            color: color-mix(in srgb, var(--member-primary) 78%, var(--member-ink) 22%) !important;
+            color: rgba(var(--member-primary-rgb), 0.78) !important;
         }
 
         .member-shell .member-sidebar [class~="text-white/60"] {
-            color: color-mix(in srgb, var(--member-ink-soft) 88%, transparent) !important;
+            color: rgba(var(--member-ink-soft-rgb), 0.88) !important;
         }
 
         .member-shell .member-sidebar [class~="text-white/50"] {
-            color: color-mix(in srgb, var(--member-ink-muted) 82%, transparent) !important;
+            color: rgba(var(--member-ink-muted-rgb), 0.82) !important;
         }
 
         .member-shell .member-sidebar [class~="text-white/40"] {
-            color: color-mix(in srgb, var(--member-ink-muted) 72%, transparent) !important;
+            color: rgba(var(--member-ink-muted-rgb), 0.72) !important;
         }
 
         .member-shell [class~="from-[#02568a]/90"] {
@@ -407,7 +500,7 @@
             [class~="bg-[#071e33]"],
             [class~="bg-[#0a3d62]"],
             [class~="blue-depth-gradient"]
-        ) [class~="text-white"] { color: #ffffff !important; }
+        ) [class~="text-white"] { color: var(--member-contrast) !important; }
         .member-shell :is(
             [class~="bg-brand-blue"],
             [class~="bg-brand-blue/95"],
@@ -417,7 +510,7 @@
             [class~="bg-[#071e33]"],
             [class~="bg-[#0a3d62]"],
             [class~="blue-depth-gradient"]
-        ) [class~="text-white/80"] { color: rgba(255, 255, 255, 0.82) !important; }
+        ) [class~="text-white/80"] { color: rgba(var(--member-contrast-rgb), 0.82) !important; }
         .member-shell :is(
             [class~="bg-brand-blue"],
             [class~="bg-brand-blue/95"],
@@ -427,7 +520,7 @@
             [class~="bg-[#071e33]"],
             [class~="bg-[#0a3d62]"],
             [class~="blue-depth-gradient"]
-        ) [class~="text-white/75"] { color: rgba(255, 255, 255, 0.76) !important; }
+        ) [class~="text-white/75"] { color: rgba(var(--member-contrast-rgb), 0.76) !important; }
         .member-shell :is(
             [class~="bg-brand-blue"],
             [class~="bg-brand-blue/95"],
@@ -437,7 +530,7 @@
             [class~="bg-[#071e33]"],
             [class~="bg-[#0a3d62]"],
             [class~="blue-depth-gradient"]
-        ) [class~="text-white/60"],
+        ) [class~="text-white/60"] { color: rgba(var(--member-contrast-soft-rgb), 0.88) !important; }
         .member-shell :is(
             [class~="bg-brand-blue"],
             [class~="bg-brand-blue/95"],
@@ -447,7 +540,7 @@
             [class~="bg-[#071e33]"],
             [class~="bg-[#0a3d62]"],
             [class~="blue-depth-gradient"]
-        ) [class~="text-white/55"],
+        ) [class~="text-white/55"] { color: rgba(var(--member-contrast-soft-rgb), 0.84) !important; }
         .member-shell :is(
             [class~="bg-brand-blue"],
             [class~="bg-brand-blue/95"],
@@ -457,7 +550,7 @@
             [class~="bg-[#071e33]"],
             [class~="bg-[#0a3d62]"],
             [class~="blue-depth-gradient"]
-        ) [class~="text-white/50"],
+        ) [class~="text-white/50"] { color: rgba(var(--member-contrast-soft-rgb), 0.78) !important; }
         .member-shell :is(
             [class~="bg-brand-blue"],
             [class~="bg-brand-blue/95"],
@@ -467,7 +560,7 @@
             [class~="bg-[#071e33]"],
             [class~="bg-[#0a3d62]"],
             [class~="blue-depth-gradient"]
-        ) [class~="text-white/45"],
+        ) [class~="text-white/45"] { color: rgba(var(--member-contrast-soft-rgb), 0.72) !important; }
         .member-shell :is(
             [class~="bg-brand-blue"],
             [class~="bg-brand-blue/95"],
@@ -477,7 +570,7 @@
             [class~="bg-[#071e33]"],
             [class~="bg-[#0a3d62]"],
             [class~="blue-depth-gradient"]
-        ) [class~="text-white/40"] { color: rgba(255, 255, 255, 0.62) !important; }
+        ) [class~="text-white/40"] { color: rgba(var(--member-contrast-soft-rgb), 0.64) !important; }
         .member-shell :is(
             [class~="bg-brand-blue"],
             [class~="bg-brand-blue/95"],
@@ -487,7 +580,7 @@
             [class~="bg-[#071e33]"],
             [class~="bg-[#0a3d62]"],
             [class~="blue-depth-gradient"]
-        ) [class~="text-white/30"],
+        ) [class~="text-white/30"] { color: rgba(var(--member-contrast-muted-rgb), 0.70) !important; }
         .member-shell :is(
             [class~="bg-brand-blue"],
             [class~="bg-brand-blue/95"],
@@ -497,7 +590,7 @@
             [class~="bg-[#071e33]"],
             [class~="bg-[#0a3d62]"],
             [class~="blue-depth-gradient"]
-        ) [class~="text-white/25"],
+        ) [class~="text-white/25"] { color: rgba(var(--member-contrast-muted-rgb), 0.62) !important; }
         .member-shell :is(
             [class~="bg-brand-blue"],
             [class~="bg-brand-blue/95"],
@@ -507,7 +600,7 @@
             [class~="bg-[#071e33]"],
             [class~="bg-[#0a3d62]"],
             [class~="blue-depth-gradient"]
-        ) [class~="text-white/20"] { color: rgba(255, 255, 255, 0.4) !important; }
+        ) [class~="text-white/20"] { color: rgba(var(--member-contrast-muted-rgb), 0.52) !important; }
         .member-shell :is(
             [class~="bg-brand-blue"],
             [class~="bg-brand-blue/95"],
@@ -517,7 +610,7 @@
             [class~="bg-[#071e33]"],
             [class~="bg-[#0a3d62]"],
             [class~="blue-depth-gradient"]
-        ) [class~="text-primary"] { color: #ffe1e6 !important; }
+        ) [class~="text-primary"] { color: var(--member-contrast-soft) !important; }
         .member-shell :is(
             [class~="bg-brand-blue"],
             [class~="bg-brand-blue/95"],
@@ -527,11 +620,11 @@
             [class~="bg-[#071e33]"],
             [class~="bg-[#0a3d62]"],
             [class~="blue-depth-gradient"]
-        ) [class~="text-brand-blue"] { color: #ffffff !important; }
+        ) [class~="text-brand-blue"] { color: var(--member-contrast) !important; }
 
         .member-shell [class~="bg-primary"][class~="text-brand-blue"],
         .member-shell [class~="bg-primary"] [class~="text-brand-blue"] {
-            color: #ffffff !important;
+            color: var(--member-contrast) !important;
         }
 
         .member-shell :is(
@@ -554,7 +647,7 @@
             [class~="bg-[#0a3d62]"],
             [class~="blue-depth-gradient"]
         ) textarea::placeholder {
-            color: rgba(255, 255, 255, 0.68) !important;
+            color: rgba(var(--member-contrast-soft-rgb), 0.68) !important;
         }
     </style>
 
@@ -565,24 +658,20 @@
 <div class="mobile-container">
     <div class="member-shell">
 
-        {{-- Blade views use @yield, Livewire full-page uses $slot --}}
+        {{-- Render the page body. --}}
         @hasSection('content')
             @yield('content')
         @else
             {{ $slot }}
         @endif
 
-        {{-- Bottom nav: shown for regular Blade pages via @section('show_nav')
-             For Livewire pages, include it directly in the component view --}}
+        {{-- Bottom nav: shown for pages via @section('show_nav'). --}}
         @hasSection('show_nav')
             @include('layouts.bottom-nav')
         @endif
     </div>
 
 </div>
-
-{{-- Livewire Scripts --}}
-@livewireScripts
 
 </body>
 </html>

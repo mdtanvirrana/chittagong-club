@@ -68,21 +68,8 @@
 >
 
     {{-- Header --}}
-    <header class="userpanel-subheader sticky top-0 z-50 bg-brand-blue/90 ios-blur border-b border-white/10 px-4 pt-12 pb-4 space-y-3">
-        <div class="flex items-center justify-between">
-            <a href="{{ route('dashboard') }}"
-               class="flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-                <span class="material-symbols-outlined text-white">arrow_back_ios</span>
-            </a>
-            <div class="text-center">
-                <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">{{ $companyName }}</p>
-                <h1 class="text-white text-lg font-bold">Employee Directory</h1>
-            </div>
-            <div class="size-10"></div>
-        </div>
-
-        {{-- Search --}}
-        <div class="relative">
+    <header class="userpanel-subheader bg-primary/5 pb-5 p-4 sticky top-0 z-50 rounded-b-xl shadow-lg">
+        <div class="relative pb-2">
             <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                 <span class="material-symbols-outlined text-white/40 text-xl">search</span>
             </div>
@@ -116,10 +103,8 @@
 
     {{-- Stats bar --}}
     <div class="px-4 py-3 flex items-center justify-between">
-        <p class="text-white/40 text-sm">
-            <span class="text-primary font-bold" x-text="filtered.length"></span> employees
-        </p>
-        <p class="text-white/25 text-xs">{{ $employees->count() }} total active</p>
+       <p></p>
+        <p class="text-white/40 text-sm"><span class="text-primary font-bold" x-text="filtered.length"></span> employees</p>
     </div>
 
     {{-- ── Grouped view (default) ──────────────────────── --}}
@@ -260,10 +245,10 @@
     <template x-if="activeEmp !== null">
         <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
 
-            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="close()"></div>
+            <div class="member-modal-backdrop absolute inset-0 bg-black/60" @click="close()"></div>
 
             <div
-                class="relative w-full max-w-[425px] bg-[#0a3d62] rounded-3xl border border-white/10 flex flex-col"
+                class="member-modal-surface relative w-full max-w-[425px] rounded-3xl border border-white/10 flex flex-col"
                 style="max-height: 80dvh;"
                 x-transition:enter="transition ease-out duration-300"
                 x-transition:enter-start="opacity-0 scale-95"
@@ -387,7 +372,7 @@
                 <span class="material-symbols-outlined">close</span>
             </button>
 
-            <div class="rounded-[2rem] border border-white/10 bg-brand-blue/90 p-4 shadow-2xl">
+            <div class="member-modal-surface rounded-[2rem] border border-white/10 p-4 shadow-2xl">
                 <div class="aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-primary/20 bg-white/5">
                     <img :src="previewEmp ? previewEmp.photo_url : null"
                          :alt="previewEmp ? previewEmp.name + ' full-size profile picture' : 'Profile picture preview'"

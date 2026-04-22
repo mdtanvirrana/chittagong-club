@@ -28,7 +28,7 @@
         @keydown.escape.window="handleEscape()"
         class="flex min-h-screen flex-col pb-24"
     >
-        <header class="userpanel-subheader sticky top-0 z-50 border-b border-white/10 bg-brand-blue/90 px-4 pb-4 pt-12 ios-blur">
+        <header class="userpanel-subheader sticky top-0 z-50 border-b border-white/10 bg-primary/5 px-4 pb-4 pt-12 ios-blur">
             <div class="mb-4 flex items-center justify-between">
                 <a href="{{ route('dashboard') }}"
                    class="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-white/10">
@@ -223,12 +223,12 @@
                     <div>
                         <p class="mb-1.5 text-[10px] uppercase tracking-wider text-white/40">From</p>
                         <input type="month" autocomplete="off" x-model="fromDate"
-                               class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white [color-scheme:dark] focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                               class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white [color-scheme:light] focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/50" />
                     </div>
                     <div>
                         <p class="mb-1.5 text-[10px] uppercase tracking-wider text-white/40">To</p>
                         <input type="month" autocomplete="off" x-model="toDate"
-                               class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white [color-scheme:dark] focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                               class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white [color-scheme:light] focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/50" />
                     </div>
                 </div>
 
@@ -380,7 +380,7 @@
             <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/60" @click="closeMonthModal()"></div>
 
-                <div class="relative w-full max-w-[425px] overflow-hidden rounded-3xl border border-white/10 bg-[#0a3d62]"
+                <div class="member-modal-surface relative w-full max-w-[425px] overflow-hidden rounded-3xl border border-white/10"
                      style="max-height: 85dvh;"
                      x-transition:enter="transition ease-out duration-300"
                      x-transition:enter-start="scale-95 opacity-0"
@@ -462,7 +462,7 @@
             <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/60" @click="closePaymentModal()"></div>
 
-                <div class="relative w-full max-w-[425px] overflow-hidden rounded-3xl border border-white/10 bg-[#0a3d62] shadow-2xl"
+                <div class="member-modal-surface relative w-full max-w-[425px] overflow-hidden rounded-3xl border border-white/10 shadow-2xl"
                      x-transition:enter="transition ease-out duration-300"
                      x-transition:enter-start="scale-95 opacity-0"
                      x-transition:enter-end="scale-100 opacity-100"
@@ -483,7 +483,7 @@
                     </div>
 
                     <div class="space-y-4 px-5 py-5">
-                        <div x-show="paymentFormError" class="rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-200" x-text="paymentFormError"></div>
+                        <div x-show="paymentFormError" class="rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-600" x-text="paymentFormError"></div>
 
                         <div>
                             <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-white/40">Amount</label>

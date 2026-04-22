@@ -1,5 +1,12 @@
 <?php
 
+$brandRed = '#FE0002';
+$brandRedRgb = '254, 0, 2';
+$brandRedStrong = '#C90002';
+$brandRedStrongRgb = '201, 0, 2';
+$brandRedDeep = '#930001';
+$brandRedDeepRgb = '147, 0, 1';
+
 return [
     // Member / user portal theme tokens.
     'member' => [
@@ -16,29 +23,29 @@ return [
             'full' => '9999px',
         ],
         'colors' => [
-            'primary' => '#c5162e',
-            'primary_glow' => 'rgba(197, 22, 46, 0.28)',
-            'secondary' => '#ba1731',
-            'secondary_deep' => '#8f1025',
-            'navy' => '#7a0f22',
+            'primary' => $brandRed,
+            'primary_glow' => "rgba({$brandRedRgb}, 0.28)",
+            'secondary' => $brandRedStrong,
+            'secondary_deep' => $brandRedDeep,
+            'navy' => $brandRedDeep,
             'shell_start' => '#ffffff',
-            'shell_end' => '#fff3f4',
-            'shell_glow' => 'rgba(197, 22, 46, 0.10)',
-            'shell_start_overlay' => 'rgba(186, 23, 49, 0.86)',
-            'accent' => '#d61f3e',
-            'surface_base' => '#fff7f7',
+            'shell_end' => '#fff1f1',
+            'shell_glow' => "rgba({$brandRedRgb}, 0.10)",
+            'shell_start_overlay' => "rgba({$brandRedStrongRgb}, 0.86)",
+            'accent' => $brandRed,
+            'surface_base' => '#fff6f6',
             'surface' => 'rgba(255, 255, 255, 0.92)',
             'surface_soft' => 'rgba(255, 255, 255, 0.86)',
-            'surface_border' => 'rgba(197, 22, 46, 0.12)',
-            'surface_border_soft' => 'rgba(197, 22, 46, 0.08)',
+            'surface_border' => "rgba({$brandRedRgb}, 0.12)",
+            'surface_border_soft' => "rgba({$brandRedRgb}, 0.08)",
             'text' => '#111827',
             'text_soft' => '#475569',
             'text_muted' => '#64748b',
         ],
         'gradients' => [
-            'shell' => 'radial-gradient(circle at top, rgba(197, 22, 46, 0.10), transparent 28%), linear-gradient(180deg, #ffffff 0%, #fff3f4 100%)',
-            'accent' => 'linear-gradient(135deg, #d61f3e 0%, #ad0f28 100%)',
-            'login' => 'radial-gradient(circle at top, rgba(197, 22, 46, 0.16), transparent 34%), linear-gradient(180deg, #ffffff 0%, #fff4f5 100%)',
+            'shell' => "radial-gradient(circle at top, rgba({$brandRedRgb}, 0.10), transparent 28%), linear-gradient(180deg, #ffffff 0%, #fff1f1 100%)",
+            'accent' => "linear-gradient(135deg, {$brandRed} 0%, {$brandRedStrong} 100%)",
+            'login' => "radial-gradient(circle at top, rgba({$brandRedRgb}, 0.16), transparent 34%), linear-gradient(180deg, #ffffff 0%, #fff3f3 100%)",
         ],
     ],
 
@@ -56,25 +63,30 @@ return [
         ],
         'colors' => [
             'ink' => '#ffffff',
-            'panel' => '#a1122d',
+            'text' => '#111827',
+            'text_soft' => '#475569',
+            'text_muted' => '#64748b',
+            'panel' => $brandRedDeep,
             'panel_55' => 'rgba(255, 255, 255, 0.84)',
-            'soft' => '#fde8ea',
-            'soft_20' => 'rgba(197, 22, 46, 0.04)',
-            'soft_40' => 'rgba(197, 22, 46, 0.08)',
-            'line' => '#ecc5cc',
-            'line_active' => '#d67a88',
-            'overlay' => '#8f1025',
-            'overlay_95' => 'rgba(143, 16, 37, 0.95)',
+            'soft' => '#ffe8e8',
+            'soft_20' => "rgba({$brandRedRgb}, 0.04)",
+            'soft_40' => "rgba({$brandRedRgb}, 0.08)",
+            'surface' => 'rgba(255, 255, 255, 0.94)',
+            'surface_strong' => 'rgba(255, 255, 255, 0.98)',
+            'line' => '#f2c9c9',
+            'line_active' => '#eca1a1',
+            'overlay' => $brandRedDeep,
+            'overlay_95' => "rgba({$brandRedDeepRgb}, 0.95)",
             'mist' => '#475569',
-            'accent' => '#c5162e',
-            'login_support' => '#ef8797',
+            'accent' => $brandRed,
+            'login_support' => '#f38f90',
             'backdrop_70' => 'rgba(15, 23, 42, 0.42)',
-            'background_glow' => 'rgba(197, 22, 46, 0.08)',
-            'background_start' => '#fff7f7',
+            'background_glow' => "rgba({$brandRedRgb}, 0.08)",
+            'background_start' => '#fff6f6',
             'background_end' => '#ffffff',
-            'login_glow_primary' => 'rgba(197, 22, 46, 0.12)',
-            'login_glow_accent' => 'rgba(239, 68, 68, 0.08)',
-            'login_background_start' => '#fff5f6',
+            'login_glow_primary' => "rgba({$brandRedRgb}, 0.12)",
+            'login_glow_accent' => "rgba({$brandRedStrongRgb}, 0.08)",
+            'login_background_start' => '#fff4f4',
             'login_background_end' => '#ffffff',
         ],
         'shadow' => [

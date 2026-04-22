@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - {{ $companyName }}</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     @php
         $adminTheme = config('theme.admin', []);
         $adminDisplayFont = data_get($adminTheme, 'fonts.display.family', 'Space Grotesk');
@@ -12,6 +14,29 @@
         $adminBodyWeights = data_get($adminTheme, 'fonts.body.weights', '400;500;600;700');
         $adminDisplayFontUrl = str_replace(' ', '+', $adminDisplayFont) . ':wght@' . $adminDisplayWeights;
         $adminBodyFontUrl = str_replace(' ', '+', $adminBodyFont) . ':wght@' . $adminBodyWeights;
+        $hexToRgb = static function ($hex, $fallback) {
+            $hex = ltrim(trim((string) $hex), '#');
+
+            if (strlen($hex) === 3) {
+                $hex = preg_replace('/(.)/', '$1$1', $hex);
+            }
+
+            if (! preg_match('/^[0-9a-fA-F]{6}$/', $hex)) {
+                return $fallback;
+            }
+
+            return implode(', ', [
+                hexdec(substr($hex, 0, 2)),
+                hexdec(substr($hex, 2, 2)),
+                hexdec(substr($hex, 4, 2)),
+            ]);
+        };
+        $adminText = data_get($adminTheme, 'colors.text', '#111827');
+        $adminTextSoft = data_get($adminTheme, 'colors.text_soft', '#475569');
+        $adminTextMuted = data_get($adminTheme, 'colors.text_muted', '#64748b');
+        $adminTextRgb = $hexToRgb($adminText, '17, 24, 39');
+        $adminTextSoftRgb = $hexToRgb($adminTextSoft, '71, 85, 105');
+        $adminTextMutedRgb = $hexToRgb($adminTextMuted, '100, 116, 139');
     @endphp
 
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
@@ -41,12 +66,20 @@
     </script>
 
     <style>
+        :root {
+            --admin-text: {{ $adminText }};
+            --admin-text-rgb: {{ $adminTextRgb }};
+            --admin-text-soft-rgb: {{ $adminTextSoftRgb }};
+            --admin-text-muted-rgb: {{ $adminTextMutedRgb }};
+        }
+
         body {
             font-family: '{{ $adminBodyFont }}', sans-serif;
             background:
                 radial-gradient(circle at top left, {{ data_get($adminTheme, 'colors.login_glow_primary', 'rgba(100, 210, 199, 0.12)') }}, transparent 32%),
                 radial-gradient(circle at bottom right, {{ data_get($adminTheme, 'colors.login_glow_accent', 'rgba(240, 196, 65, 0.10)') }}, transparent 28%),
                 linear-gradient(135deg, {{ data_get($adminTheme, 'colors.login_background_start', '#07131d') }} 0%, {{ data_get($adminTheme, 'colors.login_background_end', '#0f2436') }} 100%);
+            color: var(--admin-text);
         }
 
         input::placeholder,
@@ -54,9 +87,26 @@
             color: #94a3b8 !important;
             opacity: 1;
         }
+
+        [class~="bg-slate-950/45"] {
+            background-color: rgba(255, 255, 255, 0.97) !important;
+        }
+
+        [class~="text-white"] {
+            color: var(--admin-text) !important;
+        }
+
+        [class~="text-white/80"] {
+            color: rgba(var(--admin-text-soft-rgb), 0.92) !important;
+        }
+
+        [class~="text-white/45"],
+        [class~="text-white/25"] {
+            color: rgba(var(--admin-text-muted-rgb), 0.88) !important;
+        }
     </style>
 </head>
-<body class="min-h-screen text-slate-100 antialiased">
+<body class="min-h-screen text-slate-900 antialiased">
 <div
     x-data="{ showPassword: false, loading: false }"
     class="mx-auto grid min-h-screen max-w-7xl items-center gap-8 px-4 py-6 lg:grid-cols-[1.15fr_minmax(420px,520px)] lg:px-8"

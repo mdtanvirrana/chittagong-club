@@ -5,18 +5,6 @@
 @section('userpanel_content')
 <div class="flex flex-col min-h-screen pb-24">
 
-    {{-- Sticky Header --}}
-    <header class="userpanel-subheader sticky top-0 z-50 bg-brand-blue/90 ios-blur flex items-center px-4 pt-12 pb-4 justify-between border-b border-white/10">
-        <a href="{{ route('dashboard') }}"
-           class="text-white flex size-10 items-center justify-center rounded-full hover:bg-white/10 cursor-pointer">
-            <span class="material-symbols-outlined">arrow_back_ios_new</span>
-        </a>
-        <div class="text-center">
-            <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">{{ $companyName }}</p>
-            <h1 class="text-white text-lg font-bold">{{ $companyName }} – General Committee</h1>
-        </div>
-        <div class="size-10"></div>
-    </header>
 
     <main class="flex flex-col gap-6 p-4 pb-8">
 

@@ -21,7 +21,7 @@
         [
             'heading' => 'Members',
             'items' => [
-                ['label' => $companyName . ' – Executive Committee', 'icon' => 'groups', 'route' => 'executive', 'match' => 'executive'],
+                ['label' => $companyName . ' – General Committee', 'icon' => 'groups', 'route' => 'executive', 'match' => 'executive'],
                 ['label' => 'Former Chairmen', 'icon' => 'history_edu', 'route' => 'former-chairman', 'match' => 'former-chairman'],
                 ['label' => 'Employee Directory', 'icon' => 'badge', 'route' => 'employee-directory', 'match' => 'employee-directory'],
             ],

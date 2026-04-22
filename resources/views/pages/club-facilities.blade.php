@@ -41,19 +41,7 @@
 @endphp
 
 @section('userpanel_content')
-<div class="flex flex-col min-h-screen pb-24">
-    <header class="userpanel-subheader sticky top-0 z-50 bg-background-dark/80 ios-blur border-b border-primary/20">
-        <div class="flex items-center justify-between px-4 h-16">
-            <a href="{{ route('dashboard') }}" class="flex items-center justify-center p-2 rounded-full hover:bg-primary/10 transition-colors">
-                <span class="material-symbols-outlined text-primary">arrow_back_ios</span>
-            </a>
-            <div class="flex flex-col items-center">
-                <span class="text-[10px] uppercase tracking-[0.2em] text-primary font-bold">{{ $companyName }}</span>
-                <h1 class="text-lg font-bold leading-tight">Club Facilities</h1>
-            </div>
-            <div class="size-10"></div>
-        </div>
-    </header>
+<div class"flex flex-col min-h-screen pb-24">
 
     <main class="flex-1 p-4 mb-4">
         @if ($facilities->isEmpty())

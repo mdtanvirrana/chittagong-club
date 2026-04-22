@@ -13,10 +13,10 @@
         </a>
 
         {{-- Members --}}
-        <a href="{{ route('directory') }}"
-           class="flex flex-col items-center gap-1 transition-colors {{ Route::currentRouteName() === 'directory' ? 'text-primary' : 'text-slate-400' }}">
-            <span class="material-symbols-outlined">group</span>
-            <span class="text-[10px] font-bold uppercase tracking-wider">Members</span>
+        <a href="{{ route('gallery') }}"
+           class="flex flex-col items-center gap-1 transition-colors {{ Route::currentRouteName() === 'gallery' ? 'text-primary' : 'text-slate-400' }}">
+            <span class="material-symbols-outlined">photo_library</span>
+            <span class="text-[10px] font-bold uppercase tracking-wider">Gallery</span>
         </a>
 
         {{-- Notice Board --}}

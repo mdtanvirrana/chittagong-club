@@ -26,18 +26,7 @@
 >
 
     {{-- Header --}}
-    <header class="userpanel-subheader bg-brand-blue pt-12 pb-5 px-4 sticky top-0 z-50 rounded-b-xl shadow-lg">
-        <div class="flex items-center justify-between mb-4">
-            <a href="{{ route('dashboard') }}"
-               class="text-white flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-                <span class="material-symbols-outlined">arrow_back_ios</span>
-            </a>
-            <div class="text-center">
-                <p class="text-primary text-[14px] uppercase tracking-[0.2em] font-bold">{{ $companyName }}</p>
-                <h1 class="text-white text-lg font-bold">Notice Board</h1>
-            </div>
-            <div class="size-10"></div>
-        </div>
+    <header class="userpanel-subheader bg-primary/5 pb-5 p-4 sticky top-0 z-50 rounded-b-xl shadow-lg">
 
         {{-- Search --}}
         <div class="relative">
@@ -114,12 +103,12 @@
              @keydown.escape.window="closeNotice()">
 
             {{-- Backdrop --}}
-            <div class="absolute inset-0 bg-black/60 ios-blur"
+            <div class="member-modal-backdrop absolute inset-0 bg-black/60"
                  @click="closeNotice()"></div>
 
             {{-- Sheet --}}
             <div
-                class="relative w-full max-w-[425px] bg-[#0a3d62] rounded-3xl border border-white/10 flex flex-col"
+                class="member-modal-surface relative w-full max-w-[425px] rounded-3xl border border-white/10 flex flex-col"
                 style="max-height: 88dvh;"
                 x-transition:enter="transition ease-out duration-300"
                 x-transition:enter-start="opacity-0 scale-95"

@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('page_title', 'Admin Panel') - {{ $companyName }}</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     @php
         $adminTheme = config('theme.admin', []);
         $adminDisplayFont = data_get($adminTheme, 'fonts.display.family', 'Space Grotesk');
@@ -12,6 +14,29 @@
         $adminBodyWeights = data_get($adminTheme, 'fonts.body.weights', '400;500;600;700');
         $adminDisplayFontUrl = str_replace(' ', '+', $adminDisplayFont) . ':wght@' . $adminDisplayWeights;
         $adminBodyFontUrl = str_replace(' ', '+', $adminBodyFont) . ':wght@' . $adminBodyWeights;
+        $hexToRgb = static function ($hex, $fallback) {
+            $hex = ltrim(trim((string) $hex), '#');
+
+            if (strlen($hex) === 3) {
+                $hex = preg_replace('/(.)/', '$1$1', $hex);
+            }
+
+            if (! preg_match('/^[0-9a-fA-F]{6}$/', $hex)) {
+                return $fallback;
+            }
+
+            return implode(', ', [
+                hexdec(substr($hex, 0, 2)),
+                hexdec(substr($hex, 2, 2)),
+                hexdec(substr($hex, 4, 2)),
+            ]);
+        };
+        $adminText = data_get($adminTheme, 'colors.text', '#111827');
+        $adminTextSoft = data_get($adminTheme, 'colors.text_soft', '#475569');
+        $adminTextMuted = data_get($adminTheme, 'colors.text_muted', '#64748b');
+        $adminTextRgb = $hexToRgb($adminText, '17, 24, 39');
+        $adminTextSoftRgb = $hexToRgb($adminTextSoft, '71, 85, 105');
+        $adminTextMutedRgb = $hexToRgb($adminTextMuted, '100, 116, 139');
     @endphp
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
@@ -57,6 +82,14 @@
             --admin-soft-20: {{ data_get($adminTheme, 'colors.soft_20', 'rgba(23, 34, 53, 0.20)') }};
             --admin-soft-40: {{ data_get($adminTheme, 'colors.soft_40', 'rgba(23, 34, 53, 0.40)') }};
             --admin-backdrop-70: {{ data_get($adminTheme, 'colors.backdrop_70', 'rgba(11, 18, 32, 0.70)') }};
+            --admin-surface: {{ data_get($adminTheme, 'colors.surface', 'rgba(255, 255, 255, 0.94)') }};
+            --admin-surface-strong: {{ data_get($adminTheme, 'colors.surface_strong', 'rgba(255, 255, 255, 0.98)') }};
+            --admin-text: {{ $adminText }};
+            --admin-text-rgb: {{ $adminTextRgb }};
+            --admin-text-soft: {{ $adminTextSoft }};
+            --admin-text-soft-rgb: {{ $adminTextSoftRgb }};
+            --admin-text-muted: {{ $adminTextMuted }};
+            --admin-text-muted-rgb: {{ $adminTextMutedRgb }};
         }
 
         [x-cloak] {
@@ -68,6 +101,7 @@
             background:
                 radial-gradient(circle at top right, {{ data_get($adminTheme, 'colors.background_glow', 'rgba(217, 178, 76, 0.07)') }}, transparent 20%),
                 linear-gradient(180deg, {{ data_get($adminTheme, 'colors.background_start', '#08111b') }} 0%, {{ data_get($adminTheme, 'colors.background_end', '#0d1724') }} 100%);
+            color: var(--admin-text);
         }
 
         input::placeholder,
@@ -88,6 +122,16 @@
             background-color: rgba(255, 255, 255, 0.97) !important;
         }
 
+        [class~="bg-white/[0.03]"],
+        [class~="bg-white/[0.04]"] {
+            background-color: var(--admin-surface) !important;
+        }
+
+        [class~="bg-white/[0.05]"],
+        [class~="bg-white/[0.08]"] {
+            background-color: var(--admin-surface-strong) !important;
+        }
+
         [class~="bg-slate-950/70"] {
             background-color: var(--admin-backdrop-70) !important;
         }
@@ -103,11 +147,40 @@
         [class~="bg-slate-950/20"] {
             background-color: var(--admin-soft-20) !important;
         }
+
+        [class~="text-slate-100"],
+        [class~="text-slate-200"],
+        [class~="text-white"] {
+            color: var(--admin-text) !important;
+        }
+
+        [class~="text-white/80"],
+        [class~="text-white/78"],
+        [class~="text-white/75"],
+        [class~="text-white/72"],
+        [class~="text-white/65"] {
+            color: rgba(var(--admin-text-soft-rgb), 0.92) !important;
+        }
+
+        [class~="text-white/55"],
+        [class~="text-white/48"],
+        [class~="text-white/45"],
+        [class~="text-white/40"],
+        [class~="text-white/35"] {
+            color: rgba(var(--admin-text-muted-rgb), 0.88) !important;
+        }
+
+        [class~="text-white/30"],
+        [class~="text-white/28"],
+        [class~="text-white/25"],
+        [class~="text-white/20"] {
+            color: rgba(var(--admin-text-muted-rgb), 0.72) !important;
+        }
     </style>
 
     @stack('styles')
 </head>
-<body class="min-h-screen text-slate-100 antialiased">
+<body class="min-h-screen text-slate-900 antialiased">
 @php
     $adminUser = \Illuminate\Support\Facades\Auth::guard('admin')->user();
     $adminDisplayName = $adminUser?->display_name ?? 'Admin User';

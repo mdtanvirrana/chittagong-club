@@ -125,6 +125,29 @@ class PortalCache
         }
     }
 
+    public static function clearMemberRelatedCaches(string|int|null $memberId): void
+    {
+        $memberId = trim((string) $memberId);
+
+        if ($memberId === '') {
+            return;
+        }
+
+        $cache = static::store();
+
+        foreach ([
+            "dashboard_member_{$memberId}_v2",
+            "dashboard_member_{$memberId}_stale_v2",
+            "dashboard_ledger_totals_{$memberId}_v2",
+            "dashboard_ledger_totals_{$memberId}_stale_v2",
+            "dashboard_member_credit_{$memberId}_v1",
+            "dashboard_member_credit_{$memberId}_stale_v1",
+            "member_profile_view_{$memberId}_v1",
+        ] as $key) {
+            $cache->forget($key);
+        }
+    }
+
     private static function publicImageUrl(string|int|null $identifier): ?string
     {
         if ($identifier === null || $identifier === '') {

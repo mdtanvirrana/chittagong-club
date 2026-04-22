@@ -5,22 +5,6 @@
 
     <div class="flex flex-col min-h-screen pb-24">
 
-        {{-- Header --}}
-        <header class="userpanel-subheader sticky top-0 z-50 bg-brand-blue/90 ios-blur border-b border-white/10 px-4 pt-12 pb-4">
-            <div class="flex items-center justify-between">
-                <a href="{{ route('dashboard') }}"
-                   class="flex size-10 text-center items-center justify-center rounded-full hover:bg-white/10
-                   transition-colors">
-                    <span class="material-symbols-outlined text-white">arrow_back_ios</span>
-                </a>
-                <div class="text-center">
-                    <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">{{ $companyName }}</p>
-                    <h1 class="text-white text-lg font-bold">About CCL</h1>
-                </div>
-                <div class="size-10"></div>
-            </div>
-        </header>
-
         {{-- Hero Image --}}
         <div class="relative w-full h-56 overflow-hidden">
             <img src="https://chittagongclubltd.com/wp-content/uploads/2023/04/Drone-Photo-Faisal-Azim-2-768x464-1-600x363.jpg"

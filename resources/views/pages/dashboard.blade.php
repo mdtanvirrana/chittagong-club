@@ -105,8 +105,7 @@
                         <span class="inline-flex size-5 animate-spin rounded-full border-2 border-white/15 border-t-primary"></span>
                     </div>
                     <p x-show="!balanceLoading"
-                       class="text-lg font-bold"
-                       :class="text-white"
+                       class="text-lg font-bold text-white"
                        x-text="formatMoney(totalDue ?? 0, 2)"></p>
                 </a>
                 <p class="text-white/50 text-xs">
@@ -137,7 +136,7 @@
                     <span class="material-symbols-outlined">close</span>
                 </button>
 
-                <div class="rounded-[2rem] border border-white/10 bg-brand-blue/90 p-4 shadow-2xl">
+                <div class="member-modal-surface rounded-[2rem] border border-white/10 p-4 shadow-2xl">
                     <div class="aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-primary/20 bg-white/5">
                         <img src="{{ $member->profilePhotoUrl }}"
                              alt="{{ $fullName }} full-size profile picture"
@@ -160,11 +159,12 @@
 
             @php
             $services = [
-                ['route' => 'circulars',    'icon' => 'article',                'label' => 'Circular'],
-                ['route' => 'notice-board', 'icon' => 'campaign',               'label' => 'Notice Board'],
-                ['route' => 'ledger',       'icon' => 'account_balance_wallet', 'label' => 'Ledger'],
+
                 ['route' => 'directory',    'icon' => 'group',                  'label' => 'Directory'],
-                ['route' => 'executive',    'icon' => 'gavel',                  'label' => 'Committee'],
+                ['route' => 'executive',    'icon' => 'gavel',                  'label' => 'General Committee'],
+                ['route' => 'ledger',       'icon' => 'account_balance_wallet', 'label' => 'Ledger'],
+                ['route' => 'circulars',    'icon' => 'article',                'label' => 'Circular'],
+                ['route' => 'employee-directory', 'icon' => 'badge',               'label' => 'Employee Directory'],
                 ['route' => 'contact',      'icon' => 'call',                   'label' => 'Contact'],
 //                ['route' => 'profile',      'icon' => 'badge',                  'label' => 'My Profile'],
             ];

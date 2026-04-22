@@ -6,22 +6,7 @@
 <div x-data="memberDirectory()" x-on:keydown.escape.window="closePreview()" class="flex flex-col min-h-screen pb-24">
 
     {{-- Header --}}
-    <header class="userpanel-subheader sticky top-0 z-50 bg-brand-blue/90 ios-blur border-b border-white/10">
-        <div class="flex items-center px-4 pt-12 pb-3 justify-between">
-            <a href="{{ route('dashboard') }}" class="size-10 flex items-center justify-center rounded-full hover:bg-white/10">
-                <span class="material-symbols-outlined text-white">arrow_back_ios</span>
-            </a>
-            <div class="text-center">
-                <p class="text-primary text-[14px] uppercase tracking-widest font-bold">{{ $companyName }}</p>
-                <h1 class="text-white text-lg font-bold">Member Directory</h1>
-            </div>
-            <div class="size-10 flex items-center justify-center">
-{{--                <span class="text-white/30 text-xs">{{ $total }}</span>--}}
-            </div>
-        </div>
-
-        {{-- Search --}}
-        <div class="px-4 pb-3">
+    <header class="userpanel-subheader bg-primary/5 pb-5 p-4 sticky top-0 z-50 rounded-b-xl shadow-lg">
             <div class="relative">
                 <span class="material-symbols-outlined absolute left-4 top-2.5 text-white/30 pointer-events-none">search</span>
                 <input x-model="search" x-on:input="resetPage()" type="text" placeholder="Search by name or ID..."
@@ -31,9 +16,6 @@
                     <span class="material-symbols-outlined text-lg">close</span>
                 </button>
             </div>
-        </div>
-
-
     </header>
 
     {{-- Stats --}}
@@ -124,7 +106,7 @@
                 <span class="material-symbols-outlined">close</span>
             </button>
 
-            <div class="rounded-[2rem] border border-white/10 bg-brand-blue/90 p-4 shadow-2xl">
+            <div class="member-modal-surface rounded-[2rem] border border-white/10 p-4 shadow-2xl">
                 <div class="aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-primary/20 bg-white/5">
                     <img x-bind:src="previewMember ? previewMember.photo_url : null"
                          x-bind:alt="previewMember ? previewMember.name + ' full-size profile picture' : 'Profile picture preview'"

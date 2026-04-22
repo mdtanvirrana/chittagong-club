@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
+use App\Support\MemberSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
@@ -49,10 +50,10 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
         $request->session()->regenerateToken();
-        $request->session()->put('member', [
-            'id' => $member->tx_org_id,
-            'name' => $member->tx_name ?? 'Member',
-        ]);
+        $request->session()->put(
+            MemberSession::KEY,
+            MemberSession::build($member->tx_org_id, $member->tx_name)
+        );
 
         return redirect()->route('dashboard');
     }
@@ -62,9 +63,7 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        Session::forget('member');
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        MemberSession::logout($request);
 
         return redirect()->route('login');
     }

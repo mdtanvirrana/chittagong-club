@@ -1,34 +1,25 @@
-@php
-    $memberPhotoUrl = \App\Support\PortalCache::memberPhotoUrl($member->PrvCusID);
-@endphp
+@extends('layouts.userpanel')
+@section('page_title', 'Member Detail')
+@section('show_nav', true)
 
+@section('userpanel_content')
 <div x-data="{ previewOpen: false }"
      x-on:keydown.escape.window="previewOpen = false"
      class="flex flex-col min-h-screen pb-24">
 
-    {{-- Blue Header --}}
-    <div class="bg-brand-blue w-full pt-4 pb-14 px-4 rounded-b-[2.5rem] shadow-2xl">
-        <div class="flex items-center justify-between mb-8">
-            <a href="{{ route('directory') }}"
-               class="text-white flex size-10 items-center justify-center rounded-full bg-white/10 ios-blur">
-                <span class="material-symbols-outlined">arrow_back</span>
-            </a>
-            <h2 class="text-white text-lg font-bold tracking-tight">Member Details</h2>
-            <div class="size-10"></div>
-        </div>
+    <div class="bg-primary/5 w-full pt-4 pb-14 px-4 rounded-b-[2.5rem] shadow-2xl">
 
-        {{-- Avatar --}}
         <div class="flex flex-col items-center">
             <div class="relative">
                 <button type="button"
-                        @if ($memberPhotoUrl) x-on:click="previewOpen = true" @endif
+                        @if ($profilePhotoUrl) x-on:click="previewOpen = true" @endif
                         class="relative rounded-full h-28 w-28 mb-4 overflow-hidden flex items-center justify-center bg-brand-blue/80"
-                        :class="{ 'active:scale-95 transition-transform': {{ $memberPhotoUrl ? 'true' : 'false' }} }"
+                        :class="{ 'active:scale-95 transition-transform': {{ $profilePhotoUrl ? 'true' : 'false' }} }"
                         style="border: 4px solid var(--member-primary); box-shadow: 0 0 15px var(--member-primary-glow);"
                         aria-label="Preview profile picture">
-                    @if ($memberPhotoUrl)
+                    @if ($profilePhotoUrl)
                         <img class="size-full rounded-full object-cover object-top"
-                             src="{{ $memberPhotoUrl }}"
+                             src="{{ $profilePhotoUrl }}"
                              alt="{{ $fullName }} profile picture">
                     @else
                         <span class="text-primary font-extrabold text-3xl">{{ $initials }}</span>
@@ -44,10 +35,7 @@
         </div>
     </div>
 
-    {{-- Body --}}
     <div class="px-4 mt-4 relative z-10 space-y-4">
-
-        {{-- Stat chips --}}
         <div class="grid grid-cols-2 gap-3">
             <div class="bg-white/10 rounded-xl p-3 text-center border border-white/10">
                 <p class="text-white/40 text-[10px] font-bold uppercase tracking-wider mb-1">Joined</p>
@@ -88,31 +76,28 @@
             @endforeach
         </div>
 
-        {{-- Personal Info --}}
         <x-profile-card icon="person" title="Personal Information">
-            <x-profile-row label="Full Name"     :value="$fullName" />
-            <x-profile-row label="Date of Birth" :value="$birthDate . ($age !== '—' ? ' ('.$age.')' : '')" />
-            <x-profile-row label="Blood Group"   :value="$member->BloodGroup  ?: '—'" />
-            <x-profile-row label="Gender"        :value="match(strtolower($member->Sex ?? '')) {
-                                                            'm' => 'Male', 'f' => 'Female', default => $member->Sex ?: '—'
-                                                          }" />
-            <x-profile-row label="Religion"      :value="$member->Religion    ?: '—'" />
-            <x-profile-row label="Nationality"   :value="$member->Nationality ?: '—'" />
-            <x-profile-row label="Profession"    :value="$member->Profession  ?: '—'" />
+            <x-profile-row label="Full Name" :value="$fullName" />
+            <x-profile-row label="Date of Birth" :value="$birthDate . ($age !== '—' ? ' (' . $age . ')' : '')" />
+            <x-profile-row label="Blood Group" :value="$member->BloodGroup ?: '—'" />
+            <x-profile-row label="Gender" :value="match(strtolower($member->Sex ?? '')) {
+                'm' => 'Male',
+                'f' => 'Female',
+                default => $member->Sex ?: '—',
+            }" />
+            <x-profile-row label="Religion" :value="$member->Religion ?: '—'" />
+            <x-profile-row label="Nationality" :value="$member->Nationality ?: '—'" />
+            <x-profile-row label="Profession" :value="$member->Profession ?: '—'" />
         </x-profile-card>
 
-        {{-- Membership --}}
         <x-profile-card icon="card_membership" title="Membership Details">
-            <x-profile-row label="Member ID"   :value="$member->PrvCusID" />
-            <x-profile-row label="Category"    :value="$member->MemberCategory ?: '—'" />
-            <x-profile-row label="Status"      :value="$member->MemExpTypeName ?: '—'" />
-            <x-profile-row label="Join Date"   :value="$joinDate" />
-            <x-profile-row label="Expiry Date" :value="$member->ExpDt
-                                                        ? \Carbon\Carbon::parse($member->ExpDt)->format('M d, Y')
-                                                        : '—'" />
+            <x-profile-row label="Member ID" :value="$member->PrvCusID" />
+            <x-profile-row label="Category" :value="$member->MemberCategory ?: '—'" />
+            <x-profile-row label="Status" :value="$member->MemExpTypeName ?: '—'" />
+            <x-profile-row label="Join Date" :value="$joinDate" />
+            <x-profile-row label="Expiry Date" :value="$member->ExpDt ? \Carbon\Carbon::parse($member->ExpDt)->format('M d, Y') : '—'" />
         </x-profile-card>
 
-        {{-- Contact --}}
         <div x-data="{ open: false }" class="bg-white/10 rounded-xl border border-white/10 overflow-hidden">
             <button @click="open = !open"
                     class="w-full flex items-center justify-between p-4 active:bg-white/5 transition-colors">
@@ -134,10 +119,10 @@
                  x-transition:leave-end="opacity-0 -translate-y-2"
                  class="divide-y divide-white/10 border-t border-white/10">
                 @foreach ([
-                    ['icon' => 'phone_iphone', 'label' => 'Mobile',  'value' => $member->Mobile  ?: '—'],
-                    ['icon' => 'call',         'label' => 'Phone',   'value' => $member->Phone   ?: '—'],
-                    ['icon' => 'mail',         'label' => 'Email',   'value' => $member->Email   ?: '—'],
-                    ['icon' => 'location_on',  'label' => 'Address', 'value' => $member->Address ?: '—'],
+                    ['icon' => 'phone_iphone', 'label' => 'Mobile', 'value' => $member->Mobile ?: '—'],
+                    ['icon' => 'call', 'label' => 'Phone', 'value' => $member->Phone ?: '—'],
+                    ['icon' => 'mail', 'label' => 'Email', 'value' => $member->Email ?: '—'],
+                    ['icon' => 'location_on', 'label' => 'Address', 'value' => $member->Address ?: '—'],
                 ] as $row)
                     <div class="flex items-start gap-3 px-4 py-3">
                         <span class="material-symbols-outlined text-white/30 text-lg mt-0.5">{{ $row['icon'] }}</span>
@@ -150,7 +135,6 @@
             </div>
         </div>
 
-        {{-- Family --}}
         <div x-data="{ open: false }" class="bg-white/10 rounded-xl border border-white/10 overflow-hidden">
             <button @click="open = !open"
                     class="w-full flex items-center justify-between p-4 active:bg-white/5 transition-colors">
@@ -171,34 +155,30 @@
                  x-transition:leave-start="opacity-100 translate-y-0"
                  x-transition:leave-end="opacity-0 -translate-y-2"
                  class="divide-y divide-white/10 border-t border-white/10">
-
                 <x-profile-row label="Marital Status" :value="$isMarried ? 'Married' : ($member->MaritalStatus ?: '—')" />
-                <x-profile-row label="Father's Name"  :value="$member->FatherName ?: '—'" />
-                <x-profile-row label="Mother's Name"  :value="$member->MotherName ?: '—'" />
+                <x-profile-row label="Father's Name" :value="$member->FatherName ?: '—'" />
+                <x-profile-row label="Mother's Name" :value="$member->MotherName ?: '—'" />
 
                 @if ($isMarried)
-                    <x-profile-row label="Spouse Name"   :value="$member->SpouseName ?: '—'" />
-                    <x-profile-row label="Spouse Blood"  :value="$member->SpoBlood   ?: '—'" />
-                    <x-profile-row label="Spouse Mobile" :value="$member->SpoMobile  ?: '—'" />
-                    <x-profile-row label="Anniversary"   :value="$weddingDt" />
+                    <x-profile-row label="Spouse Name" :value="$member->SpouseName ?: '—'" />
+                    <x-profile-row label="Spouse Blood" :value="$member->SpoBlood ?: '—'" />
+                    <x-profile-row label="Spouse Mobile" :value="$member->SpoMobile ?: '—'" />
+                    <x-profile-row label="Anniversary" :value="$weddingDt" />
                 @endif
 
                 @php
-                    $children = collect([
-                        $member->Child1 ?? null,
-                        $member->Child2 ?? null,
-                        $member->Child3 ?? null,
-                    ])->map(fn ($child) => trim((string) $child))
-                      ->filter(fn ($child) => $child !== '' && $child !== '0')
-                      ->values();
+                    $childrenList = collect($children)
+                        ->pluck('name')
+                        ->filter()
+                        ->values();
                 @endphp
 
-                @if ($children->isNotEmpty())
+                @if ($childrenList->isNotEmpty())
                     <div class="px-4 py-3">
                         <p class="mb-2 text-white/40 text-[10px] font-bold uppercase tracking-widest">
-                            Children ({{ max((int) ($member->NoChild ?? 0), $children->count()) }})
+                            Children ({{ max($childrenCount, $childrenList->count()) }})
                         </p>
-                        @foreach ($children as $child)
+                        @foreach ($childrenList as $child)
                             <div class="mb-1 flex items-center gap-2">
                                 <span class="material-symbols-outlined text-white/20 text-base">child_care</span>
                                 <p class="text-white text-sm">{{ $child }}</p>
@@ -212,12 +192,9 @@
                 @endif
             </div>
         </div>
-
-
-
     </div>
 
-    @if ($memberPhotoUrl)
+    @if ($profilePhotoUrl)
         <div x-show="previewOpen"
              x-transition.opacity
              class="fixed inset-0 z-[80] flex items-center justify-center p-4"
@@ -234,9 +211,9 @@
                     <span class="material-symbols-outlined">close</span>
                 </button>
 
-                <div class="rounded-[2rem] border border-white/10 bg-brand-blue/90 p-4 shadow-2xl">
+                <div class="member-modal-surface rounded-[2rem] border border-white/10 p-4 shadow-2xl">
                     <div class="aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-primary/20 bg-white/5">
-                        <img src="{{ $memberPhotoUrl }}"
+                        <img src="{{ $profilePhotoUrl }}"
                              alt="{{ $fullName }} full-size profile picture"
                              class="size-full object-cover object-top">
                     </div>
@@ -249,6 +226,5 @@
             </div>
         </div>
     @endif
-
-    @include('layouts.bottom-nav')
 </div>
+@endsection

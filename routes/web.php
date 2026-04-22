@@ -14,11 +14,11 @@ use App\Http\Controllers\EmployeeDirectoryController;
 use App\Http\Controllers\FormerChairmanController;
 use App\Http\Controllers\Member\DashboardController;
 use App\Http\Controllers\Member\LedgerController;
+use App\Http\Controllers\Member\MemberDetailController;
 use App\Http\Controllers\Member\MemberDirectoryController;
+use App\Http\Controllers\Member\MemberProfileController;
 use App\Http\Controllers\NoticeController;
 use App\Http\Controllers\Payments\SSLCommerzPaymentController;
-use App\Livewire\MemberDetail;
-use App\Livewire\MemberProfile;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
@@ -69,7 +69,7 @@ Route::middleware('auth.member')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/summary', [DashboardController::class, 'summary'])->name('dashboard.summary');
     Route::get('/circulars', [CircularController::class, 'index'])->name('circulars');
-    Route::get('/profile', MemberProfile::class)->name('profile');
+    Route::get('/profile', [MemberProfileController::class, 'index'])->name('profile');
     Route::get('/notice-board', [NoticeController::class, 'index'])->name('notice-board');
     Route::get('/ledger', [LedgerController::class, 'index'])->name('ledger');
     Route::get('/ledger/data', [LedgerController::class, 'data'])->name('ledger.data');
@@ -77,7 +77,7 @@ Route::middleware('auth.member')->group(function () {
     Route::post('/ledger/payments/sslcommerz/initiate', [SSLCommerzPaymentController::class, 'initiate'])
         ->name('ledger.payments.sslcommerz.initiate');
     Route::get('/directory', [MemberDirectoryController::class, 'index'])->name('directory');
-    Route::get('/directory/{id}', MemberDetail::class)->name('directory.show');
+    Route::get('/directory/{id}', [MemberDetailController::class, 'show'])->name('directory.show');
     Route::get('/facilities', [ClubFacilitiesController::class, 'index'])->name('facilities');
     Route::get('/shop', fn () => view('pages.club-shop'))->name('shop');
     Route::get('/executive', [CommitteeController::class, 'index'])->name('executive');

@@ -20,6 +20,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Member Portal Session Lifetime
+    |--------------------------------------------------------------------------
+    |
+    | Member portal authentication uses a custom session payload rather than
+    | Laravel's built-in guard. This defines the absolute login lifetime in
+    | minutes before members are required to sign in again.
+    |
+    */
+
+    'member_session_lifetime' => (int) env('MEMBER_SESSION_LIFETIME', 60 * 24 * 7),
+
+    /*
+    |--------------------------------------------------------------------------
     | Authentication Guards
     |--------------------------------------------------------------------------
     |
