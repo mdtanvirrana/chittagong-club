@@ -21,6 +21,7 @@ test('logging out clears member-specific cached data', function () {
         "dashboard_member_credit_{$memberId}_v1",
         "dashboard_member_credit_{$memberId}_stale_v1",
         "member_profile_view_{$memberId}_v1",
+        "member_profile_view_{$memberId}_v2",
     ] as $key) {
         $store->shouldReceive('forget')
             ->once()

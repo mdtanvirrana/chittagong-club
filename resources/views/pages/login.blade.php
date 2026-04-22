@@ -2,48 +2,7 @@
 @section('page_title', 'Login')
 
 @push('styles')
-<style>
-    .blue-depth-gradient { background: var(--member-login-gradient); }
-    .gold-text-gradient {
-        background: var(--member-accent-gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    .gold-btn-gradient { background: var(--member-accent-gradient); }
-
-    .login-input {
-        background: rgba(255, 255, 255, 0.96);
-        border: 1px solid rgba(197, 22, 46, 0.12);
-        color: #111827;
-        box-shadow: 0 18px 38px -34px rgba(185, 28, 28, 0.28);
-    }
-
-    .login-input::placeholder {
-        color: #94a3b8 !important;
-        opacity: 1;
-    }
-
-    .member-shell .blue-depth-gradient .login-input::placeholder {
-        color: #94a3b8 !important;
-        opacity: 1;
-    }
-
-    .login-icon {
-        color: #94a3b8;
-        transition: color 180ms ease;
-    }
-
-    .group:focus-within .login-icon,
-    .login-icon.is-active,
-    .login-toggle:hover {
-        color: var(--member-primary);
-    }
-
-    .login-toggle {
-        color: #94a3b8;
-        transition: color 180ms ease;
-    }
-</style>
+    @include('partials.member-auth-styles')
 @endpush
 
 @section('content')
@@ -61,30 +20,19 @@
 
 
 
-    {{-- Hero / Logo --}}
-    <div class="flex flex-col items-center justify-center pt-8 pb-12 px-8">
-        <div class="relative mb-8">
-            <div class="absolute -inset-4 bg-primary/10 blur-3xl rounded-full opacity-50"></div>
-            <div class="relative flex items-center justify-center w-32 h-32">
-                <img
-                    class="w-24 h-24 object-contain rounded-full"
-                    src="{{asset('logo.jpg')}}"
-                    alt="Chittagong Club Logo"
-                />
-            </div>
-        </div>
-        <h1 class="text-4xl font-extrabold tracking-tight text-center mb-2">
-            <span class="gold-text-gradient">{{ $companyName }}</span>
-        </h1>
-        <p class="text-white/60 text-sm font-light tracking-widest uppercase text-center">
-            Exclusive Member Access
-        </p>
-    </div>
+    @include('partials.member-auth-hero')
 
     {{-- Login Form --}}
     <div class="flex-1 px-8 pb-12 flex flex-col justify-start w-full">
         <form action="{{ route('login.post') }}" method="POST" class="space-y-6" @submit="loading = true">
             @csrf
+
+            @if (session('password_reset_status'))
+            <div class="flex items-center gap-3 bg-emerald-500/15 border border-emerald-400/30 rounded-xl px-4 py-3">
+                <span class="material-symbols-outlined text-emerald-300 shrink-0">check_circle</span>
+                <p class="text-emerald-100 text-sm">{{ session('password_reset_status') }}</p>
+            </div>
+            @endif
 
             @if (session('session_expired'))
             <div class="flex items-center gap-3 bg-amber-500/15 border border-amber-400/30 rounded-xl px-4 py-3">
@@ -123,7 +71,7 @@
 
             {{-- Password --}}
             <div class="space-y-2">
-                <label class="block text-xs font-semibold text-primary/80 uppercase tracking-widest">Security Code</label>
+                <label class="block text-xs font-semibold text-primary/80 uppercase tracking-widest">Password</label>
                 <div class="relative group">
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <span class="material-symbols-outlined login-icon">lock</span>
@@ -145,6 +93,14 @@
                               x-text="showPassword ? 'visibility' : 'visibility_off'">
                         </span>
                     </button>
+                </div>
+                <div class="flex justify-end">
+                    <a
+                        href="{{ route('password.forgot') }}"
+                        class="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80 transition hover:text-primary"
+                    >
+                        Forgot Password?
+                    </a>
                 </div>
             </div>
 

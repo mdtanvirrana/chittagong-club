@@ -44,4 +44,15 @@ return [
         'live_url' => env('SSLCOMMERZ_LIVE_URL', 'https://securepay.sslcommerz.com'),
     ],
 
+    'robi_sms' => [
+        'url' => env('ROBI_SMS_URL'),
+        'token' => env('ROBI_SMS_TOKEN'),
+        'token_header' => env('ROBI_SMS_TOKEN_HEADER', 'Authorization'),
+        'sender_id' => env('ROBI_SMS_SENDER_ID'),
+        'to_field' => env('ROBI_SMS_TO_FIELD', 'to'),
+        'message_field' => env('ROBI_SMS_MESSAGE_FIELD', 'message'),
+        'sender_field' => env('ROBI_SMS_SENDER_FIELD', 'sender_id'),
+        'timeout' => (int) env('ROBI_SMS_TIMEOUT', 10),
+    ],
+
 ];

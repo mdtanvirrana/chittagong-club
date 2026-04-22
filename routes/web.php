@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\NoticeController as AdminNoticeController;
 use App\Http\Controllers\Admin\PictureUploadController as AdminPictureUploadController;
 use App\Http\Controllers\AffiliatedClubsController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\CircularController;
 use App\Http\Controllers\ClubFacilitiesController;
 use App\Http\Controllers\CommitteeController;
@@ -28,6 +29,13 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 Route::middleware('guest.member')->group(function () {
     Route::get('/', [AuthController::class, 'login'])->name('login');
     Route::post('/login', [AuthController::class, 'authenticate'])->name('login.post');
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'create'])->name('password.forgot');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendCode'])->name('password.forgot.send');
+    Route::get('/forgot-password/otp', [ForgotPasswordController::class, 'showVerify'])->name('password.forgot.verify');
+    Route::post('/forgot-password/otp', [ForgotPasswordController::class, 'verifyCode'])->name('password.forgot.verify.store');
+    Route::post('/forgot-password/otp/resend', [ForgotPasswordController::class, 'resendCode'])->name('password.forgot.verify.resend');
+    Route::get('/forgot-password/reset', [ForgotPasswordController::class, 'showReset'])->name('password.forgot.reset');
+    Route::post('/forgot-password/reset', [ForgotPasswordController::class, 'updatePassword'])->name('password.forgot.update');
 });
 
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -70,6 +78,7 @@ Route::middleware('auth.member')->group(function () {
     Route::get('/dashboard/summary', [DashboardController::class, 'summary'])->name('dashboard.summary');
     Route::get('/circulars', [CircularController::class, 'index'])->name('circulars');
     Route::get('/profile', [MemberProfileController::class, 'index'])->name('profile');
+    Route::post('/profile/password', [MemberProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::get('/notice-board', [NoticeController::class, 'index'])->name('notice-board');
     Route::get('/ledger', [LedgerController::class, 'index'])->name('ledger');
     Route::get('/ledger/data', [LedgerController::class, 'data'])->name('ledger.data');

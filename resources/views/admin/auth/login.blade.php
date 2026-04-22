@@ -104,6 +104,10 @@
         [class~="text-white/25"] {
             color: rgba(var(--admin-text-muted-rgb), 0.88) !important;
         }
+
+        [x-cloak] {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="min-h-screen text-slate-900 antialiased">
@@ -140,7 +144,7 @@
                     type="text"
                     value="{{ old('login') }}"
                     autocomplete="username"
-                    class="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-white placeholder:text-white/25 focus:border-admin-gold/40 focus:ring-admin-gold/25"
+                    class="w-full rounded-2xl border border-black/10 bg-white/[0.04] px-4 py-3 text-black placeholder:text-black/25 focus:border-admin-gold/40 focus:ring-admin-gold/25"
                     placeholder="e.g. 10001 or system.user"
                 >
             </div>
@@ -153,11 +157,44 @@
                         name="password"
                         :type="showPassword ? 'text' : 'password'"
                         autocomplete="current-password"
-                        class="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 pr-14 text-white placeholder:text-white/25 focus:border-admin-gold/40 focus:ring-admin-gold/25"
+                        class="w-full rounded-2xl border border-black/10 bg-white/[0.04] px-4 py-3 pr-14 text-black placeholder:text-black/25 focus:border-admin-gold/40 focus:ring-admin-gold/25"
                         placeholder="Enter password"
                     >
-                    <button type="button" @click="showPassword = !showPassword" class="absolute inset-y-0 right-0 flex items-center px-4 text-sm text-white/45">
-                        <span x-text="showPassword ? 'Hide' : 'Show'"></span>
+                    <button
+                        type="button"
+                        @click="showPassword = !showPassword"
+                        x-bind:aria-label="showPassword ? 'Hide password' : 'Show password'"
+                        x-bind:title="showPassword ? 'Hide password' : 'Show password'"
+                        class="absolute inset-y-0 right-0 flex items-center px-4 text-black/45 transition-colors hover:text-black/70"
+                    >
+                        <svg
+                            x-show="!showPassword"
+                            class="h-5 w-5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            aria-hidden="true"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12Z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <svg
+                            x-cloak
+                            x-show="showPassword"
+                            class="h-5 w-5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            aria-hidden="true"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.58 10.58A2 2 0 0 0 12 14a2 2 0 0 0 1.42-.58" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.88 5.09A10.94 10.94 0 0 1 12 5c4.477 0 8.268 2.943 9.542 7a11.05 11.05 0 0 1-4.042 5.222" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.228 6.228A11.01 11.01 0 0 0 2.458 12c1.274 4.057 5.065 7 9.542 7a10.94 10.94 0 0 0 5.772-1.628" />
+                        </svg>
+                        <span class="sr-only" x-text="showPassword ? 'Hide password' : 'Show password'"></span>
                     </button>
                 </div>
             </div>

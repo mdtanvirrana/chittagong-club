@@ -28,23 +28,7 @@
         @keydown.escape.window="handleEscape()"
         class="flex min-h-screen flex-col pb-24"
     >
-        <header class="userpanel-subheader sticky top-0 z-50 border-b border-white/10 bg-primary/5 px-4 pb-4 pt-12 ios-blur">
-            <div class="mb-4 flex items-center justify-between">
-                <a href="{{ route('dashboard') }}"
-                   class="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-white/10">
-                    <span class="material-symbols-outlined text-white">arrow_back_ios</span>
-                </a>
-                <div class="text-center">
-                    <p class="text-[14px] font-bold uppercase tracking-[0.2em] text-primary">{{ $companyName }}</p>
-                    <h1 class="text-lg font-bold text-white">My Ledger</h1>
-                </div>
-                <button
-                    @click="openPaymentModal()"
-                    class=""
-                >
-                </button>
-            </div>
-
+        <header class="userpanel-subheader bg-primary/5 pb-5 p-4 sticky top-0 z-50 rounded-b-xl shadow-lg">
             <div class="grid grid-cols-3 gap-2">
                 <button
                     @click="activeTab = 'overview'"

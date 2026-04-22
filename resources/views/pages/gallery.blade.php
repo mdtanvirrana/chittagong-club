@@ -17,18 +17,24 @@
                         <div class="relative rounded-2xl overflow-hidden border border-white/10">
                             {{-- Cover image --}}
                             <img :src="album.cover" :alt="album.title"
-                                 class="w-full h-44 object-cover">
+                                 class="w-full h-44 object-cover"
+                                 style="filter: brightness(0.82) contrast(1.08);">
                             {{-- Overlay --}}
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/45 to-transparent"></div>
                             {{-- Info --}}
-                            <div class="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
-                                <div>
-                                    <p class="text-white font-extrabold text-base leading-tight" x-text="album.title"></p>
-                                    <p class="text-white/50 text-xs mt-0.5" x-text="album.photos.length + ' photos • ' + album.date"></p>
-                                </div>
-                                <div class="size-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shrink-0 transition-transform duration-300"
-                                     :class="openId === album.id ? 'rotate-180' : ''">
-                                    <span class="material-symbols-outlined text-white text-lg">expand_more</span>
+                            <div class="absolute bottom-0 left-0 right-0 p-3">
+                                <div class="flex items-end justify-between gap-3 rounded-2xl border border-white/80 bg-white px-4 py-3"
+                                     style="box-shadow: 0 18px 36px -24px rgba(15, 23, 42, 0.55);">
+                                    <div class="min-w-0">
+                                        <p class="text-slate-900 font-extrabold text-base leading-tight"
+                                           x-text="album.title"></p>
+                                        <p class="text-slate-600 text-xs mt-1 font-semibold"
+                                           x-text="album.photos.length + ' photos • ' + album.date"></p>
+                                    </div>
+                                    <div class="size-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 transition-transform duration-300 shadow-sm"
+                                         :class="openId === album.id ? 'rotate-180' : ''">
+                                        <span class="material-symbols-outlined text-slate-700 text-lg">expand_more</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

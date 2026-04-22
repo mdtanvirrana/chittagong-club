@@ -3,8 +3,8 @@
 @section('show_nav', true)
 
 @section('userpanel_content')
-<div x-data="{ previewOpen: false }"
-     x-on:keydown.escape.window="previewOpen = false"
+<div x-data="{ previewOpen: false, qrModalOpen: false }"
+     x-on:keydown.escape.window="previewOpen = false; qrModalOpen = false"
      class="flex flex-col min-h-screen pb-24">
 
     <div class="bg-primary/5 w-full pt-4 pb-14 px-4 rounded-b-[2.5rem] shadow-2xl">
@@ -62,6 +62,7 @@
             <x-profile-row label="Religion" :value="$member->Religion ?: '—'" />
             <x-profile-row label="Nationality" :value="$member->Nationality ?: '—'" />
             <x-profile-row label="Profession" :value="$member->Profession ?: '—'" />
+            <x-profile-row label="Company Name" :value="data_get($member, 'ComName') ?: '—'" />
             <x-profile-row label="NID" :value="$member->NID ?: '—'" />
             <x-profile-row label="Passport" :value="$member->PassportNo ?: '—'" />
         </x-profile-card>
@@ -229,12 +230,121 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-4 pb-4">
+        <div
+            x-data="{ open: {{ $errors->any() || session()->has('password_status') ? 'true' : 'false' }} }"
+            class="bg-white/10 rounded-xl border border-white/10 overflow-hidden"
+        >
+            <button @click="open = !open"
+                    class="w-full flex items-center justify-between p-4 active:bg-white/5 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <span class="material-symbols-outlined text-primary">lock</span>
+                    </div>
+                    <div class="text-left">
+                        <h3 class="text-white font-bold">Change Password</h3>
+                        <p class="mt-1 text-xs text-white/40">Update the password you use to sign in to the member panel.</p>
+                    </div>
+                </div>
+                <span class="material-symbols-outlined text-white/40 transition-transform duration-300"
+                      :class="open ? 'rotate-180' : ''">expand_more</span>
+            </button>
+
+            <div x-show="open"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 -translate-y-2"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 -translate-y-2"
+                 class="border-t border-white/10 px-4 py-4"
+                 style="display: none;">
+                @if (session('password_status'))
+                    <div class="mb-4 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
+                        {{ session('password_status') }}
+                    </div>
+                @endif
+
+                @if ($errors->any())
+                    <div class="mb-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                        {{ $errors->first() }}
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('profile.password.update') }}" class="space-y-4">
+                    @csrf
+
+                    <div>
+                        <label for="current_password" class="mb-2 block text-sm font-semibold text-white/75">Current Password</label>
+                        <input
+                            id="current_password"
+                            name="current_password"
+                            type="password"
+                            autocomplete="current-password"
+                            class="w-full rounded-2xl border px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary/30 {{ $errors->has('current_password') ? 'border-red-400/50 bg-red-500/10' : 'border-white/10 bg-white/[0.04]' }}"
+                            placeholder="Enter current password"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label for="new_password" class="mb-2 block text-sm font-semibold text-white/75">New Password</label>
+                        <input
+                            id="new_password"
+                            name="new_password"
+                            type="password"
+                            autocomplete="new-password"
+                            class="w-full rounded-2xl border px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary/30 {{ $errors->has('new_password') ? 'border-red-400/50 bg-red-500/10' : 'border-white/10 bg-white/[0.04]' }}"
+                            placeholder="At least 6 characters"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label for="new_password_confirmation" class="mb-2 block text-sm font-semibold text-white/75">Confirm New Password</label>
+                        <input
+                            id="new_password_confirmation"
+                            name="new_password_confirmation"
+                            type="password"
+                            autocomplete="new-password"
+                            class="w-full rounded-2xl border px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary/30 {{ $errors->has('new_password') ? 'border-red-400/50 bg-red-500/10' : 'border-white/10 bg-white/[0.04]' }}"
+                            placeholder="Re-enter new password"
+                            required
+                        >
+                    </div>
+
+                    <div class="flex items-center justify-between gap-4 pt-1">
+                        <p class="text-xs leading-relaxed text-white/40">
+                            Your next sign-in will use the new password.
+                        </p>
+
+                        <button
+                            type="submit"
+                            class="inline-flex shrink-0 items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-brand-blue shadow-lg shadow-primary/20 transition-transform active:scale-95"
+                        >
+                            Update Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 pb-4">
             <a href="{{ route('ledger') }}"
-               class="flex flex-col items-center justify-center p-4 bg-white/10 rounded-xl border border-white/10 active:scale-95 transition-transform">
+               class="flex min-h-[11.5rem] flex-col items-center justify-center rounded-xl border border-white/10 bg-white/10 p-4 text-center active:scale-95 transition-transform">
                 <span class="material-symbols-outlined text-white/60 mb-2 text-3xl">receipt_long</span>
                 <span class="text-white text-xs font-bold uppercase tracking-tight">Billing History</span>
             </a>
+
+            <button
+                type="button"
+                x-on:click="qrModalOpen = true; requestAnimationFrame(() => window.renderMemberProfileQr && window.renderMemberProfileQr())"
+                class="flex min-h-[11.5rem] flex-col items-center justify-center rounded-xl border border-white/10 bg-white/10 p-4 text-center transition-transform active:scale-95"
+            >
+                <div class="flex size-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+                    <span class="material-symbols-outlined text-primary text-[1.9rem]">qr_code_2</span>
+                </div>
+                <span class="mt-3 text-white text-xs font-bold uppercase tracking-tight">Member Info QR</span>
+            </button>
         </div>
     </div>
 
@@ -270,5 +380,102 @@
             </div>
         </div>
     @endif
+
+    <div
+        x-show="qrModalOpen"
+        x-transition.opacity
+        class="fixed inset-0 z-[85] flex items-center justify-center p-4"
+        style="display: none;"
+    >
+        <button
+            type="button"
+            x-on:click="qrModalOpen = false"
+            class="absolute inset-0 bg-slate-950/45 backdrop-blur-sm"
+            aria-label="Close member info QR modal"
+        ></button>
+
+        <div class="relative w-full max-w-sm">
+            <button
+                type="button"
+                x-on:click="qrModalOpen = false"
+                class="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full border border-white/10 bg-slate-950/25 text-white"
+            >
+                <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <div class="member-modal-surface overflow-hidden rounded-[2rem] border border-white/10 shadow-2xl">
+                <div class="bg-primary/10 px-6 pb-5 pt-6 text-center">
+                    <div class="mx-auto flex size-16 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+                        <span class="material-symbols-outlined text-primary text-[2rem]">qr_code_2</span>
+                    </div>
+                    <p class="mt-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">Member Profile</p>
+                    <h3 class="mt-2 text-xl font-extrabold text-white">Member Info QR</h3>
+                    <p class="mt-2 text-sm leading-relaxed text-white/55">
+                        Scan to read the member name and membership ID.
+                    </p>
+                </div>
+
+                <div class="px-6 py-6 ">
+                    <div class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 shadow-inner shadow-slate-900/5">
+                        <div
+                            data-member-qr-value='@json($memberQrValue)'
+                            id="member-profile-qr-code"
+                            class="mx-auto flex size-56 items-center justify-center overflow-hidden rounded-[1.5rem] bg-white p-4"
+                        >
+                            <span class="text-xs font-medium text-slate-400">Generating QR...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            window.renderMemberProfileQr = function () {
+                var container = document.getElementById('member-profile-qr-code');
+
+                if (!container || container.dataset.qrRendered === 'true') {
+                    return;
+                }
+
+                var qrValue = container.dataset.memberQrValue || '';
+
+                try {
+                    qrValue = JSON.parse(qrValue);
+                } catch (error) {
+                    // Keep the raw value if it is not JSON encoded.
+                }
+
+                if (!qrValue || typeof window.QRCode === 'undefined') {
+                    container.innerHTML = '<span class="text-xs font-medium text-slate-400">QR unavailable</span>';
+                    return;
+                }
+
+                container.innerHTML = '';
+
+                new window.QRCode(container, {
+                    text: qrValue,
+                    width: 176,
+                    height: 176,
+                    colorDark: '#7a0f22',
+                    colorLight: '#ffffff',
+                    correctLevel: window.QRCode.CorrectLevel.M
+                });
+
+                var renderedCode = container.querySelector('img, canvas');
+
+                if (renderedCode) {
+                    renderedCode.style.width = '100%';
+                    renderedCode.style.height = '100%';
+                    renderedCode.style.display = 'block';
+                    renderedCode.style.borderRadius = '1rem';
+                }
+
+                container.dataset.qrRendered = 'true';
+            };
+        });
+    </script>
 </div>
 @endsection

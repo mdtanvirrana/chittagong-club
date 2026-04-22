@@ -88,6 +88,7 @@
             <x-profile-row label="Religion" :value="$member->Religion ?: '—'" />
             <x-profile-row label="Nationality" :value="$member->Nationality ?: '—'" />
             <x-profile-row label="Profession" :value="$member->Profession ?: '—'" />
+            <x-profile-row label="Company Name" :value="data_get($member, 'ComName') ?: '—'" />
         </x-profile-card>
 
         <x-profile-card icon="card_membership" title="Membership Details">

@@ -22,7 +22,7 @@ class MemberProfileViewData
 
         abort_if($memberId === '', 404, 'Member not found.');
 
-        $member = PortalCache::remember("member_profile_view_{$memberId}_v1", now()->addMinutes(10), function () use ($memberId) {
+        $member = PortalCache::remember("member_profile_view_{$memberId}_v2", now()->addMinutes(10), function () use ($memberId) {
             return DB::table('CustomerMst as c')
                 ->leftJoin('List_MemExpType as mt', 'c.MemExpTypeID', '=', 'mt.MemExpTypeID')
                 ->leftJoin('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.Cardid')
@@ -38,6 +38,7 @@ class MemberProfileViewData
                     'c.Address',
                     'c.City',
                     'c.Profession',
+                    'c.ComName',
                     'c.Sex',
                     'c.BirthDt',
                     'c.DOE',
@@ -123,10 +124,19 @@ class MemberProfileViewData
             'emailHref' => static::buildEmailHref($member->Email ?? null),
             'hasProfilePhoto' => PortalCache::hasMemberPhoto($member->PrvCusID),
             'profilePhotoUrl' => PortalCache::memberPhotoUrl($member->PrvCusID),
+            'memberQrValue' => static::formatMemberQrValue($fullName, $member->PrvCusID),
             'children' => static::buildChildren($member),
             'childrenCount' => (int) (static::normalizeZeroValue($member->NoChild ?? null) ?? 0),
             'hasMoreChildren' => static::toBool($member->MoreChild ?? false),
         ];
+    }
+
+    public static function formatMemberQrValue(string $fullName, string|int|null $memberId): string
+    {
+        $fullName = preg_replace('/\s+/', ' ', trim($fullName)) ?: 'Member';
+        $memberId = trim((string) $memberId) ?: 'N/A';
+
+        return "Member Name: {$fullName}; Member ID: {$memberId}";
     }
 
     private static function buildPhoneHref(?string $number, string $scheme): ?string
