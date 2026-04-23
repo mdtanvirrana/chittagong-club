@@ -7,6 +7,7 @@ use App\Http\Requests\Payments\InitiateSslCommerzPaymentRequest;
 use App\Models\PaymentTransaction;
 use App\Models\SuccessfulPaymentTransaction;
 use App\Services\Payments\SSLCommerzService;
+use App\Support\MemberAccess;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
@@ -307,9 +308,9 @@ class SSLCommerzPaymentController extends Controller
     private function getMemberContact(string $memberId): array
     {
         try {
-            $member = DB::table('CustomerMst')
-                ->where('PrvCusID', $memberId)
-                ->select('CusName', 'Email', 'Mobile', 'Phone', 'Address', 'City')
+            $member = MemberAccess::activeMemberQuery('c', 'cc')
+                ->where('c.PrvCusID', $memberId)
+                ->select('c.CusName', 'c.Email', 'c.Mobile', 'c.Phone', 'c.Address', 'c.City')
                 ->first();
         } catch (Throwable $e) {
             Log::warning('Unable to load member contact for payment initiation.', [

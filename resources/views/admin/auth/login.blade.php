@@ -125,19 +125,18 @@
             @csrf
 
             @if (session('session_expired'))
-                <div class="rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                <div class="rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
                     {{ session('session_expired') }}
                 </div>
             @endif
-
             @if ($errors->any())
-                <div class="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                <div class="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-700">
                     {{ $errors->first() }}
                 </div>
             @endif
 
             <div>
-                <label for="login" class="mb-2 block text-sm font-medium text-white/80">Admin user ID or username</label>
+                <label for="login" class="mb-2 block text-sm font-medium text-white/80">Admin user ID</label>
                 <input
                     id="login"
                     name="login"

@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Member\UpdatePasswordRequest;
+use App\Support\MemberAccess;
 use App\Support\MemberProfileViewData;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class MemberProfileController extends Controller
@@ -24,24 +24,15 @@ class MemberProfileController extends Controller
         $currentPassword = (string) $request->input('current_password');
         $newPassword = (string) $request->input('new_password');
 
-        $memberExists = DB::table('T_MEMBER')
-            ->where('tx_org_id', $memberId)
-            ->where('tx_password', $currentPassword)
-            ->exists();
-
-        if (! $memberExists) {
+        if (! MemberAccess::activeMemberExists($memberId) || ! MemberAccess::credentialsMatch($memberId, $currentPassword)) {
             throw ValidationException::withMessages([
                 'current_password' => 'The current password is incorrect.',
             ]);
         }
 
-        $updated = DB::table('T_MEMBER')
-            ->where('tx_org_id', $memberId)
-            ->update([
-                'tx_password' => $newPassword,
-            ]);
+        $updated = MemberAccess::changePassword($memberId, $newPassword, 'changed');
 
-        if ($updated < 1) {
+        if (! $updated) {
             throw ValidationException::withMessages([
                 'new_password' => 'Unable to update the password right now. Please try again.',
             ]);

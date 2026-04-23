@@ -14,8 +14,8 @@ class ResetPasswordWithOtpRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'member_id' => ['nullable', 'string', 'max:50'],
-            'password' => ['required', 'string', 'min:6', 'confirmed'],
+            'member_id' => ['nullable', 'string', 'max:40'],
+            'password' => ['required', 'string', 'min:6', 'max:40', 'confirmed'],
         ];
     }
 
@@ -24,6 +24,7 @@ class ResetPasswordWithOtpRequest extends FormRequest
         return [
             'password.required' => 'Enter a new password.',
             'password.min' => 'The new password must be at least 6 characters.',
+            'password.max' => 'The new password may not be greater than 40 characters.',
             'password.confirmed' => 'Confirm the new password.',
         ];
     }

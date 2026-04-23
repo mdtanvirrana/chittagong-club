@@ -3,7 +3,6 @@
 namespace App\Support;
 
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class MemberProfileViewData
 {
@@ -23,9 +22,8 @@ class MemberProfileViewData
         abort_if($memberId === '', 404, 'Member not found.');
 
         $member = PortalCache::remember("member_profile_view_{$memberId}_v2", now()->addMinutes(10), function () use ($memberId) {
-            return DB::table('CustomerMst as c')
+            return MemberAccess::activeMemberQuery()
                 ->leftJoin('List_MemExpType as mt', 'c.MemExpTypeID', '=', 'mt.MemExpTypeID')
-                ->leftJoin('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.Cardid')
                 ->where('c.PrvCusID', $memberId)
                 ->select([
                     'c.PrvCusID',

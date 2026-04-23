@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\Http;
 
 test('member can reset password with sms otp flow', function () {
     $lookup = \Mockery::mock();
-    $update = \Mockery::mock();
+    $passwordHistory = \Mockery::mock();
+    $credentialSave = \Mockery::mock();
     $capturedMessage = null;
 
     Http::fake(function ($request) use (&$capturedMessage) {
@@ -25,12 +26,20 @@ test('member can reset password with sms otp flow', function () {
 
     DB::shouldReceive('table')
         ->once()
-        ->with('T_MEMBER as t')
+        ->with('CustomerMst as c')
         ->andReturn($lookup);
 
     $lookup->shouldReceive('join')
         ->once()
-        ->with('CustomerMst as c', 'c.PrvCusID', '=', 't.tx_org_id')
+        ->with('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.CardID')
+        ->andReturnSelf();
+    $lookup->shouldReceive('where')
+        ->once()
+        ->with('cc.GM', 'M')
+        ->andReturnSelf();
+    $lookup->shouldReceive('where')
+        ->once()
+        ->with('c.MemExpTypeID', 100)
         ->andReturnSelf();
     $lookup->shouldReceive('select')
         ->once()
@@ -46,7 +55,6 @@ test('member can reset password with sms otp flow', function () {
             (object) [
                 'member_id' => 'A-0005',
                 'member_name' => 'Test Member',
-                'contact_name' => 'Test Member',
             ],
         ]));
 
@@ -75,17 +83,35 @@ test('member can reset password with sms otp flow', function () {
 
     DB::shouldReceive('table')
         ->once()
-        ->with('T_MEMBER')
-        ->andReturn($update);
+        ->with('Users_App_Pass')
+        ->andReturn($passwordHistory);
 
-    $update->shouldReceive('where')
+    $passwordHistory->shouldReceive('insert')
         ->once()
-        ->with('tx_org_id', 'A-0005')
-        ->andReturnSelf();
-    $update->shouldReceive('update')
+        ->with(\Mockery::on(function (array $values): bool {
+            return $values['PrvcusID'] === 'A-0005'
+                && $values['NewPass'] === md5('new-pass-123')
+                && $values['ConPass'] === md5('new-pass-123')
+                && $values['Note'] === 'forget'
+                && isset($values['EDate'], $values['ETime']);
+        }))
+        ->andReturnTrue();
+
+    DB::shouldReceive('table')
         ->once()
-        ->with(['tx_password' => 'new-pass-123'])
-        ->andReturn(1);
+        ->with('Users_App')
+        ->andReturn($credentialSave);
+
+    $credentialSave->shouldReceive('updateOrInsert')
+        ->once()
+        ->with(
+            ['PrvcusID' => 'A-0005'],
+            \Mockery::on(function (array $values): bool {
+                return $values['Password'] === md5('new-pass-123')
+                    && isset($values['LastUpdateDate'], $values['LastUpdateTime']);
+            })
+        )
+        ->andReturnTrue();
 
     $resetResponse = $this
         ->withSession(app('session.store')->all())
@@ -113,12 +139,20 @@ test('member sees validation error for an invalid otp', function () {
 
     DB::shouldReceive('table')
         ->once()
-        ->with('T_MEMBER as t')
+        ->with('CustomerMst as c')
         ->andReturn($lookup);
 
     $lookup->shouldReceive('join')
         ->once()
-        ->with('CustomerMst as c', 'c.PrvCusID', '=', 't.tx_org_id')
+        ->with('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.CardID')
+        ->andReturnSelf();
+    $lookup->shouldReceive('where')
+        ->once()
+        ->with('cc.GM', 'M')
+        ->andReturnSelf();
+    $lookup->shouldReceive('where')
+        ->once()
+        ->with('c.MemExpTypeID', 100)
         ->andReturnSelf();
     $lookup->shouldReceive('select')
         ->once()
@@ -134,7 +168,6 @@ test('member sees validation error for an invalid otp', function () {
             (object) [
                 'member_id' => 'A-0005',
                 'member_name' => 'Test Member',
-                'contact_name' => 'Test Member',
             ],
         ]));
 

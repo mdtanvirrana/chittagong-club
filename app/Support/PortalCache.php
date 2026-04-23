@@ -5,6 +5,7 @@ namespace App\Support;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class PortalCache
 {
@@ -51,61 +52,38 @@ class PortalCache
 
     public static function memberPhotoIndex(): array
     {
-        return static::remember('public_image_index_v1', now()->addMinutes(30), function (): array {
-            $imageDir = public_path('images');
+        return static::photoIndex(
+            'public_image_index_member_directory_v2',
+            [PortalImageDirectory::MEMBER_DIRECTORY, null]
+        );
+    }
 
-            if (! is_dir($imageDir)) {
-                return [];
-            }
-
-            $index = [];
-            collect(File::files($imageDir))
-                ->filter(
-                    fn ($file) => in_array(
-                        strtolower($file->getExtension()),
-                        self::PUBLIC_IMAGE_EXTENSIONS,
-                        true
-                    )
-                )
-                ->sortByDesc(fn ($file) => $file->getMTime())
-                ->each(function ($file) use (&$index): void {
-                    $basename = pathinfo($file->getFilename(), PATHINFO_FILENAME);
-
-                    if ($basename !== '' && ! isset($index[$basename])) {
-                        $index[$basename] = $file->getFilename();
-                    }
-                });
-
-            return $index;
-        });
+    public static function employeePhotoIndex(): array
+    {
+        return static::photoIndex(
+            'public_image_index_employee_directory_v2',
+            [PortalImageDirectory::EMPLOYEE_DIRECTORY, null]
+        );
     }
 
     public static function hasMemberPhoto(string|int|null $memberId): bool
     {
-        if ($memberId === null || $memberId === '') {
-            return false;
-        }
-
-        return isset(static::memberPhotoIndex()[(string) $memberId]);
+        return static::photoExists(static::memberPhotoIndex(), $memberId);
     }
 
     public static function memberPhotoUrl(string|int|null $memberId): ?string
     {
-        return static::publicImageUrl($memberId);
+        return static::photoUrlFromIndex(static::memberPhotoIndex(), $memberId);
     }
 
     public static function hasEmployeePhoto(string|int|null $employeeId): bool
     {
-        if ($employeeId === null || $employeeId === '') {
-            return false;
-        }
-
-        return isset(static::memberPhotoIndex()[(string) $employeeId]);
+        return static::photoExists(static::employeePhotoIndex(), $employeeId);
     }
 
     public static function employeePhotoUrl(string|int|null $employeeId): ?string
     {
-        return static::publicImageUrl($employeeId);
+        return static::photoUrlFromIndex(static::employeePhotoIndex(), $employeeId);
     }
 
     public static function clearPhotoRelatedCaches(): void
@@ -116,6 +94,8 @@ class PortalCache
 
         foreach ([
             'public_image_index_v1',
+            'public_image_index_member_directory_v2',
+            'public_image_index_employee_directory_v2',
             'member_directory_v4',
             'employee_directory_v2',
             'former_chairman_v2',
@@ -149,19 +129,76 @@ class PortalCache
         }
     }
 
-    private static function publicImageUrl(string|int|null $identifier): ?string
+    private static function photoIndex(string $cacheKey, array $folders): array
     {
-        if ($identifier === null || $identifier === '') {
+        return static::remember($cacheKey, now()->addMinutes(30), function () use ($folders): array {
+            $index = [];
+
+            foreach ($folders as $folder) {
+                $directory = $folder === null
+                    ? public_path(PortalImageDirectory::BASE_DIRECTORY)
+                    : PortalImageDirectory::absoluteDirectory($folder);
+
+                if (! is_dir($directory)) {
+                    continue;
+                }
+
+                collect(File::files($directory))
+                    ->filter(
+                        fn ($file) => in_array(
+                            strtolower($file->getExtension()),
+                            self::PUBLIC_IMAGE_EXTENSIONS,
+                            true
+                        )
+                    )
+                    ->sortByDesc(fn ($file) => $file->getMTime())
+                    ->each(function ($file) use (&$index, $folder): void {
+                        $basename = static::normalizeImageIdentifier(pathinfo($file->getFilename(), PATHINFO_FILENAME));
+
+                        if ($basename !== '' && ! isset($index[$basename])) {
+                            $index[$basename] = [
+                                'filename' => $file->getFilename(),
+                                'folder' => $folder,
+                            ];
+                        }
+                    });
+            }
+
+            return $index;
+        });
+    }
+
+    private static function photoExists(array $index, string|int|null $identifier): bool
+    {
+        $identifier = static::normalizeImageIdentifier($identifier);
+
+        if ($identifier === '') {
+            return false;
+        }
+
+        return isset($index[$identifier]);
+    }
+
+    private static function photoUrlFromIndex(array $index, string|int|null $identifier): ?string
+    {
+        $identifier = static::normalizeImageIdentifier($identifier);
+
+        if ($identifier === '') {
             return null;
         }
 
-        $filename = static::memberPhotoIndex()[(string) $identifier] ?? null;
+        $entry = $index[$identifier] ?? null;
 
-        if ($filename === null) {
+        if (! is_array($entry) || empty($entry['filename'])) {
             return null;
         }
 
-        $path = public_path('images/' . $filename);
+        $folder = $entry['folder'] ?? null;
+        $filename = $entry['filename'];
+        $relativePath = $folder === null
+            ? PortalImageDirectory::BASE_DIRECTORY.'/'.$filename
+            : PortalImageDirectory::relativePath($folder, $filename);
+        $path = public_path($relativePath);
 
         if (! is_file($path)) {
             return null;
@@ -171,6 +208,11 @@ class PortalCache
         $ctime = @filectime($path) ?: 0;
         $version = max($mtime, $ctime);
 
-        return asset('images/' . $filename) . '?v=' . $version;
+        return asset($relativePath) . '?v=' . $version;
+    }
+
+    private static function normalizeImageIdentifier(string|int|null $identifier): string
+    {
+        return Str::lower(trim((string) $identifier));
     }
 }

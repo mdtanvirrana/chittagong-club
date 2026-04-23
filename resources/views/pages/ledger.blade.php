@@ -754,13 +754,11 @@
 
                 usageBadgeClass() {
                     if ((this.state.usagePercent ?? 0) >= 90) return 'bg-red-500/20 text-red-400';
-                    if ((this.state.usagePercent ?? 0) >= 70) return 'bg-amber-500/20 text-amber-400';
-                    return 'bg-green-500/20 text-green-400';
+                    return 'bg-primary/15 text-primary';
                 },
 
                 usageBarClass() {
                     if ((this.state.usagePercent ?? 0) >= 90) return 'bg-red-400';
-                    if ((this.state.usagePercent ?? 0) >= 70) return 'bg-amber-400';
                     return 'bg-primary';
                 },
 

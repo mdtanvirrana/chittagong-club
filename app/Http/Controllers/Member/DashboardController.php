@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
 use App\Models\CircularItem;
+use App\Support\MemberAccess;
 use App\Support\PortalCache;
 use App\Support\PortalContent;
 use Illuminate\Support\Facades\Log;
@@ -26,20 +27,19 @@ class DashboardController extends Controller
             now()->addMinutes(10),
             now()->addDay(),
             function () use ($memberId) {
-            return DB::table('CustomerMst as c')
-                ->leftJoin('List_MemExpType as mt', 'c.MemExpTypeID', '=', 'mt.MemExpTypeID')
-                ->leftJoin('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.Cardid')
-                ->where('c.PrvCusID', $memberId)
-                ->select([
-                    'c.PrvCusID',
-                    'c.Title',
-                    'c.CusName',
-                    'c.CreditBal',
-                    'c.CreditAmt',
-                    'mt.MemExpTypeName',
-                    'cc.Remarks as MemberCategory',
-                ])
-                ->first();
+                return MemberAccess::activeMemberQuery()
+                    ->leftJoin('List_MemExpType as mt', 'c.MemExpTypeID', '=', 'mt.MemExpTypeID')
+                    ->where('c.PrvCusID', $memberId)
+                    ->select([
+                        'c.PrvCusID',
+                        'c.Title',
+                        'c.CusName',
+                        'c.CreditBal',
+                        'c.CreditAmt',
+                        'mt.MemExpTypeName',
+                        'cc.Remarks as MemberCategory',
+                    ])
+                    ->first();
             },
             null
         );
@@ -132,9 +132,10 @@ class DashboardController extends Controller
                 "dashboard_member_credit_{$memberId}_stale_v1",
                 now()->addMinutes(10),
                 now()->addDay(),
-                fn () => DB::table('CustomerMst')
-                    ->where('PrvCusID', $memberId)
-                    ->select('CreditAmt', 'CreditBal')->first(),
+                fn () => MemberAccess::activeMemberQuery('c', 'cc')
+                    ->where('c.PrvCusID', $memberId)
+                    ->select('c.CreditAmt', 'c.CreditBal')
+                    ->first(),
                 (object) ['CreditAmt' => 0, 'CreditBal' => 0]
             );
         } catch (\Throwable $e) {

@@ -3,18 +3,15 @@
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
+use App\Support\MemberAccess;
 use App\Support\PortalCache;
-use Illuminate\Support\Facades\DB;
 
 class MemberDirectoryController extends Controller
 {
     public function index()
     {
         $members = PortalCache::remember('member_directory_v4', now()->addMinutes(15), function (): array {
-            return DB::table('CustomerMst as c')
-                ->leftJoin('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.Cardid')
-                ->where('c.MemExpTypeID', 100)
-
+            return MemberAccess::activeMemberQuery()
                 ->orderBy('c.Cardid')
                 ->orderBy('c.slno')
                 ->select('c.PrvCusID', 'c.CusName', 'c.Email', 'c.Mobile', 'cc.Remarks as MemberCategory')

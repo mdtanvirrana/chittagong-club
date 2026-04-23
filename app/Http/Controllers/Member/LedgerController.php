@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Member;
 use App\Http\Controllers\Controller;
 use App\Models\PaymentTransaction;
 use App\Models\SuccessfulPaymentTransaction;
+use App\Support\MemberAccess;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,9 +28,9 @@ class LedgerController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $customerInfo = DB::table('CustomerMst')
-            ->where('PrvCusID', $memberId)
-            ->select('CreditAmt')
+        $customerInfo = MemberAccess::activeMemberQuery('c', 'cc')
+            ->where('c.PrvCusID', $memberId)
+            ->select('c.CreditAmt')
             ->first();
 
         $ledgerDue = DB::table('Customer_ledger')

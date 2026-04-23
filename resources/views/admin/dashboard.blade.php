@@ -26,6 +26,9 @@
         <div class="rounded-lg border border-admin-line/10 bg-white/[0.03] p-4 shadow-panel">
             <p class="text-[10px] uppercase tracking-[0.2em] text-white/35">Quick Actions</p>
             <div class="mt-3 flex flex-wrap gap-2">
+                <a href="{{ route('admin.contacts.create') }}" class="inline-flex h-8 items-center border border-[#30384a] px-3 text-xs text-white/72 transition hover:border-[#3b4557] hover:bg-white/[0.04]">
+                    New Contact
+                </a>
                 <a href="{{ route('admin.notices.create') }}" class="inline-flex h-8 items-center border border-[#30384a] px-3 text-xs text-white/72 transition hover:border-[#3b4557] hover:bg-white/[0.04]">
                     New Notice
                 </a>

@@ -8,10 +8,9 @@ use App\Http\Requests\Auth\SendPasswordResetCodeRequest;
 use App\Http\Requests\Auth\VerifyPasswordResetCodeRequest;
 use App\Services\Auth\RobiSmsService;
 use App\Support\BangladeshMobile;
+use App\Support\MemberAccess;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -39,7 +38,7 @@ class ForgotPasswordController extends Controller
             ]);
         }
 
-        $accounts = $this->findAccountsByPhone($phone['candidates']);
+        $accounts = MemberAccess::findAccountsByPhone($phone['candidates']);
 
         if ($accounts->isEmpty()) {
             throw ValidationException::withMessages([
@@ -240,13 +239,13 @@ class ForgotPasswordController extends Controller
             ]);
         }
 
-        $updated = DB::table('T_MEMBER')
-            ->where('tx_org_id', $memberId)
-            ->update([
-                'tx_password' => (string) $request->input('password'),
-            ]);
+        $updated = MemberAccess::changePassword(
+            $memberId,
+            (string) $request->input('password'),
+            'forget'
+        );
 
-        if ($updated < 1) {
+        if (! $updated) {
             throw ValidationException::withMessages([
                 'password' => 'Unable to update the password right now. Please try again.',
             ]);
@@ -258,43 +257,6 @@ class ForgotPasswordController extends Controller
         return redirect()
             ->route('login')
             ->with('password_reset_status', 'Password updated successfully. Sign in with your new password.');
-    }
-
-    private function findAccountsByPhone(array $candidateDigits): Collection
-    {
-        $mobileExpression = DB::raw($this->digitsOnlyExpression('c.Mobile'));
-        $phoneExpression = DB::raw($this->digitsOnlyExpression('c.Phone'));
-
-        return DB::table('T_MEMBER as t')
-            ->join('CustomerMst as c', 'c.PrvCusID', '=', 't.tx_org_id')
-            ->select([
-                't.tx_org_id as member_id',
-                't.tx_name as member_name',
-                'c.CusName as contact_name',
-            ])
-            ->where(function ($query) use ($candidateDigits, $mobileExpression, $phoneExpression): void {
-                $query->whereIn($mobileExpression, $candidateDigits)
-                    ->orWhereIn($phoneExpression, $candidateDigits);
-            })
-            ->get()
-            ->map(function (object $member): array {
-                $memberId = trim((string) ($member->member_id ?? ''));
-                $name = trim((string) ($member->member_name ?? $member->contact_name ?? 'Member'));
-
-                return [
-                    'member_id' => $memberId,
-                    'member_name' => $name !== '' ? $name : 'Member',
-                    'label' => $memberId . ' • ' . ($name !== '' ? $name : 'Member'),
-                ];
-            })
-            ->filter(fn (array $account): bool => $account['member_id'] !== '')
-            ->unique('member_id')
-            ->values();
-    }
-
-    private function digitsOnlyExpression(string $column): string
-    {
-        return "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ISNULL({$column}, ''), ' ', ''), '+', ''), '-', ''), '(', ''), ')', ''), '.', ''), '/', ''), CHAR(9), '')";
     }
 
     private function guestView(string $view, array $data = [])

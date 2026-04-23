@@ -6,9 +6,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class AdminUser extends Authenticatable
 {
-    protected $table = 'Users';
+    public const LOGIN_ID = 'admin';
 
-    protected $primaryKey = 'userid';
+    protected $table = 'Users_App';
+
+    protected $primaryKey = 'PrvcusID';
 
     public $incrementing = false;
 
@@ -27,6 +29,21 @@ class AdminUser extends Authenticatable
     public function getAuthPassword(): string
     {
         return (string) $this->Password;
+    }
+
+    public function getUseridAttribute(): string
+    {
+        return trim((string) ($this->attributes['PrvcusID'] ?? $this->attributes['userid'] ?? ''));
+    }
+
+    public function setUseridAttribute(string $value): void
+    {
+        $this->attributes['PrvcusID'] = trim($value);
+    }
+
+    public function getUsernameAttribute(): string
+    {
+        return trim((string) ($this->attributes['username'] ?? $this->userid));
     }
 
     public function getDisplayNameAttribute(): string

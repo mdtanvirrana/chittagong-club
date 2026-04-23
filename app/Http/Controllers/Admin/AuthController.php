@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\LoginRequest;
 use App\Models\AdminUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
@@ -24,19 +25,27 @@ class AuthController extends Controller
         $login = trim((string) $request->input('login'));
         $password = (string) $request->input('password');
 
-        $admin = AdminUser::query()
-            ->where(function ($query) use ($login) {
-                $query->where('userid', $login)
-                    ->orWhere('username', $login);
-            })
-            ->where('Password', $password)
-            ->first();
-
-        if (! $admin) {
+        if (strtolower($login) !== AdminUser::LOGIN_ID) {
             return back()
                 ->withInput(['login' => $login])
-                ->withErrors(['login' => 'Invalid admin user ID/username or password.']);
+                ->withErrors(['login' => 'Invalid credentials']);
         }
+
+        $adminRecord = DB::table('Users_App')
+            ->where('PrvcusID', AdminUser::LOGIN_ID)
+            ->first();
+
+        $storedPassword = strtolower(trim((string) data_get($adminRecord, 'Password')));
+        $matches = $storedPassword !== '' && hash_equals(md5($password), $storedPassword);
+
+        if (! $adminRecord || ! $matches) {
+            return back()
+                ->withInput(['login' => $login])
+                ->withErrors(['login' => 'Invalid credentials']);
+        }
+
+        $admin = new AdminUser((array) $adminRecord);
+        $admin->exists = true;
 
         Auth::guard('admin')->login($admin);
         $request->session()->regenerate();

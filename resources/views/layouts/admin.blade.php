@@ -199,8 +199,9 @@
     $navItems = [
         ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'match' => 'admin.dashboard', 'icon' => 'space_dashboard'],
         ['label' => 'Notices', 'route' => 'admin.notices.index', 'match' => 'admin.notices.*', 'icon' => 'campaign'],
+        ['label' => 'Contacts', 'route' => 'admin.contacts.index', 'match' => 'admin.contacts.*', 'icon' => 'contacts'],
         ['label' => 'Circulars', 'route' => 'admin.circulars.index', 'match' => 'admin.circulars.*', 'icon' => 'article'],
-        ['label' => 'Upload Pictures', 'route' => 'admin.pictures.index', 'match' => 'admin.pictures.*', 'icon' => 'upload_file'],
+        ['label' => 'Upload Pictures', 'route' => 'admin.pictures.create', 'match' => 'admin.pictures.*', 'icon' => 'upload_file'],
     ];
 @endphp
 

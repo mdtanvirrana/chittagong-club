@@ -12,7 +12,9 @@ class DashboardController extends Controller
     public function index()
     {
         $stats = [
-            'admins' => AdminUser::query()->count(),
+            'admins' => AdminUser::query()
+                ->where('PrvcusID', AdminUser::LOGIN_ID)
+                ->count(),
             'notices_total' => NoticeMessage::query()->count(),
             'notices_published' => NoticeMessage::query()->visible()->count(),
             'circulars_total' => CircularItem::query()->count(),

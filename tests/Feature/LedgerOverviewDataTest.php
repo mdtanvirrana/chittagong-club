@@ -14,7 +14,15 @@ beforeEach(function () {
     Schema::create('CustomerMst', function (Blueprint $table) {
         $table->id();
         $table->string('PrvCusID');
+        $table->unsignedInteger('Cardid')->nullable();
+        $table->unsignedInteger('MemExpTypeID')->nullable();
         $table->decimal('CreditAmt', 12, 2)->nullable();
+    });
+
+    Schema::create('CusCardCatagory', function (Blueprint $table) {
+        $table->id();
+        $table->unsignedInteger('CardID');
+        $table->string('GM')->nullable();
     });
 
     Schema::create('List_Department', function (Blueprint $table) {
@@ -43,7 +51,14 @@ afterEach(function () {
 test('ledger overview shows credit-only departments without affecting debit total', function () {
     DB::table('CustomerMst')->insert([
         'PrvCusID' => 'M-100',
+        'Cardid' => 1,
+        'MemExpTypeID' => 100,
         'CreditAmt' => 50000,
+    ]);
+
+    DB::table('CusCardCatagory')->insert([
+        'CardID' => 1,
+        'GM' => 'M',
     ]);
 
     DB::table('List_Department')->insert([

@@ -3,10 +3,26 @@
 use App\Support\MemberSession;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 test('logging out clears member-specific cached data', function () {
     $memberId = 'CCL-LOGOUT-CACHE';
     $store = \Mockery::mock(Repository::class);
+    $log = \Mockery::mock();
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('UsersLog')
+        ->andReturn($log);
+
+    $log->shouldReceive('insert')
+        ->once()
+        ->with(\Mockery::on(function (array $values) use ($memberId): bool {
+            return $values['PrvcusID'] === $memberId
+                && $values['Status'] === 'Logout'
+                && isset($values['EDate'], $values['ETime'], $values['eIP']);
+        }))
+        ->andReturnTrue();
 
     Cache::shouldReceive('store')
         ->once()

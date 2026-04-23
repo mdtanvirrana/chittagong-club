@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\ContactController as AdminContactController;
 use App\Http\Controllers\Admin\CircularController as AdminCircularController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\NoticeController as AdminNoticeController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Admin\PictureUploadController as AdminPictureUploadCont
 use App\Http\Controllers\AffiliatedClubsController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CircularController;
 use App\Http\Controllers\ClubFacilitiesController;
 use App\Http\Controllers\CommitteeController;
@@ -29,6 +31,8 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 Route::middleware('guest.member')->group(function () {
     Route::get('/', [AuthController::class, 'login'])->name('login');
     Route::post('/login', [AuthController::class, 'authenticate'])->name('login.post');
+    Route::get('/password/setup', [AuthController::class, 'showInitialPasswordSetup'])->name('password.initial.create');
+    Route::post('/password/setup', [AuthController::class, 'storeInitialPassword'])->name('password.initial.store');
     Route::get('/forgot-password', [ForgotPasswordController::class, 'create'])->name('password.forgot');
     Route::post('/forgot-password', [ForgotPasswordController::class, 'sendCode'])->name('password.forgot.send');
     Route::get('/forgot-password/otp', [ForgotPasswordController::class, 'showVerify'])->name('password.forgot.verify');
@@ -48,6 +52,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', fn () => redirect()->route('admin.dashboard'));
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
         Route::post('/logout', [AdminAuthController::class, 'destroy'])->name('logout');
+        Route::get('/pictures/upload', [AdminPictureUploadController::class, 'create'])->name('pictures.create');
         Route::get('/pictures', [AdminPictureUploadController::class, 'index'])->name('pictures.index');
         Route::post('/pictures', [AdminPictureUploadController::class, 'store'])->name('pictures.store');
         Route::delete('/pictures', [AdminPictureUploadController::class, 'destroy'])->name('pictures.destroy');
@@ -59,6 +64,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/notices/{notice}', [AdminNoticeController::class, 'update'])->name('notices.update');
         Route::patch('/notices/{notice}/online', [AdminNoticeController::class, 'toggleOnline'])->name('notices.online');
         Route::patch('/notices/{notice}/active', [AdminNoticeController::class, 'toggleActive'])->name('notices.active');
+
+        Route::get('/contacts', [AdminContactController::class, 'index'])->name('contacts.index');
+        Route::get('/contacts/create', [AdminContactController::class, 'create'])->name('contacts.create');
+        Route::post('/contacts', [AdminContactController::class, 'store'])->name('contacts.store');
+        Route::get('/contacts/{contact}/edit', [AdminContactController::class, 'edit'])->name('contacts.edit');
+        Route::put('/contacts/{contact}', [AdminContactController::class, 'update'])->name('contacts.update');
+        Route::delete('/contacts/{contact}', [AdminContactController::class, 'destroy'])->name('contacts.destroy');
 
         Route::get('/circulars', [AdminCircularController::class, 'index'])->name('circulars.index');
         Route::get('/circulars/create', [AdminCircularController::class, 'create'])->name('circulars.create');
@@ -90,7 +102,7 @@ Route::middleware('auth.member')->group(function () {
     Route::get('/facilities', [ClubFacilitiesController::class, 'index'])->name('facilities');
     Route::get('/shop', fn () => view('pages.club-shop'))->name('shop');
     Route::get('/executive', [CommitteeController::class, 'index'])->name('executive');
-    Route::get('/contact', fn () => view('pages.contact'))->name('contact');
+    Route::get('/contact', [ContactController::class, 'index'])->name('contact');
     Route::get('/affiliated-clubs', [AffiliatedClubsController::class, 'index'])->name(
         'affiliated-clubs'
     );
