@@ -30,14 +30,14 @@
             @if (session('password_reset_status'))
             <div class="flex items-center gap-3 bg-emerald-500/15 border border-emerald-400/30 rounded-xl px-4 py-3">
                 <span class="material-symbols-outlined text-emerald-300 shrink-0">check_circle</span>
-                <p class="text-emerald-100 text-sm">{{ session('password_reset_status') }}</p>
+                <p class="text-emerald-700 text-sm">{{ session('password_reset_status') }}</p>
             </div>
             @endif
 
             @if (session('session_expired'))
             <div class="flex items-center gap-3 bg-amber-500/15 border border-amber-400/30 rounded-xl px-4 py-3">
                 <span class="material-symbols-outlined text-amber-300 shrink-0">schedule</span>
-                <p class="text-amber-100 text-sm">{{ session('session_expired') }}</p>
+                <p class="text-amber-700 text-sm">{{ session('session_expired') }}</p>
             </div>
             @endif
 
@@ -45,7 +45,7 @@
             @if ($errors->any())
             <div class="flex items-center gap-3 bg-red-500/15 border border-red-500/30 rounded-xl px-4 py-3">
                 <span class="material-symbols-outlined text-red-400 shrink-0">error</span>
-                <p class="text-red-300 text-sm">{{ $errors->first() }}</p>
+                <p class="text-red-700 text-sm">{{ $errors->first() }}</p>
             </div>
             @endif
 
