@@ -7,18 +7,45 @@ use Illuminate\Support\Facades\Http;
 
 test('member can reset password with sms otp flow', function () {
     $lookup = \Mockery::mock();
+    $profileLookup = \Mockery::mock();
+    $otpInsert = \Mockery::mock();
+    $otpSendUpdate = \Mockery::mock();
+    $otpLookup = \Mockery::mock();
+    $otpVerifyUpdate = \Mockery::mock();
+    $otpUseUpdate = \Mockery::mock();
     $passwordHistory = \Mockery::mock();
     $credentialSave = \Mockery::mock();
     $capturedMessage = null;
+    $successXml = <<<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<ArrayOfServiceClass>
+    <ServiceClass>
+        <MessageId>12345</MessageId>
+        <Status>0</Status>
+        <StatusText>success</StatusText>
+        <ErrorCode>0</ErrorCode>
+        <ErrorText></ErrorText>
+        <SMSCount>1</SMSCount>
+        <CurrentCredit>42.0</CurrentCredit>
+    </ServiceClass>
+</ArrayOfServiceClass>
+XML;
 
-    Http::fake(function ($request) use (&$capturedMessage) {
-        $capturedMessage = data_get($request->data(), 'message');
+    Http::fake(function ($request) use (&$capturedMessage, $successXml) {
+        $capturedMessage = $request->data()['Message'] ?? null;
+        expect($request->data()['Username'] ?? null)->toBe('sms-user');
+        expect($request->data()['Password'] ?? null)->toBe('sms-pass');
+        expect($request->data()['From'] ?? null)->toBe('8801847170339');
+        expect($request->data()['To'] ?? null)->toBe('01711721053');
+        expect(isset($request->data()['submit']))->toBeFalse();
 
-        return Http::response(['status' => 'queued'], 200);
+        return Http::response($successXml, 200, ['Content-Type' => 'application/xml']);
     });
 
     Config::set('services.robi_sms.url', 'https://robi.example.test/sms');
-    Config::set('services.robi_sms.token', 'Bearer test-token');
+    Config::set('services.robi_sms.username', 'sms-user');
+    Config::set('services.robi_sms.password', 'sms-pass');
+    Config::set('services.robi_sms.from', '8801847170339');
 
     DB::shouldReceive('raw')
         ->twice()
@@ -58,6 +85,53 @@ test('member can reset password with sms otp flow', function () {
             ],
         ]));
 
+    DB::shouldReceive('table')
+        ->once()
+        ->with('CPROFILE')
+        ->andReturn($profileLookup);
+
+    $profileLookup->shouldReceive('first')
+        ->once()
+        ->andReturn((object) [
+            'BranchName' => 'CCLApps',
+            'CompanyName' => 'Chittagong Club Ltd.',
+        ]);
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('SMSSend_OTP')
+        ->andReturn($otpInsert);
+
+    $otpInsert->shouldReceive('insertGetId')
+        ->once()
+        ->with(\Mockery::on(function (array $values): bool {
+            return $values['PrvcusID'] === 'A-0005'
+                && $values['Mobile'] === '8801711721053'
+                && is_int($values['OTP'])
+                && preg_match('/^CCLApps login OTP is \d{6}, Valid for 5 minutes\. Chittagong Club Ltd\.$/', $values['SMSText']) === 1
+                && $values['Status'] === 'PENDING'
+                && $values['Note'] === 'forget'
+                && isset($values['SDate'], $values['STime'], $values['EDate'], $values['ETime']);
+        }))
+        ->andReturn(501);
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('SMSSend_OTP')
+        ->andReturn($otpSendUpdate);
+
+    $otpSendUpdate->shouldReceive('where')
+        ->once()
+        ->with('id_otp', 501)
+        ->andReturnSelf();
+    $otpSendUpdate->shouldReceive('update')
+        ->once()
+        ->with(\Mockery::on(function (array $values): bool {
+            return $values['Status'] === 'SENT'
+                && isset($values['EDate'], $values['ETime']);
+        }))
+        ->andReturn(1);
+
     $sendResponse = $this->post(route('password.forgot.send'), [
         'phone' => '01711721053',
     ]);
@@ -70,6 +144,43 @@ test('member can reset password with sms otp flow', function () {
     $sendResponse
         ->assertRedirect(route('password.forgot.verify'))
         ->assertSessionHas('member_password_reset.phone.e164', '+8801711721053');
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('SMSSend_OTP')
+        ->andReturn($otpLookup);
+
+    $otpLookup->shouldReceive('where')
+        ->once()
+        ->with('id_otp', 501)
+        ->andReturnSelf();
+    $otpLookup->shouldReceive('first')
+        ->once()
+        ->andReturn((object) [
+            'id_otp' => 501,
+            'PrvcusID' => 'A-0005',
+            'Mobile' => '8801711721053',
+            'OTP' => (int) $otp,
+            'Status' => 'SENT',
+            'Note' => 'forget',
+        ]);
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('SMSSend_OTP')
+        ->andReturn($otpVerifyUpdate);
+
+    $otpVerifyUpdate->shouldReceive('where')
+        ->once()
+        ->with('id_otp', 501)
+        ->andReturnSelf();
+    $otpVerifyUpdate->shouldReceive('update')
+        ->once()
+        ->with(\Mockery::on(function (array $values): bool {
+            return $values['Status'] === 'VERIFIED'
+                && isset($values['EDate'], $values['ETime']);
+        }))
+        ->andReturn(1);
 
     $verifyResponse = $this
         ->withSession(app('session.store')->all())
@@ -113,6 +224,23 @@ test('member can reset password with sms otp flow', function () {
         )
         ->andReturnTrue();
 
+    DB::shouldReceive('table')
+        ->once()
+        ->with('SMSSend_OTP')
+        ->andReturn($otpUseUpdate);
+
+    $otpUseUpdate->shouldReceive('where')
+        ->once()
+        ->with('id_otp', 501)
+        ->andReturnSelf();
+    $otpUseUpdate->shouldReceive('update')
+        ->once()
+        ->with(\Mockery::on(function (array $values): bool {
+            return $values['Status'] === 'USED'
+                && isset($values['EDate'], $values['ETime']);
+        }))
+        ->andReturn(1);
+
     $resetResponse = $this
         ->withSession(app('session.store')->all())
         ->post(route('password.forgot.update'), [
@@ -127,11 +255,39 @@ test('member can reset password with sms otp flow', function () {
 
 test('member sees validation error for an invalid otp', function () {
     $lookup = \Mockery::mock();
+    $profileLookup = \Mockery::mock();
+    $otpInsert = \Mockery::mock();
+    $otpSendUpdate = \Mockery::mock();
+    $otpLookup = \Mockery::mock();
+    $successXml = <<<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<ArrayOfServiceClass>
+    <ServiceClass>
+        <MessageId>12345</MessageId>
+        <Status>0</Status>
+        <StatusText>success</StatusText>
+        <ErrorCode>0</ErrorCode>
+        <ErrorText></ErrorText>
+        <SMSCount>1</SMSCount>
+        <CurrentCredit>42.0</CurrentCredit>
+    </ServiceClass>
+</ArrayOfServiceClass>
+XML;
 
-    Http::fake(fn () => Http::response(['status' => 'queued'], 200));
+    Http::fake(function ($request) use ($successXml) {
+        expect($request->data()['Username'] ?? null)->toBe('sms-user');
+        expect($request->data()['Password'] ?? null)->toBe('sms-pass');
+        expect($request->data()['From'] ?? null)->toBe('8801847170339');
+        expect($request->data()['To'] ?? null)->toBe('01711721053');
+        expect(isset($request->data()['submit']))->toBeFalse();
+
+        return Http::response($successXml, 200, ['Content-Type' => 'application/xml']);
+    });
 
     Config::set('services.robi_sms.url', 'https://robi.example.test/sms');
-    Config::set('services.robi_sms.token', 'Bearer test-token');
+    Config::set('services.robi_sms.username', 'sms-user');
+    Config::set('services.robi_sms.password', 'sms-pass');
+    Config::set('services.robi_sms.from', '8801847170339');
 
     DB::shouldReceive('raw')
         ->twice()
@@ -171,9 +327,68 @@ test('member sees validation error for an invalid otp', function () {
             ],
         ]));
 
+    DB::shouldReceive('table')
+        ->once()
+        ->with('CPROFILE')
+        ->andReturn($profileLookup);
+
+    $profileLookup->shouldReceive('first')
+        ->once()
+        ->andReturn((object) [
+            'BranchName' => 'CCLApps',
+            'CompanyName' => 'Chittagong Club Ltd.',
+        ]);
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('SMSSend_OTP')
+        ->andReturn($otpInsert);
+
+    $otpInsert->shouldReceive('insertGetId')
+        ->once()
+        ->with(\Mockery::type('array'))
+        ->andReturn(601);
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('SMSSend_OTP')
+        ->andReturn($otpSendUpdate);
+
+    $otpSendUpdate->shouldReceive('where')
+        ->once()
+        ->with('id_otp', 601)
+        ->andReturnSelf();
+    $otpSendUpdate->shouldReceive('update')
+        ->once()
+        ->with(\Mockery::on(function (array $values): bool {
+            return $values['Status'] === 'SENT'
+                && isset($values['EDate'], $values['ETime']);
+        }))
+        ->andReturn(1);
+
     $this->post(route('password.forgot.send'), [
         'phone' => '01711721053',
     ])->assertRedirect(route('password.forgot.verify'));
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('SMSSend_OTP')
+        ->andReturn($otpLookup);
+
+    $otpLookup->shouldReceive('where')
+        ->once()
+        ->with('id_otp', 601)
+        ->andReturnSelf();
+    $otpLookup->shouldReceive('first')
+        ->once()
+        ->andReturn((object) [
+            'id_otp' => 601,
+            'PrvcusID' => 'A-0005',
+            'Mobile' => '8801711721053',
+            'OTP' => 123456,
+            'Status' => 'SENT',
+            'Note' => 'forget',
+        ]);
 
     $response = $this
         ->withSession(app('session.store')->all())

@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AffiliatedClub;
 use App\Support\PortalCache;
-use Illuminate\Support\Facades\DB;
 
 class AffiliatedClubsController extends Controller
 {
     public function index()
     {
-        $clubs = collect(PortalCache::remember('affiliated_clubs_v1', now()->addMinutes(30), function (): array {
-            return DB::table('T_AFFILIATED_CLUBS')
+        $clubs = collect(PortalCache::remember('affiliated_clubs_v2', now()->addMinutes(30), function (): array {
+            return AffiliatedClub::query()
                 ->where('is_active', 1)
+                ->orderByRaw('CASE WHEN id_serial IS NULL THEN 1 ELSE 0 END')
+                ->orderBy('id_serial')
+                ->orderBy('COMPANY')
                 ->select([
                     'id_affiliated_club_key',
                     'id_serial',
@@ -26,10 +29,11 @@ class AffiliatedClubsController extends Controller
                     'tx_url',
                     'tx_fax',
                     'CEO',
+                    'image_path',
                 ])
                 ->get()
-                ->map(function ($c) {
-                    $address = $c->HOAddress ?? '';
+                ->map(function (AffiliatedClub $c) {
+                    $address = $c->display_address ?? '';
                     $firstPhone = null;
 
                     if ($c->BranchTel) {
@@ -52,7 +56,7 @@ class AffiliatedClubsController extends Controller
                         }
                     }
 
-                    $initials = collect(explode(' ', $c->COMPANY ?? ''))
+                    $initials = collect(explode(' ', $c->display_name))
                         ->map(fn ($w) => strtoupper($w[0] ?? ''))
                         ->take(2)
                         ->join('');
@@ -60,7 +64,7 @@ class AffiliatedClubsController extends Controller
                     return [
                         'id' => $c->id_affiliated_club_key,
                         'serial' => $c->id_serial,
-                        'name' => $c->COMPANY ?? $c->BranchName ?? '—',
+                        'name' => $c->display_name,
                         'branch' => $c->BranchName ?? '',
                         'address' => $address,
                         'initials' => $initials,
@@ -70,6 +74,7 @@ class AffiliatedClubsController extends Controller
                         'website' => $c->tx_url ?? '',
                         'fax' => $c->tx_fax ?? '',
                         'ceo' => $c->CEO ?? '',
+                        'image_url' => $c->display_image_url,
                     ];
                 })
                 ->values()

@@ -64,8 +64,12 @@
             >
                 {{-- Avatar / placeholder --}}
                 <div class="shrink-0 size-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
-                    {{-- swap with <img> once images are available --}}
-                    <span class="text-primary font-extrabold text-lg" x-text="club.initials"></span>
+                    <template x-if="club.image_url">
+                        <img :src="club.image_url" :alt="club.name" class="h-full w-full object-cover">
+                    </template>
+                    <template x-if="!club.image_url">
+                        <span class="text-primary font-extrabold text-lg" x-text="club.initials"></span>
+                    </template>
                 </div>
 
                 {{-- Info --}}
@@ -129,11 +133,15 @@
 
                     {{-- Club image / banner --}}
                     <div class="mx-4 mt-3 mb-4 h-36 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
-                        {{-- Replace with <img> once available --}}
-                        <div class="flex flex-col items-center gap-2 opacity-40">
-                            <span class="material-symbols-outlined text-4xl text-primary">domain</span>
-                            <p class="text-white/40 text-xs">Image coming soon</p>
-                        </div>
+                        <template x-if="activeClub.image_url">
+                            <img :src="activeClub.image_url" :alt="activeClub.name" class="h-full w-full object-cover">
+                        </template>
+                        <template x-if="!activeClub.image_url">
+                            <div class="flex flex-col items-center gap-2 opacity-40">
+                                <span class="material-symbols-outlined text-4xl text-primary">domain</span>
+                                <p class="text-white/40 text-xs">Image coming soon</p>
+                            </div>
+                        </template>
                     </div>
 
                     {{-- Name & branch --}}

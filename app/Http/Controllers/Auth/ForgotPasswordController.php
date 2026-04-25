@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Http\Controllers\Auth\Concerns\HandlesMemberOtp;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ResetPasswordWithOtpRequest;
 use App\Http\Requests\Auth\SendPasswordResetCodeRequest;
@@ -10,15 +11,16 @@ use App\Services\Auth\RobiSmsService;
 use App\Support\BangladeshMobile;
 use App\Support\MemberAccess;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class ForgotPasswordController extends Controller
 {
+    use HandlesMemberOtp;
+
     private const SESSION_KEY = 'member_password_reset';
-    private const CACHE_PREFIX = 'member_password_reset_otp_';
-    private const OTP_TTL_MINUTES = 10;
+    private const OTP_TTL_MINUTES = 5;
     private const MAX_OTP_ATTEMPTS = 5;
 
     public function create(Request $request)
@@ -46,15 +48,8 @@ class ForgotPasswordController extends Controller
             ]);
         }
 
-        $otp = (string) random_int(100000, 999999);
-        $cacheKey = $this->otpCacheKey($phone['e164_digits']);
-        $expiresAt = now()->addMinutes(self::OTP_TTL_MINUTES);
-
         try {
-            $robiSms->sendOtp(
-                $phone['e164'],
-                "Your password reset code is {$otp}. It expires in 10 minutes."
-            );
+            $otpState = $this->dispatchOtp($phone, $accounts->all(), $robiSms, 'forget');
         } catch (Throwable $exception) {
             report($exception);
 
@@ -63,18 +58,10 @@ class ForgotPasswordController extends Controller
             ]);
         }
 
-        Cache::put($cacheKey, [
-            'otp_hash' => $this->otpHash($otp),
-            'attempts' => 0,
-        ], $expiresAt);
-
         $request->session()->put(self::SESSION_KEY, [
             'phone' => $phone,
             'accounts' => $accounts->all(),
-            'sent_at' => now()->timestamp,
-            'expires_at' => $expiresAt->timestamp,
-            'verified_at' => null,
-            'verified_until' => null,
+            ...$otpState,
         ]);
 
         $request->session()->regenerateToken();
@@ -111,10 +98,9 @@ class ForgotPasswordController extends Controller
                 ->withErrors(['phone' => 'Start the password reset process again.']);
         }
 
-        $cacheKey = $this->otpCacheKey(data_get($state, 'phone.e164_digits'));
-        $otpState = Cache::get($cacheKey);
+        $otpRecord = $this->otpRecord((int) data_get($state, 'otp_id'));
 
-        if (! is_array($otpState)) {
+        if (! $otpRecord || $this->otpRecordPhone($otpRecord) !== (string) data_get($state, 'phone.e164_digits')) {
             $this->clearState($request);
 
             return redirect()
@@ -122,10 +108,10 @@ class ForgotPasswordController extends Controller
                 ->withErrors(['phone' => 'The code has expired. Request a new one.']);
         }
 
-        $attempts = (int) ($otpState['attempts'] ?? 0);
+        $attempts = (int) data_get($state, 'attempts', 0);
 
         if ($attempts >= self::MAX_OTP_ATTEMPTS) {
-            Cache::forget($cacheKey);
+            $this->updateOtpStatus((int) data_get($state, 'otp_id'), 'BLOCKED');
             $this->clearState($request);
 
             return redirect()
@@ -133,19 +119,24 @@ class ForgotPasswordController extends Controller
                 ->withErrors(['phone' => 'Too many invalid attempts. Request a new code.']);
         }
 
-        if (! hash_equals((string) ($otpState['otp_hash'] ?? ''), $this->otpHash((string) $request->input('code')))) {
-            $this->updateOtpState($cacheKey, $otpState, (int) data_get($state, 'expires_at'));
+        if ((int) data_get($otpRecord, 'OTP') !== (int) $request->input('code')) {
+            $state['attempts'] = $attempts + 1;
+            $request->session()->put(self::SESSION_KEY, $state);
+
+            if ((int) data_get($state, 'attempts', 0) >= self::MAX_OTP_ATTEMPTS) {
+                $this->updateOtpStatus((int) data_get($state, 'otp_id'), 'BLOCKED');
+            }
 
             throw ValidationException::withMessages([
                 'code' => 'The OTP is invalid. Please check the SMS and try again.',
             ]);
         }
 
-        Cache::forget($cacheKey);
-
         $state['verified_at'] = now()->timestamp;
         $state['verified_until'] = now()->addMinutes(self::OTP_TTL_MINUTES)->timestamp;
+        $state['attempts'] = 0;
 
+        $this->updateOtpStatus((int) data_get($state, 'otp_id'), 'VERIFIED');
         $request->session()->put(self::SESSION_KEY, $state);
         $request->session()->regenerateToken();
 
@@ -162,13 +153,13 @@ class ForgotPasswordController extends Controller
             return redirect()->route('password.forgot');
         }
 
-        $otp = (string) random_int(100000, 999999);
-        $expiresAt = now()->addMinutes(self::OTP_TTL_MINUTES);
-
         try {
-            $robiSms->sendOtp(
-                (string) data_get($state, 'phone.e164'),
-                "Your password reset code is {$otp}. It expires in 10 minutes."
+            $this->updateOtpStatus((int) data_get($state, 'otp_id'), 'RESENT');
+            $otpState = $this->dispatchOtp(
+                (array) data_get($state, 'phone', []),
+                (array) data_get($state, 'accounts', []),
+                $robiSms,
+                'forget'
             );
         } catch (Throwable $exception) {
             report($exception);
@@ -178,13 +169,10 @@ class ForgotPasswordController extends Controller
             ]);
         }
 
-        Cache::put($this->otpCacheKey(data_get($state, 'phone.e164_digits')), [
-            'otp_hash' => $this->otpHash($otp),
-            'attempts' => 0,
-        ], $expiresAt);
-
-        $state['sent_at'] = now()->timestamp;
-        $state['expires_at'] = $expiresAt->timestamp;
+        $state = [
+            ...$state,
+            ...$otpState,
+        ];
 
         $request->session()->put(self::SESSION_KEY, $state);
         $request->session()->regenerateToken();
@@ -251,6 +239,7 @@ class ForgotPasswordController extends Controller
             ]);
         }
 
+        $this->updateOtpStatus((int) data_get($state, 'otp_id'), 'USED');
         $this->clearState($request);
         $request->session()->regenerateToken();
 
@@ -277,12 +266,14 @@ class ForgotPasswordController extends Controller
         }
 
         if ($this->hasExpired((int) data_get($state, 'expires_at')) && ! $this->isVerified($state)) {
+            $this->updateOtpStatus((int) data_get($state, 'otp_id'), 'EXPIRED');
             $this->clearState($request);
 
             return null;
         }
 
         if ($this->isVerified($state) && $this->hasExpired((int) data_get($state, 'verified_until'))) {
+            $this->updateOtpStatus((int) data_get($state, 'otp_id'), 'EXPIRED');
             $this->clearState($request);
 
             return null;
@@ -301,38 +292,8 @@ class ForgotPasswordController extends Controller
         return $timestamp > 0 && $timestamp <= now()->timestamp;
     }
 
-    private function otpCacheKey(?string $phoneDigits): string
-    {
-        return self::CACHE_PREFIX . trim((string) $phoneDigits);
-    }
-
-    private function otpHash(string $otp): string
-    {
-        return hash_hmac('sha256', $otp, (string) config('app.key'));
-    }
-
-    private function updateOtpState(string $cacheKey, array $otpState, int $expiresAt): void
-    {
-        $secondsRemaining = max(1, $expiresAt - now()->timestamp);
-        $otpState['attempts'] = ((int) ($otpState['attempts'] ?? 0)) + 1;
-
-        if ((int) $otpState['attempts'] >= self::MAX_OTP_ATTEMPTS) {
-            Cache::forget($cacheKey);
-
-            return;
-        }
-
-        Cache::put($cacheKey, $otpState, now()->addSeconds($secondsRemaining));
-    }
-
     private function clearState(Request $request): void
     {
-        $phoneDigits = data_get($request->session()->get(self::SESSION_KEY), 'phone.e164_digits');
-
-        if (filled($phoneDigits)) {
-            Cache::forget($this->otpCacheKey($phoneDigits));
-        }
-
         $request->session()->forget(self::SESSION_KEY);
     }
 }

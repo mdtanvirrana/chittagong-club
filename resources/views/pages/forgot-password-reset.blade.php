@@ -26,14 +26,14 @@
             @if (session('password_reset_status'))
                 <div class="flex items-center gap-3 rounded-xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3">
                     <span class="material-symbols-outlined shrink-0 text-emerald-300">check_circle</span>
-                    <p class="text-sm text-emerald-100">{{ session('password_reset_status') }}</p>
+                    <p class="text-sm text-emerald-700">{{ session('password_reset_status') }}</p>
                 </div>
             @endif
 
             @if ($errors->any())
                 <div class="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/15 px-4 py-3">
                     <span class="material-symbols-outlined shrink-0 text-red-400">error</span>
-                    <p class="text-sm text-red-300">{{ $errors->first() }}</p>
+                    <p class="text-sm text-red-700">{{ $errors->first() }}</p>
                 </div>
             @endif
 

@@ -154,6 +154,26 @@ class MemberAccess
         return $displayName !== '' ? $displayName : 'Member';
     }
 
+    public static function registeredPhone(?object $member): ?array
+    {
+        if (! $member) {
+            return null;
+        }
+
+        foreach ([
+            trim((string) data_get($member, 'Mobile')),
+            trim((string) data_get($member, 'Phone')),
+        ] as $candidate) {
+            $phone = BangladeshMobile::normalize($candidate);
+
+            if ($phone) {
+                return $phone;
+            }
+        }
+
+        return null;
+    }
+
     private static function digitsOnlyExpression(string $column): string
     {
         return "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ISNULL({$column}, ''), ' ', ''), '+', ''), '-', ''), '(', ''), ')', ''), '.', ''), '/', ''), CHAR(9), '')";

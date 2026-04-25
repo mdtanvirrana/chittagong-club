@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\AffiliatedClubController as AdminAffiliatedClubController;
 use App\Http\Controllers\Admin\ContactController as AdminContactController;
 use App\Http\Controllers\Admin\CircularController as AdminCircularController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
@@ -32,6 +33,9 @@ Route::middleware('guest.member')->group(function () {
     Route::get('/', [AuthController::class, 'login'])->name('login');
     Route::post('/login', [AuthController::class, 'authenticate'])->name('login.post');
     Route::get('/password/setup', [AuthController::class, 'showInitialPasswordSetup'])->name('password.initial.create');
+    Route::post('/password/setup/send-otp', [AuthController::class, 'sendInitialPasswordOtp'])->name('password.initial.send');
+    Route::post('/password/setup/otp', [AuthController::class, 'verifyInitialPasswordOtp'])->name('password.initial.verify.store');
+    Route::post('/password/setup/otp/resend', [AuthController::class, 'resendInitialPasswordOtp'])->name('password.initial.verify.resend');
     Route::post('/password/setup', [AuthController::class, 'storeInitialPassword'])->name('password.initial.store');
     Route::get('/forgot-password', [ForgotPasswordController::class, 'create'])->name('password.forgot');
     Route::post('/forgot-password', [ForgotPasswordController::class, 'sendCode'])->name('password.forgot.send');
@@ -71,6 +75,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/contacts/{contact}/edit', [AdminContactController::class, 'edit'])->name('contacts.edit');
         Route::put('/contacts/{contact}', [AdminContactController::class, 'update'])->name('contacts.update');
         Route::delete('/contacts/{contact}', [AdminContactController::class, 'destroy'])->name('contacts.destroy');
+
+        Route::get('/affiliated-clubs', [AdminAffiliatedClubController::class, 'index'])->name('affiliated-clubs.index');
+        Route::get('/affiliated-clubs/create', [AdminAffiliatedClubController::class, 'create'])->name('affiliated-clubs.create');
+        Route::post('/affiliated-clubs', [AdminAffiliatedClubController::class, 'store'])->name('affiliated-clubs.store');
+        Route::get('/affiliated-clubs/{club}/edit', [AdminAffiliatedClubController::class, 'edit'])->name('affiliated-clubs.edit');
+        Route::put('/affiliated-clubs/{club}', [AdminAffiliatedClubController::class, 'update'])->name('affiliated-clubs.update');
+        Route::delete('/affiliated-clubs/{club}', [AdminAffiliatedClubController::class, 'destroy'])->name('affiliated-clubs.destroy');
 
         Route::get('/circulars', [AdminCircularController::class, 'index'])->name('circulars.index');
         Route::get('/circulars/create', [AdminCircularController::class, 'create'])->name('circulars.create');

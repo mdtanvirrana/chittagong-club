@@ -129,6 +129,18 @@ class PortalCache
         }
     }
 
+    public static function clearAffiliatedClubCaches(): void
+    {
+        $cache = static::store();
+
+        foreach ([
+            'affiliated_clubs_v1',
+            'affiliated_clubs_v2',
+        ] as $key) {
+            $cache->forget($key);
+        }
+    }
+
     private static function photoIndex(string $cacheKey, array $folders): array
     {
         return static::remember($cacheKey, now()->addMinutes(30), function () use ($folders): array {

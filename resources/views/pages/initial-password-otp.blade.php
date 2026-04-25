@@ -13,20 +13,20 @@
     <div class="h-12 w-full"></div>
 
     @include('partials.member-auth-hero', [
-        'eyebrow' => 'Member Password Recovery',
+        'eyebrow' => 'Member First Login',
         'stepLabel' => 'Step 2 of 3',
         'sectionTitle' => 'Confirm OTP',
-        'sectionDescription' => 'A 6-digit code was sent to ' . data_get($resetState, 'phone.masked') . '. The OTP stays valid for 5 minutes.',
+        'sectionDescription' => 'A 6-digit code was sent to ' . data_get($setupState, 'phone.masked') . '. The OTP stays valid for 5 minutes.',
     ])
 
     <div class="flex flex-1 flex-col justify-start px-8 pb-12">
-        <form action="{{ route('password.forgot.verify.store') }}" method="POST" class="space-y-6" @submit="loading = true">
+        <form action="{{ route('password.initial.verify.store') }}" method="POST" class="space-y-6" @submit="loading = true">
             @csrf
 
-            @if (session('password_reset_status'))
+            @if (session('password_setup_status'))
                 <div class="flex items-center gap-3 rounded-xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3">
                     <span class="material-symbols-outlined shrink-0 text-emerald-300">check_circle</span>
-                    <p class="text-sm text-emerald-700">{{ session('password_reset_status') }}</p>
+                    <p class="text-sm text-emerald-700">{{ session('password_setup_status') }}</p>
                 </div>
             @endif
 
@@ -39,7 +39,7 @@
 
             <div class="auth-floating-card rounded-[1.75rem] px-5 py-5 text-center">
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary/70">SMS Sent To</p>
-                <p class="mt-3 text-2xl font-bold tracking-[0.24em] text-slate-900">{{ data_get($resetState, 'phone.masked') }}</p>
+                <p class="mt-3 text-2xl font-bold tracking-[0.24em] text-slate-900">{{ data_get($setupState, 'phone.masked') }}</p>
                 <p class="mt-3 text-sm leading-6 text-slate-600">
                     Enter the 6-digit OTP exactly as received. If it expires, resend a new code.
                 </p>
@@ -77,13 +77,13 @@
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                     </svg>
-                    Verifying…
+                    Verifying...
                 </span>
                 <span class="material-symbols-outlined text-xl" x-show="!loading">verified</span>
             </button>
         </form>
 
-        <form action="{{ route('password.forgot.verify.resend') }}" method="POST" class="mt-4" @submit="resending = true">
+        <form action="{{ route('password.initial.verify.resend') }}" method="POST" class="mt-4" @submit="resending = true">
             @csrf
             <button
                 type="submit"
@@ -96,18 +96,18 @@
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                     </svg>
-                    Resending…
+                    Resending...
                 </span>
                 <span class="material-symbols-outlined text-base" x-show="!resending">refresh</span>
             </button>
         </form>
 
         <a
-            href="{{ route('password.forgot') }}"
+            href="{{ route('login') }}"
             class="mt-4 flex items-center justify-center gap-2 text-sm font-semibold tracking-wide text-slate-600 transition hover:text-slate-900"
         >
             <span class="material-symbols-outlined text-base">arrow_back</span>
-            Use a different mobile number
+            Back to Sign In
         </a>
     </div>
 

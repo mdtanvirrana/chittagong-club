@@ -46,12 +46,9 @@ return [
 
     'robi_sms' => [
         'url' => env('ROBI_SMS_URL'),
-        'token' => env('ROBI_SMS_TOKEN'),
-        'token_header' => env('ROBI_SMS_TOKEN_HEADER', 'Authorization'),
-        'sender_id' => env('ROBI_SMS_SENDER_ID'),
-        'to_field' => env('ROBI_SMS_TO_FIELD', 'to'),
-        'message_field' => env('ROBI_SMS_MESSAGE_FIELD', 'message'),
-        'sender_field' => env('ROBI_SMS_SENDER_FIELD', 'sender_id'),
+        'username' => env('ROBI_SMS_USERNAME'),
+        'password' => env('ROBI_SMS_PASSWORD'),
+        'from' => env('ROBI_SMS_FROM'),
         'timeout' => (int) env('ROBI_SMS_TIMEOUT', 10),
     ],
 

@@ -14,9 +14,9 @@
 
     @include('partials.member-auth-hero', [
         'eyebrow' => 'Member First Login',
-        'stepLabel' => 'Set Password',
+        'stepLabel' => 'Step 3 of 3',
         'sectionTitle' => 'Create Your Password',
-        'sectionDescription' => 'This member ID does not have a password yet. Set a new password now, then sign in from the login page.',
+        'sectionDescription' => 'OTP confirmed. Set your password now, then sign in from the login page.',
     ])
 
     <div class="flex flex-1 flex-col justify-start px-8 pb-12">
@@ -26,14 +26,14 @@
             @if (session('password_setup_status'))
                 <div class="flex items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-500/15 px-4 py-3">
                     <span class="material-symbols-outlined shrink-0 text-amber-300">lock_reset</span>
-                    <p class="text-sm text-amber-100">{{ session('password_setup_status') }}</p>
+                    <p class="text-sm text-amber-700">{{ session('password_setup_status') }}</p>
                 </div>
             @endif
 
             @if ($errors->any())
                 <div class="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/15 px-4 py-3">
                     <span class="material-symbols-outlined shrink-0 text-red-400">error</span>
-                    <p class="text-sm text-red-300">{{ $errors->first() }}</p>
+                    <p class="text-sm text-red-700">{{ $errors->first() }}</p>
                 </div>
             @endif
 
