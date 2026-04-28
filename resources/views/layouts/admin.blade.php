@@ -220,7 +220,7 @@
     >
         <div class="flex items-center justify-between">
             <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
-                <img src="{{ asset('logo.jpg') }}" alt="{{ $companyName }}" class="size-11 rounded-lg bg-admin-soft/80 object-contain p-1.5">
+                <img src="{{ asset('logo.png') }}" alt="{{ $companyName }}" class="size-11 rounded-lg bg-admin-soft/80 object-contain p-1.5">
                 <div>
                     <p class="font-display text-base font-bold tracking-tight text-slate-900">Admin Panel</p>
                     <p class="text-[10px] uppercase tracking-[0.24em] text-admin-gold">{{ $companyName }}</p>

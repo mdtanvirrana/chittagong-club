@@ -516,11 +516,11 @@
                                         @click.stop
                                         class="font-semibold text-primary underline underline-offset-2"
                                     >Terms &amp; Conditions</a>
+
                                     before making this payment.
                                 </span>
                             </div>
-
-                            <p class="px-4 pb-3 text-xs text-white/40">Required before continuing to payment.</p>
+                            <img src="{{asset('ssl.jpeg')}}" alt="Ssl-commerz" class="px-4 pb-2">
                         </div>
 
                         <button
