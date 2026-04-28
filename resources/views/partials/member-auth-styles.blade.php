@@ -5,6 +5,7 @@
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
+
     .gold-btn-gradient { background: var(--member-accent-gradient); }
 
     .login-input,

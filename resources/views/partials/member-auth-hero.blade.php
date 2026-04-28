@@ -11,7 +11,7 @@
     </div>
 
     <h1 class="mb-2 text-center text-4xl font-extrabold tracking-tight">
-        <span class="gold-text-gradient">{{ $companyName }}</span>
+        <span class="gold-text-gradient company-name-canterbury" style="font-family: 'Canterbury', serif;">{{ $companyName }}</span>
     </h1>
 
     <p class="text-center text-sm font-light uppercase tracking-widest text-black/70">

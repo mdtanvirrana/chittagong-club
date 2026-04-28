@@ -21,9 +21,27 @@
         [
             'heading' => 'Members',
             'items' => [
-                ['label' => $companyName . ' – General Committee', 'icon' => 'groups', 'route' => 'executive', 'match' => 'executive'],
+                [
+                    'label' => $companyName . ' – General Committee',
+                    'label_html' => new \Illuminate\Support\HtmlString(
+                        '<span class="company-name-canterbury">' . e($companyName) . '</span> &ndash; General Committee'
+                    ),
+                    'icon' => 'groups',
+                    'route' => 'executive',
+                    'match' => 'executive',
+                ],
                 ['label' => 'Former Chairmen', 'icon' => 'history_edu', 'route' => 'former-chairman', 'match' => 'former-chairman'],
                 ['label' => 'Employee Directory', 'icon' => 'badge', 'route' => 'employee-directory', 'match' => 'employee-directory'],
+            ],
+        ],
+        [
+            'heading' => 'Legal',
+            'items' => [
+                ['label' => 'Terms & Conditions', 'icon' => 'gavel', 'route' => 'legal.terms', 'match' => 'legal.terms'],
+                ['label' => 'Privacy Policy', 'icon' => 'shield', 'route' => 'legal.privacy', 'match' => 'legal.privacy'],
+                ['label' => 'Return and Refund', 'icon' => 'payments', 'route' => 'legal.refund', 'match' => 'legal.refund'],
+                ['label' => 'Data Policy', 'icon' => 'database', 'route' => 'legal.data', 'match' => 'legal.data'],
+                ['label' => 'Contact Us', 'icon' => 'contact_support', 'route' => 'legal.contact', 'match' => 'legal.contact'],
             ],
         ],
     ];
@@ -58,7 +76,7 @@
             <div class="flex items-center gap-3">
                 <img src="{{ asset('logo.jpg') }}" alt="CCL" class="size-9 rounded-full object-contain" />
                 <div>
-                    <p class="text-slate-900 font-bold text-sm leading-tight">{{ $companyName }}</p>
+                    <p class="company-name-canterbury text-slate-900 text-lg leading-tight">{{ $companyName }}</p>
                     <p class="text-primary text-[10px] font-bold uppercase tracking-wider">Est. 1878</p>
                 </div>
             </div>
@@ -85,7 +103,7 @@
                         <a href="{{ route($item['route']) }}"
                            class="flex items-center gap-3 px-5 py-3 transition-colors {{ $isActive ? 'bg-primary/10 text-primary' : 'text-primary hover:bg-primary/10' }}">
                             <span class="material-symbols-outlined text-xl shrink-0 {{ $isActive ? 'text-primary' : 'text-primary' }}">{{ $item['icon'] }}</span>
-                            <span class="text-sm font-medium">{{ $item['label'] }}</span>
+                            <span class="text-sm font-medium">{!! $item['label_html'] ?? e($item['label']) !!}</span>
                         </a>
                     @else
                         <div class="flex items-center gap-3 px-5 py-3 text-slate-400 cursor-not-allowed">

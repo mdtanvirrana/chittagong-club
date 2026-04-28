@@ -491,9 +491,41 @@
                             ></textarea>
                         </div>
 
+                        <div class="rounded-2xl border border-white/10 bg-white/5">
+                            <div
+                                @click="paymentForm.acceptTerms = !paymentForm.acceptTerms"
+                                @keydown.space.prevent="paymentForm.acceptTerms = !paymentForm.acceptTerms"
+                                @keydown.enter.prevent="paymentForm.acceptTerms = !paymentForm.acceptTerms"
+                                role="checkbox"
+                                tabindex="0"
+                                :aria-checked="paymentForm.acceptTerms.toString()"
+                                class="flex cursor-pointer items-start gap-3 px-4 py-3"
+                            >
+                                <span
+                                    class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition"
+                                    :class="paymentForm.acceptTerms ? 'border-primary bg-primary text-brand-blue' : 'border-primary/35 bg-white text-transparent'"
+                                >
+                                    <span class="material-symbols-outlined text-[16px] leading-none">check</span>
+                                </span>
+
+                                <span class="min-w-0 text-sm leading-6 text-white/70">
+                                    I accept the
+                                    <a
+                                        href="{{ route('legal.terms') }}"
+                                        target="_blank"
+                                        @click.stop
+                                        class="font-semibold text-primary underline underline-offset-2"
+                                    >Terms &amp; Conditions</a>
+                                    before making this payment.
+                                </span>
+                            </div>
+
+                            <p class="px-4 pb-3 text-xs text-white/40">Required before continuing to payment.</p>
+                        </div>
+
                         <button
                             @click="submitPayment()"
-                            :disabled="paymentSubmitting"
+                            :disabled="paymentSubmitting || !paymentForm.acceptTerms"
                             class="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-extrabold text-brand-blue transition disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             <span class="material-symbols-outlined text-base" x-show="!paymentSubmitting">lock</span>
@@ -522,6 +554,7 @@
                 paymentForm: {
                     amount: '',
                     note: '',
+                    acceptTerms: false,
                 },
                 state: {
                     creditLimit: null,
@@ -625,6 +658,7 @@
                 openPaymentModal() {
                     this.paymentForm.amount = this.state.totalDue ? Number(this.state.totalDue).toFixed(2) : '';
                     this.paymentForm.note = '';
+                    this.paymentForm.acceptTerms = false;
                     this.paymentFormError = '';
                     this.paymentModalOpen = true;
                 },
@@ -640,6 +674,11 @@
 
                     if (!Number.isFinite(amount) || amount < 10 || amount > 500000) {
                         this.paymentFormError = 'Enter a valid amount between 10 and 500000.';
+                        return;
+                    }
+
+                    if (!this.paymentForm.acceptTerms) {
+                        this.paymentFormError = 'You must accept the Terms & Conditions before continuing to payment.';
                         return;
                     }
 
@@ -659,13 +698,24 @@
                             body: JSON.stringify({
                                 amount: Number(amount).toFixed(2),
                                 note: this.paymentForm.note,
+                                accept_terms: this.paymentForm.acceptTerms,
                             }),
                         });
 
                         const data = await response.json();
 
                         if (!response.ok) {
-                            throw new Error(data.message || 'Unable to initiate payment.');
+                            const validationMessage = data?.errors
+                                ? Object.values(data.errors).reduce((message, items) => {
+                                    if (message) {
+                                        return message;
+                                    }
+
+                                    return Array.isArray(items) ? (items.find(Boolean) || '') : '';
+                                }, '')
+                                : '';
+
+                            throw new Error(validationMessage || data.message || 'Unable to initiate payment.');
                         }
 
                         if (!data.gateway_url) {

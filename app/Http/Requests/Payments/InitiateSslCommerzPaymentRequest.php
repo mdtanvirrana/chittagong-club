@@ -16,6 +16,14 @@ class InitiateSslCommerzPaymentRequest extends FormRequest
         return [
             'amount' => ['required', 'numeric', 'min:10', 'max:500000'],
             'note' => ['nullable', 'string', 'max:1000'],
+            'accept_terms' => ['accepted'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'accept_terms.accepted' => 'You must accept the Terms & Conditions before continuing to payment.',
         ];
     }
 }

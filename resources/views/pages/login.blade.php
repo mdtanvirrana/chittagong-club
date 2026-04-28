@@ -13,7 +13,7 @@
         memberId: '',
         password: '',
     }"
-    class="relative flex h-screen w-full flex-col blue-depth-gradient overflow-hidden"
+    class="relative flex min-h-screen w-full flex-col blue-depth-gradient overflow-x-hidden"
 >
     {{-- Status bar spacer --}}
     <div class="h-12 w-full"></div>
@@ -122,6 +122,37 @@
             </button>
 
         </form>
+
+        <section class="mt-6 border-t border-primary/10 pt-4">
+            <p class="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70">Club Policies</p>
+            <div class="mt-6 text-center text-sm font-medium space-y-3">
+
+                <div class="flex justify-center gap-10">
+                    <a href="{{ route('legal.terms') }}" class="text-gray-600 hover:text-primary hover:underline">
+                        Terms &amp; Conditions
+                    </a>
+
+                    <a href="{{ route('legal.refund') }}" class="text-gray-600 hover:text-primary hover:underline">
+                        Return and Refund Policy
+                    </a>
+                </div>
+
+                <div class="flex justify-center gap-8">
+                    <a href="{{ route('legal.privacy') }}" class="text-gray-600 hover:text-primary hover:underline">
+                        Privacy Policy
+                    </a>
+
+                    <a href="{{ route('legal.data') }}" class="text-gray-600 hover:text-primary hover:underline">
+                        Data Policy
+                    </a>
+
+                    <a href="{{ route('legal.contact') }}" class="text-gray-600 hover:text-primary hover:underline">
+                        Contact Us
+                    </a>
+                </div>
+
+            </div>
+        </section>
     </div>
 
     {{-- iOS home indicator --}}

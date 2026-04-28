@@ -26,6 +26,7 @@ test('member can initiate an sslcommerz payment', function () {
         ->postJson(route('ledger.payments.sslcommerz.initiate'), [
             'amount' => '1500.00',
             'note' => 'Ledger due payment',
+            'accept_terms' => true,
         ]);
 
     $response
@@ -42,6 +43,21 @@ test('member can initiate an sslcommerz payment', function () {
         ->and($transaction->status)->toBe('pending')
         ->and($transaction->note)->toBe('Ledger due payment')
         ->and($transaction->session_key)->toBe('session-key-123');
+});
+
+test('member must accept terms before initiating an sslcommerz payment', function () {
+    $response = $this
+        ->withSession(['member' => ['id' => 'M-100', 'name' => 'Test Member']])
+        ->postJson(route('ledger.payments.sslcommerz.initiate'), [
+            'amount' => '1500.00',
+            'note' => 'Ledger due payment',
+        ]);
+
+    $response
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['accept_terms']);
+
+    expect(PaymentTransaction::count())->toBe(0);
 });
 
 test('successful callback validates payment and stores it in success table', function () {

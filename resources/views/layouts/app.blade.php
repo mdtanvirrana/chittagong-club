@@ -651,6 +651,7 @@
         }
     </style>
 
+    @include('partials.canterbury-font')
     @stack('styles')
 </head>
 <body class="antialiased font-display text-slate-900">

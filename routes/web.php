@@ -16,6 +16,7 @@ use App\Http\Controllers\ClubFacilitiesController;
 use App\Http\Controllers\CommitteeController;
 use App\Http\Controllers\EmployeeDirectoryController;
 use App\Http\Controllers\FormerChairmanController;
+use App\Http\Controllers\LegalPageController;
 use App\Http\Controllers\Member\DashboardController;
 use App\Http\Controllers\Member\LedgerController;
 use App\Http\Controllers\Member\MemberDetailController;
@@ -45,6 +46,12 @@ Route::middleware('guest.member')->group(function () {
     Route::get('/forgot-password/reset', [ForgotPasswordController::class, 'showReset'])->name('password.forgot.reset');
     Route::post('/forgot-password/reset', [ForgotPasswordController::class, 'updatePassword'])->name('password.forgot.update');
 });
+
+Route::get('/terms-and-conditions', [LegalPageController::class, 'terms'])->name('legal.terms');
+Route::get('/privacy-policy', [LegalPageController::class, 'privacy'])->name('legal.privacy');
+Route::get('/return-and-refund-policy', [LegalPageController::class, 'refund'])->name('legal.refund');
+Route::get('/data-policy', [LegalPageController::class, 'data'])->name('legal.data');
+Route::get('/contact-us', [LegalPageController::class, 'contact'])->name('legal.contact');
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware('guest.admin')->group(function () {
