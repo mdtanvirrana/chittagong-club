@@ -115,7 +115,7 @@
         .mobile-container {
             max-width: 425px;
             margin: 0 auto;
-            background: var(--member-shell-gradient);
+            background: #ffffff;
             min-height: 100dvh;
             position: relative;
             box-shadow: 0 36px 84px -56px rgba(127, 29, 29, 0.32);
@@ -125,9 +125,7 @@
             font-family: '{{ $memberDisplayFont }}', sans-serif;
             -webkit-tap-highlight-color: transparent;
             min-height: 100dvh;
-            background:
-                radial-gradient(circle at top, var(--member-shell-glow), transparent 28%),
-                linear-gradient(180deg, var(--member-shell-start) 0%, var(--member-shell-end) 100%);
+            background: #ffffff;
         }
 
         .member-shell {
@@ -314,7 +312,7 @@
         }
 
         .member-shell .member-sidebar {
-            background: linear-gradient(180deg, #ffffff 0%, var(--member-shell-end) 100%) !important;
+            background: #ffffff !important;
             border-color: var(--member-border) !important;
             box-shadow: 0 24px 48px -34px rgba(185, 28, 28, 0.28);
         }

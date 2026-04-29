@@ -1,5 +1,5 @@
 @php
-    $sidebarSections = [
+    use Illuminate\Support\HtmlString;$sidebarSections = [
         [
             'heading' => 'Club Info',
             'items' => [
@@ -22,10 +22,8 @@
             'heading' => 'Members',
             'items' => [
                 [
-                    'label' => $companyName . ' – General Committee',
-                    'label_html' => new \Illuminate\Support\HtmlString(
-                        '<span class="company-name-canterbury">' . e($companyName) . '</span> &ndash; General Committee'
-                    ),
+                    'label' => 'General Committee',
+                    'label_html' =>  'General Committee',
                     'icon' => 'groups',
                     'route' => 'executive',
                     'match' => 'executive',
@@ -74,7 +72,7 @@
     <div class="px-5 pt-5 pb-5 border-b border-primary/10 bg-white">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <img src="{{ asset('logo.png') }}" alt="CCL" class="size-9 rounded-full object-contain" />
+                <img src="{{ asset('logo.png') }}" alt="CCL" class="size-9 rounded-full object-contain"/>
                 <div>
                     <p class="company-name-canterbury text-slate-900 text-lg leading-tight">{{ $companyName }}</p>
                     <p class="text-primary text-[10px] font-bold uppercase tracking-wider">Est. 1878</p>
@@ -102,14 +100,17 @@
                         @endphp
                         <a href="{{ route($item['route']) }}"
                            class="flex items-center gap-3 px-5 py-3 transition-colors {{ $isActive ? 'bg-primary/10 text-primary' : 'text-primary hover:bg-primary/10' }}">
-                            <span class="material-symbols-outlined text-xl shrink-0 {{ $isActive ? 'text-primary' : 'text-primary' }}">{{ $item['icon'] }}</span>
+                            <span
+                                class="material-symbols-outlined text-xl shrink-0 {{ $isActive ? 'text-primary' : 'text-primary' }}">{{ $item['icon'] }}</span>
                             <span class="text-sm font-medium">{!! $item['label_html'] ?? e($item['label']) !!}</span>
                         </a>
                     @else
                         <div class="flex items-center gap-3 px-5 py-3 text-slate-400 cursor-not-allowed">
-                            <span class="material-symbols-outlined text-slate-400 text-xl shrink-0">{{ $item['icon'] }}</span>
+                            <span
+                                class="material-symbols-outlined text-slate-400 text-xl shrink-0">{{ $item['icon'] }}</span>
                             <span class="text-sm font-medium">{{ $item['label'] }}</span>
-                            <span class="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">Soon</span>
+                            <span
+                                class="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">Soon</span>
                         </div>
                     @endif
                 @endforeach

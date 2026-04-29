@@ -9,7 +9,7 @@ class MemberSession
 {
     public const KEY = 'member';
 
-    public const EXPIRY_MESSAGE = 'Your session expired after 1 week. Please sign in again.';
+    public const EXPIRY_MESSAGE = 'Your session expired after 5 minutes of inactivity. Please sign in again.';
 
     public static function build(string $memberId, ?string $memberName = null): array
     {
@@ -25,7 +25,7 @@ class MemberSession
 
     public static function lifetimeMinutes(): int
     {
-        return max(1, (int) config('auth.member_session_lifetime', 60 * 24 * 7));
+        return max(1, (int) config('auth.member_session_lifetime', 5));
     }
 
     public static function isExpired(?array $member): bool
@@ -40,7 +40,7 @@ class MemberSession
         return filled(data_get($member, 'id')) && ! is_numeric(data_get($member, 'expires_at'));
     }
 
-    public static function refreshExpiry(Request $request): void
+    public static function touch(Request $request): void
     {
         $member = Session::get(static::KEY, []);
 
@@ -56,6 +56,11 @@ class MemberSession
         $member['expires_at'] = now()->addMinutes(static::lifetimeMinutes())->timestamp;
 
         $request->session()->put(static::KEY, $member);
+    }
+
+    public static function refreshExpiry(Request $request): void
+    {
+        static::touch($request);
     }
 
     public static function logout(Request $request): void

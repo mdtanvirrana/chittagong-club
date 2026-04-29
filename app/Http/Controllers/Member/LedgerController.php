@@ -190,12 +190,12 @@ class LedgerController extends Controller
                     'total_debit' => (float) ($monthData->MBill ?? 0),
                     'total_credit' => 0.0,
                     'entries' => [[
-                        'InvMRN' => null,
-                        'DrAmt' => (float) ($monthData->MBill ?? 0),
-                        'CrAmt' => 0.0,
-                        'EDate' => Carbon::parse($monthData->sMonth)->format('M Y'),
-                        'Remarks' => 'Monthly billed amount',
-                        'Note' => null,
+                    'InvMRN' => null,
+                    'DrAmt' => (float) ($monthData->MBill ?? 0),
+                    'CrAmt' => 0.0,
+                    'EDate' => Carbon::parse($monthData->sMonth)->format('M Y'),
+                    'Remarks' => 'Monthly billed amount',
+                    'Note' => null,
                     ], [
                         'InvMRN' => null,
                         'DrAmt' => 0.0,

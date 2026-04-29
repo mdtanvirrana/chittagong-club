@@ -34,7 +34,7 @@ return [
 
     'lifetime' => max(
         (int) env('SESSION_LIFETIME', 120),
-        (int) env('MEMBER_SESSION_LIFETIME', 60 * 24 * 7),
+        (int) env('MEMBER_SESSION_LIFETIME', 5),
     ),
 
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),

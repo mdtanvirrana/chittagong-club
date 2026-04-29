@@ -1,5 +1,5 @@
 <style>
-    .blue-depth-gradient { background: var(--member-login-gradient); }
+    .blue-depth-gradient { background: #ffffff; }
     .gold-text-gradient {
         background: var(--member-accent-gradient);
         -webkit-background-clip: text;

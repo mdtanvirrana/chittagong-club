@@ -126,20 +126,14 @@
             </form>
 
             <section class="mt-6 border-t border-primary/10 pt-4">
-                <p class="text-center text-[10px] font-bold uppercase tracking-[0.25em] text-primary/70"> Club
-                    Policies </p>
-                <div class="mt-5 flex flex-col items-center space-y-3 text-sm font-medium"><a
-                        href="{{ route('legal.terms') }}"
-                        class="text-gray-600 hover:text-primary hover:underline transition"> Terms &amp; Conditions </a>
-                    <a href="{{ route('legal.refund') }}"
-                       class="text-gray-600 hover:text-primary hover:underline transition"> Return and Refund
-                        Policy </a> <a href="{{ route('legal.privacy') }}"
-                                       class="text-gray-600 hover:text-primary hover:underline transition"> Privacy
-                        Policy </a> <a href="{{ route('legal.data') }}"
-                                       class="text-gray-600 hover:text-primary hover:underline transition"> Data
-                        Policy </a> <a href="{{ route('legal.contact') }}"
-                                       class="text-gray-600 hover:text-primary hover:underline transition"> Contact
-                        Us </a></div>
+                <p class="text-center text-[10px] font-bold uppercase tracking-[0.25em] text-primary/70">Club Policies</p>
+                <div class="mt-5 flex flex-col items-center space-y-3 text-sm font-medium">
+                    <a href="{{ route('legal.terms') }}" class="text-gray-600 hover:text-primary hover:underline transition">Terms &amp; Conditions</a>
+                    <a href="{{ route('legal.refund') }}" class="text-gray-600 hover:text-primary hover:underline transition">Return and Refund Policy</a>
+                    <a href="{{ route('legal.privacy') }}" class="text-gray-600 hover:text-primary hover:underline transition">Privacy Policy</a>
+                    <a href="{{ route('legal.data') }}" class="text-gray-600 hover:text-primary hover:underline transition">Data Policy</a>
+                    <a href="{{ route('legal.contact') }}" class="text-gray-600 hover:text-primary hover:underline transition">Contact Us</a>
+                </div>
             </section>
         </div>
 

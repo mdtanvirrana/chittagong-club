@@ -116,6 +116,11 @@
                 </p>
             </div>
 
+            <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+                <p class="text-primary text-[10px] font-bold uppercase tracking-[0.2em]">Trade License</p>
+                <p class="mt-2 text-white font-bold text-base">07/2020-2021</p>
+            </div>
+
             {{-- Divider --}}
             <div class="flex items-center gap-3">
                 <div class="h-px flex-1 bg-white/10"></div>

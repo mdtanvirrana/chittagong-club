@@ -516,7 +516,20 @@
                                         @click.stop
                                         class="font-semibold text-primary underline underline-offset-2"
                                     >Terms &amp; Conditions</a>
-
+                                    ,
+                                    <a
+                                        href="{{ route('legal.refund') }}"
+                                        target="_blank"
+                                        @click.stop
+                                        class="font-semibold text-primary underline underline-offset-2"
+                                    >Refund Policy</a>
+                                    , and
+                                    <a
+                                        href="{{ route('legal.privacy') }}"
+                                        target="_blank"
+                                        @click.stop
+                                        class="font-semibold text-primary underline underline-offset-2"
+                                    >Privacy Policy</a>
                                     before making this payment.
                                 </span>
                             </div>

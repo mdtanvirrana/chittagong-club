@@ -2,12 +2,29 @@
 
 use App\Support\MemberSession;
 
-test('members can access protected routes before the one week expiry', function () {
+test('members can access protected routes before the inactivity timeout', function () {
     $response = $this->withSession([
         MemberSession::KEY => MemberSession::build('CCL-1001', 'Test Member'),
     ])->get('/about');
 
     $response->assertOk();
+});
+
+test('active member requests refresh the inactivity timeout', function () {
+    $response = $this->withSession([
+        MemberSession::KEY => [
+            'id' => 'CCL-1001',
+            'name' => 'Active Member',
+            'issued_at' => now()->subMinutes(4)->timestamp,
+            'expires_at' => now()->addSecond()->timestamp,
+        ],
+    ])->get('/about');
+
+    $response
+        ->assertOk()
+        ->assertSessionHas(MemberSession::KEY, function (array $member): bool {
+            return data_get($member, 'expires_at') > now()->addMinutes(4)->timestamp;
+        });
 });
 
 test('expired member sessions are logged out from protected routes', function () {

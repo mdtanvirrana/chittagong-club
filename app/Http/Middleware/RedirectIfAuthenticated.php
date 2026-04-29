@@ -19,17 +19,14 @@ class RedirectIfAuthenticated
             return $next($request);
         }
 
-        if (MemberSession::needsExpiryRefresh($member)) {
-            MemberSession::refreshExpiry($request);
-            $member = Session::get(MemberSession::KEY);
-        }
-
         if (MemberSession::isExpired($member)) {
             MemberSession::logout($request);
             $request->session()->flash('session_expired', MemberSession::EXPIRY_MESSAGE);
 
             return $next($request);
         }
+
+        MemberSession::touch($request);
 
         if (Session::has(MemberSession::KEY)) {
             return redirect()->route('dashboard');

@@ -17,11 +17,6 @@ class CheckMemberAuth
             return redirect()->route('login');
         }
 
-        if (MemberSession::needsExpiryRefresh($member)) {
-            MemberSession::refreshExpiry($request);
-            $member = Session::get(MemberSession::KEY);
-        }
-
         if (MemberSession::isExpired($member)) {
             MemberSession::logout($request);
 
@@ -29,6 +24,8 @@ class CheckMemberAuth
                 ->route('login')
                 ->with('session_expired', MemberSession::EXPIRY_MESSAGE);
         }
+
+        MemberSession::touch($request);
 
         return $next($request);
     }
