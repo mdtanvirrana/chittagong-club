@@ -11,10 +11,8 @@ class EmployeeDirectoryController extends Controller
     {
         $employees = collect(PortalCache::remember('employee_directory_v2', now()->addMinutes(30), function (): array {
             return DB::table('EmployeesDetails')
-                ->where('is_active', '1')
                 ->where('PreStatus', 'Y')
                 ->whereNotNull('EmpName')
-                ->where('EmpName', '!=', '')
                 ->orderBy('Branch')
                 ->orderBy('EmpName')
                 ->select([
