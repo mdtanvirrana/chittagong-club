@@ -7,7 +7,7 @@
 
         {{-- Hero Image --}}
         <div class="relative w-full h-56 overflow-hidden">
-            <img src="https://chittagongclubltd.com/wp-content/uploads/2023/04/Drone-Photo-Faisal-Azim-2-768x464-1-600x363.jpg"
+            <img src="{{ asset('about.png') }}"
                  alt="Chittagong Club"
                  class="w-full h-full object-cover"
                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
@@ -15,8 +15,6 @@
             <div class="w-full h-full bg-primary/10 border-b border-white/10 items-center justify-center hidden">
                 <span class="material-symbols-outlined text-5xl text-primary/30">domain</span>
             </div>
-            {{-- Gradient overlay --}}
-            <div class="absolute inset-0 bg-gradient-to-t from-[#02568a]/90 via-transparent to-transparent"></div>
             {{-- Badge --}}
             <div class="absolute bottom-4 left-4">
                 <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold mb-0.5">Est.</p>

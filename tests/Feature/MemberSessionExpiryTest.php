@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\MemberSession;
+use Illuminate\Support\Facades\DB;
 
 test('members can access protected routes before the inactivity timeout', function () {
     $response = $this->withSession([
@@ -56,5 +57,34 @@ test('expired member sessions can reach the login page again', function () {
     $response
         ->assertOk()
         ->assertSee(MemberSession::EXPIRY_MESSAGE)
+        ->assertSessionMissing(MemberSession::KEY);
+});
+
+test('idle-triggered logout flashes the inactivity expiry message', function () {
+    $log = \Mockery::mock();
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('UsersLog')
+        ->andReturn($log);
+
+    $log->shouldReceive('insert')
+        ->once()
+        ->with(\Mockery::on(function (array $values): bool {
+            return $values['PrvcusID'] === 'CCL-1004'
+                && $values['Status'] === 'Logout'
+                && $values['eIP'] === '127.0.0.1';
+        }))
+        ->andReturn(true);
+
+    $response = $this->withSession([
+        MemberSession::KEY => MemberSession::build('CCL-1004', 'Idle Member'),
+    ])->post(route('logout'), [
+        'inactive' => 1,
+    ]);
+
+    $response
+        ->assertRedirect(route('login'))
+        ->assertSessionHas('session_expired', MemberSession::EXPIRY_MESSAGE)
         ->assertSessionMissing(MemberSession::KEY);
 });

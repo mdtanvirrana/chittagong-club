@@ -16,14 +16,14 @@
         class="relative flex min-h-screen w-full flex-col blue-depth-gradient overflow-x-hidden"
     >
         {{-- Status bar spacer --}}
-        <div class="h-12 w-full"></div>
+        <div class="h-3 w-full"></div>
 
 
         @include('partials.member-auth-hero')
 
         {{-- Login Form --}}
-        <div class="flex-1 px-8 pb-12 flex flex-col justify-start w-full">
-            <form action="{{ route('login.post') }}" method="POST" class="space-y-6" @submit="loading = true">
+        <div class="flex-1 px-8 pb-3 flex flex-col justify-start w-full">
+            <form action="{{ route('login.post') }}" method="POST" class="space-y-3" @submit="loading = true">
                 @csrf
 
                 @if (session('password_reset_status'))

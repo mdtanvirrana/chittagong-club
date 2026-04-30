@@ -377,7 +377,13 @@ class AuthController extends Controller
 
         MemberSession::logout($request);
 
-        return redirect()->route('login');
+        $redirect = redirect()->route('login');
+
+        if ($request->boolean('inactive')) {
+            $redirect->with('session_expired', MemberSession::EXPIRY_MESSAGE);
+        }
+
+        return $redirect;
     }
 
     private function guestView(string $view, array $data = [])

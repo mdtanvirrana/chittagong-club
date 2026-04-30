@@ -82,7 +82,7 @@ class LegalPageController extends Controller
                         'title' => 'Payment Confirmation',
                         'icon' => 'sms',
                         'body' => [
-                            'After completing an online payment, a member receives an SMS at the registered mobile number and an email at the registered email address.',
+                            'After completing an online payment, a member will receive a SMS at the registered mobile number and an email at the registered email address.',
                         ],
                     ],
                 ],
@@ -95,7 +95,7 @@ class LegalPageController extends Controller
                         'title' => 'About the Club',
                         'icon' => 'apartment',
                         'body' => array_values(array_filter([
-                            $profile['companyName'] . ' (' . $profile['shortName'] . ') is a not-for-profit organization which is run by, and for, its members.',
+                            $profile['companyName'] . ' (' . $profile['shortName'] . ') is a non-profit organization which is run by, and for, its members.',
                             $profile['contactSummary'] !== '' ? $profile['contactSummary'] : null,
                             $profile['companyAddressText'] !== '' ? 'Address: ' . $profile['companyAddressText'] : null,
                         ])),
@@ -104,7 +104,7 @@ class LegalPageController extends Controller
                         'title' => 'Usage of Information',
                         'icon' => 'manage_accounts',
                         'body' => [
-                            'Only registered ' . $profile['shortName'] . ' club members are eligible to access their information among themselves.',
+                            'Only registered ' . $profile['shortName'] . ' club members are eligible to access their information.',
                         ],
                     ],
                     [

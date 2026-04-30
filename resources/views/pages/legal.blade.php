@@ -43,10 +43,7 @@
                          class="company-name-canterbury size-11 rounded-full border border-white/15 bg-white object-contain p-1.5"/>
 
                     <div>
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-white/55">
-                            {{ $shortName }}
-                        </p>
-                        <p class="text-base font-semibold text-white company-name-canterbury">
+                        <p class="text-xl font-semibold text-white company-name-canterbury">
                             {{ $companyName }}
                         </p>
                     </div>
