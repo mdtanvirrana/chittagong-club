@@ -71,8 +71,8 @@
                             <td class="px-4 py-3.5">
                                 <div class="flex items-start gap-3">
                                     <div class="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-admin-line/10 bg-slate-950/20">
-                                        @if ($club->display_image_url)
-                                            <img src="{{ $club->display_image_url }}" alt="{{ $club->display_name }}" class="h-full w-full object-cover">
+                                        @if ($club->display_logo_url)
+                                            <img src="{{ $club->display_logo_url }}" alt="{{ $club->display_name }}" class="h-full w-full object-cover">
                                         @else
                                             <span class="font-display text-sm font-bold text-admin-gold">{{ $initials !== '' ? $initials : 'AC' }}</span>
                                         @endif

@@ -39,8 +39,8 @@ return [
             'surface_border' => "rgba({$brandRedRgb}, 0.12)",
             'surface_border_soft' => "rgba({$brandRedRgb}, 0.08)",
             'text' => '#111827',
-            'text_soft' => '#475569',
-            'text_muted' => '#64748b',
+            'text_soft' => '#1f2937',
+            'text_muted' => '#1f2937',
         ],
         'gradients' => [
             'shell' => "radial-gradient(circle at top, rgba({$brandRedRgb}, 0.10), transparent 28%), linear-gradient(180deg, #ffffff 0%, #fff1f1 100%)",

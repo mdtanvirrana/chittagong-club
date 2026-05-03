@@ -3,10 +3,18 @@
 @section('show_nav', true)
 @section('userpanel_content')
 
-    <div x-data="gallery()" class="flex flex-col min-h-screen pb-24">
+    <div x-data="gallery(@js($albums->values()))" class="flex flex-col min-h-screen pb-24">
 
         {{-- Album list --}}
         <main class="px-4 py-5 space-y-4">
+            @if ($albums->isEmpty())
+                <div class="rounded-2xl border border-primary/20 bg-primary/5 px-5 py-10 text-center">
+                    <span class="material-symbols-outlined text-5xl text-primary/80">photo_library</span>
+                    <h2 class="mt-3 text-lg font-bold text-white">No gallery images found</h2>
+                    <p class="mt-2 text-sm text-white/55">Upload pictures to the Gallery folder from the admin panel.</p>
+                </div>
+            @endif
+
             <template x-for="album in albums" :key="album.id">
                 <div>
                     {{-- Album card — cover + title --}}
@@ -111,14 +119,14 @@
 
     <script>
         (function() {
-            window.gallery = function() {
+            window.gallery = function(uploadedAlbums) {
                 return {
-                    openId: null,
+                    openId: uploadedAlbums && uploadedAlbums.length > 0 ? uploadedAlbums[0].id : null,
                     lightbox: null,
                     lightboxPhotos: [],
                     lightboxIndex: 0,
 
-                    albums: [
+                    albums: uploadedAlbums || [
                         {
                             id: 1,
                             title: "CCL Annual Picnic 2025 — Cox's Bazar",

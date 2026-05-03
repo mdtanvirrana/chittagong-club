@@ -89,7 +89,22 @@ class AffiliatedClubController extends Controller
                 'CEO' => $this->nullableInput($request->input('ceo')),
                 'VATREGISTRATION' => $this->nullableInput($request->input('vat_registration')),
                 'Shopid' => $this->nullableInput($request->input('shop_id')),
-                'image_path' => $this->storeImage($request, $nextId),
+                'Logo_Path' => $this->storeImage(
+                    $request,
+                    $nextId,
+                    null,
+                    'logo',
+                    'remove_logo',
+                    'affiliated-club-logo',
+                ),
+                'image_path' => $this->storeImage(
+                    $request,
+                    $nextId,
+                    null,
+                    'image',
+                    'remove_image',
+                    'affiliated-club-featured',
+                ),
             ]);
         });
 
@@ -131,7 +146,22 @@ class AffiliatedClubController extends Controller
             'CEO' => $this->nullableInput($request->input('ceo')),
             'VATREGISTRATION' => $this->nullableInput($request->input('vat_registration')),
             'Shopid' => $this->nullableInput($request->input('shop_id')),
-            'image_path' => $this->storeImage($request, (int) $clubRow->id_affiliated_club_key, $clubRow->getAttribute('image_path')),
+            'Logo_Path' => $this->storeImage(
+                $request,
+                (int) $clubRow->id_affiliated_club_key,
+                $clubRow->getAttribute('Logo_Path'),
+                'logo',
+                'remove_logo',
+                'affiliated-club-logo',
+            ),
+            'image_path' => $this->storeImage(
+                $request,
+                (int) $clubRow->id_affiliated_club_key,
+                $clubRow->getAttribute('image_path'),
+                'image',
+                'remove_image',
+                'affiliated-club-featured',
+            ),
         ])->save();
 
         PortalCache::clearAffiliatedClubCaches();
@@ -145,6 +175,7 @@ class AffiliatedClubController extends Controller
     {
         $clubRow = $this->findClub($club);
 
+        $this->deleteManagedImage($clubRow->getAttribute('Logo_Path'));
         $this->deleteManagedImage($clubRow->getAttribute('image_path'));
         $clubRow->delete();
 
@@ -174,19 +205,26 @@ class AffiliatedClubController extends Controller
         return $value !== '' ? $value : null;
     }
 
-    private function storeImage(Request $request, int $clubId, ?string $currentPath = null): ?string
+    private function storeImage(
+        Request $request,
+        int $clubId,
+        ?string $currentPath = null,
+        string $fileKey = 'image',
+        string $removeKey = 'remove_image',
+        string $filenamePrefix = 'affiliated-club',
+    ): ?string
     {
-        if ($request->boolean('remove_image') && ! $request->hasFile('image')) {
+        if ($request->boolean($removeKey) && ! $request->hasFile($fileKey)) {
             $this->deleteManagedImage($currentPath);
 
             return null;
         }
 
-        if (! $request->hasFile('image')) {
+        if (! $request->hasFile($fileKey)) {
             return $currentPath;
         }
 
-        $image = $request->file('image');
+        $image = $request->file($fileKey);
 
         if ($image === null || ! $image->isValid()) {
             return $currentPath;
@@ -196,7 +234,7 @@ class AffiliatedClubController extends Controller
         File::ensureDirectoryExists($directory);
 
         $extension = strtolower($image->getClientOriginalExtension() ?: $image->extension() ?: 'jpg');
-        $filename = sprintf('affiliated-club-%d-%s.%s', $clubId, Str::lower(Str::random(12)), $extension);
+        $filename = sprintf('%s-%d-%s.%s', $filenamePrefix, $clubId, Str::lower(Str::random(12)), $extension);
 
         $image->move($directory, $filename);
 

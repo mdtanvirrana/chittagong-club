@@ -99,6 +99,9 @@ class PortalCache
             'member_directory_v4',
             'employee_directory_v2',
             'former_chairman_v2',
+            'club_facilities_v1',
+            'club_facilities_v2',
+            'gallery_albums_v1',
             "committee_members_{$currentYear}_{$previousYear}_v2",
         ] as $key) {
             $cache->forget($key);
@@ -136,6 +139,7 @@ class PortalCache
         foreach ([
             'affiliated_clubs_v1',
             'affiliated_clubs_v2',
+            'affiliated_clubs_v3',
         ] as $key) {
             $cache->forget($key);
         }

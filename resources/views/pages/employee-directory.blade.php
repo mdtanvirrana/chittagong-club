@@ -143,7 +143,7 @@
                                 <img
                                     :src="emp.has_photo ? emp.photo_url : null"
                                     :alt="emp.name + ' photo'"
-                                    class="h-full w-full object-cover"
+                                    class="member-avatar-photo"
                                     x-show="emp.has_photo"
                                 >
                                 <span class="text-primary font-extrabold text-sm" x-show="!emp.has_photo" x-text="emp.initials"></span>
@@ -203,7 +203,7 @@
                     <img
                         :src="emp.has_photo ? emp.photo_url : null"
                         :alt="emp.name + ' photo'"
-                        class="h-full w-full object-cover"
+                        class="member-avatar-photo"
                         x-show="emp.has_photo"
                     >
                     <span class="text-primary font-extrabold text-sm" x-show="!emp.has_photo" x-text="emp.initials"></span>
@@ -276,7 +276,7 @@
                             <img
                                 :src="activeEmp.has_photo ? activeEmp.photo_url : null"
                                 :alt="activeEmp.name + ' photo'"
-                                class="h-full w-full object-cover"
+                                class="member-avatar-photo"
                                 x-show="activeEmp.has_photo"
                             >
                             <span class="text-primary font-extrabold text-2xl" x-show="!activeEmp.has_photo" x-text="activeEmp.initials"></span>
@@ -376,7 +376,7 @@
                 <div class="aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-primary/20 bg-white/5">
                     <img :src="previewEmp ? previewEmp.photo_url : null"
                          :alt="previewEmp ? previewEmp.name + ' full-size profile picture' : 'Profile picture preview'"
-                         class="size-full object-cover object-top">
+                         class="member-avatar-photo member-avatar-photo-preview">
                 </div>
 
                 <div class="pt-4 text-center">

@@ -69,7 +69,27 @@ class AffiliatedClub extends Model
 
     public function getImageUrlAttribute(): ?string
     {
-        $value = PortalContent::cleanedOptionalField($this->getAttribute('image_path'));
+        return $this->publicAssetUrl($this->getAttribute('image_path'));
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        return $this->publicAssetUrl($this->getAttribute('Logo_Path'));
+    }
+
+    public function getDisplayImageUrlAttribute(): ?string
+    {
+        return $this->image_url;
+    }
+
+    public function getDisplayLogoUrlAttribute(): ?string
+    {
+        return $this->logo_url;
+    }
+
+    private function publicAssetUrl(mixed $path): ?string
+    {
+        $value = PortalContent::cleanedOptionalField($path);
 
         if (! $value) {
             return null;
@@ -89,10 +109,5 @@ class AffiliatedClub extends Model
         $version = max((int) @filemtime($absolutePath), (int) @filectime($absolutePath));
 
         return asset($relativePath) . ($version > 0 ? '?v=' . $version : '');
-    }
-
-    public function getDisplayImageUrlAttribute(): ?string
-    {
-        return $this->image_url;
     }
 }

@@ -105,47 +105,66 @@
 
         <section
             x-data="{
-                currentUrl: @js($club->display_image_url),
-                previewUrl: @js($club->display_image_url),
-                previewName: '',
+                currentLogoUrl: @js($club->display_logo_url),
+                previewLogoUrl: @js($club->display_logo_url),
+                logoPreviewName: '',
+                removeLogo: @js((bool) old('remove_logo', false)),
+                logoObjectUrl: null,
+                currentImageUrl: @js($club->display_image_url),
+                previewImageUrl: @js($club->display_image_url),
+                imagePreviewName: '',
                 removeImage: @js((bool) old('remove_image', false)),
-                objectUrl: null,
-                updatePreview(event) {
+                imageObjectUrl: null,
+                updatePreview(type, event) {
+                    const isLogo = type === 'logo';
+                    const objectKey = isLogo ? 'logoObjectUrl' : 'imageObjectUrl';
+                    const previewKey = isLogo ? 'previewLogoUrl' : 'previewImageUrl';
+                    const previewNameKey = isLogo ? 'logoPreviewName' : 'imagePreviewName';
+                    const removeKey = isLogo ? 'removeLogo' : 'removeImage';
+                    const currentKey = isLogo ? 'currentLogoUrl' : 'currentImageUrl';
                     const [file] = event.target.files || [];
 
-                    if (this.objectUrl) {
-                        URL.revokeObjectURL(this.objectUrl);
-                        this.objectUrl = null;
+                    if (this[objectKey]) {
+                        URL.revokeObjectURL(this[objectKey]);
+                        this[objectKey] = null;
                     }
 
                     if (!file) {
-                        this.previewUrl = this.removeImage ? null : this.currentUrl;
-                        this.previewName = '';
+                        this[previewKey] = this[removeKey] ? null : this[currentKey];
+                        this[previewNameKey] = '';
                         return;
                     }
 
-                    this.removeImage = false;
-                    this.objectUrl = URL.createObjectURL(file);
-                    this.previewUrl = this.objectUrl;
-                    this.previewName = file.name;
+                    this[removeKey] = false;
+                    this[objectKey] = URL.createObjectURL(file);
+                    this[previewKey] = this[objectKey];
+                    this[previewNameKey] = file.name;
                 },
-                syncRemoval() {
-                    if (this.removeImage) {
-                        if (this.objectUrl) {
-                            URL.revokeObjectURL(this.objectUrl);
-                            this.objectUrl = null;
+                syncRemoval(type) {
+                    const isLogo = type === 'logo';
+                    const objectKey = isLogo ? 'logoObjectUrl' : 'imageObjectUrl';
+                    const previewKey = isLogo ? 'previewLogoUrl' : 'previewImageUrl';
+                    const previewNameKey = isLogo ? 'logoPreviewName' : 'imagePreviewName';
+                    const removeKey = isLogo ? 'removeLogo' : 'removeImage';
+                    const currentKey = isLogo ? 'currentLogoUrl' : 'currentImageUrl';
+                    const input = isLogo ? this.$refs.logo : this.$refs.image;
+
+                    if (this[removeKey]) {
+                        if (this[objectKey]) {
+                            URL.revokeObjectURL(this[objectKey]);
+                            this[objectKey] = null;
                         }
 
-                        this.$refs.image.value = '';
-                        this.previewName = '';
-                        this.previewUrl = null;
+                        input.value = '';
+                        this[previewNameKey] = '';
+                        this[previewKey] = null;
                         return;
                     }
 
-                    this.previewUrl = this.currentUrl;
+                    this[previewKey] = this[currentKey];
                 }
             }"
-            x-init="if (removeImage) previewUrl = null"
+            x-init="if (removeLogo) previewLogoUrl = null; if (removeImage) previewImageUrl = null"
             class="space-y-4"
         >
             <div class="rounded-lg border border-admin-line/10 bg-white/[0.03] p-4 shadow-panel">
@@ -160,37 +179,69 @@
 
             <div class="rounded-lg border border-admin-line/10 bg-white/[0.03] p-4 shadow-panel">
                 <h2 class="font-display text-lg font-bold text-white">Media</h2>
-                <div class="mt-4 space-y-4">
-                    <div>
-                        <label for="image" class="mb-1.5 block text-xs font-medium uppercase tracking-[0.16em] text-white/65">Club Image</label>
+                <div class="mt-4 space-y-5">
+                    <div class="space-y-3 border-b border-admin-line/10 pb-5">
+                        <div class="flex items-start gap-3">
+                            <div class="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-admin-line/10 bg-slate-950/20">
+                                <template x-if="previewLogoUrl">
+                                    <img :src="previewLogoUrl" alt="{{ $club->display_name }} logo" class="h-full w-full object-cover">
+                                </template>
+                                <template x-if="!previewLogoUrl">
+                                    <span class="material-symbols-outlined text-3xl text-admin-gold/70">badge</span>
+                                </template>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <label for="logo" class="mb-1.5 block text-xs font-medium uppercase tracking-[0.16em] text-white/65">Logo / Avatar</label>
+                                <input
+                                    x-ref="logo"
+                                    id="logo"
+                                    name="logo"
+                                    type="file"
+                                    accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif"
+                                    @change="updatePreview('logo', $event)"
+                                    class="block w-full border border-[#30384a] bg-slate-950/20 px-3 py-2.5 text-sm text-white file:mr-3 file:border-0 file:bg-admin-gold file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-admin-ink focus:border-[#3b4557] focus:ring-0"
+                                >
+                                <p class="mt-2 text-xs text-white/45">Used as the avatar in the member panel. The relative path is saved in `Logo_Path`.</p>
+                                <p x-show="logoPreviewName" x-text="logoPreviewName" class="mt-2 text-xs font-medium text-admin-gold"></p>
+                            </div>
+                        </div>
+
+                        <label class="flex items-center justify-between border border-admin-line/10 bg-slate-950/20 px-3 py-2.5">
+                            <span class="text-sm text-white/78">Remove current logo</span>
+                            <input type="checkbox" name="remove_logo" value="1" x-model="removeLogo" @change="syncRemoval('logo')" class="rounded-none border-[#30384a] bg-transparent text-admin-gold focus:ring-0">
+                        </label>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label for="image" class="mb-1.5 block text-xs font-medium uppercase tracking-[0.16em] text-white/65">Featured Image</label>
                         <input
                             x-ref="image"
                             id="image"
                             name="image"
                             type="file"
                             accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif"
-                            @change="updatePreview($event)"
+                            @change="updatePreview('image', $event)"
                             class="block w-full border border-[#30384a] bg-slate-950/20 px-3 py-2.5 text-sm text-white file:mr-3 file:border-0 file:bg-admin-gold file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-admin-ink focus:border-[#3b4557] focus:ring-0"
                         >
-                        <p class="mt-2 text-xs text-white/45">Files are stored in `public/affiliated_clubs`, while the relative path is saved in `image_path`.</p>
-                        <p x-show="previewName" x-text="previewName" class="mt-2 text-xs font-medium text-admin-gold"></p>
-                    </div>
+                        <p class="mt-2 text-xs text-white/45">Shown as the modal featured image. The relative path is saved in `image_path`.</p>
+                        <p x-show="imagePreviewName" x-text="imagePreviewName" class="mt-2 text-xs font-medium text-admin-gold"></p>
 
-                    <label class="flex items-center justify-between border border-admin-line/10 bg-slate-950/20 px-3 py-2.5">
-                        <span class="text-sm text-white/78">Remove current image</span>
-                        <input type="checkbox" name="remove_image" value="1" x-model="removeImage" @change="syncRemoval()" class="rounded-none border-[#30384a] bg-transparent text-admin-gold focus:ring-0">
-                    </label>
+                        <label class="flex items-center justify-between border border-admin-line/10 bg-slate-950/20 px-3 py-2.5">
+                            <span class="text-sm text-white/78">Remove current featured image</span>
+                            <input type="checkbox" name="remove_image" value="1" x-model="removeImage" @change="syncRemoval('image')" class="rounded-none border-[#30384a] bg-transparent text-admin-gold focus:ring-0">
+                        </label>
 
-                    <div class="overflow-hidden rounded-lg border border-admin-line/10 bg-slate-950/20">
-                        <template x-if="previewUrl">
-                            <img :src="previewUrl" alt="{{ $club->display_name }}" class="h-48 w-full object-cover">
-                        </template>
-                        <template x-if="!previewUrl">
-                            <div class="flex h-48 flex-col items-center justify-center gap-2">
-                                <span class="material-symbols-outlined text-4xl text-admin-gold/70">image</span>
-                                <p class="text-xs text-white/45">No image selected</p>
-                            </div>
-                        </template>
+                        <div class="overflow-hidden rounded-lg border border-admin-line/10 bg-slate-950/20">
+                            <template x-if="previewImageUrl">
+                                <img :src="previewImageUrl" alt="{{ $club->display_name }} featured image" class="h-48 w-full object-cover">
+                            </template>
+                            <template x-if="!previewImageUrl">
+                                <div class="flex h-48 flex-col items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined text-4xl text-admin-gold/70">image</span>
+                                    <p class="text-xs text-white/45">No featured image selected</p>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -207,8 +258,12 @@
                             <dt class="text-white/45">Version</dt>
                             <dd>{{ $club->id_affiliated_club_ver }}</dd>
                         </div>
+                        <div class="flex items-center justify-between gap-3 border-b border-admin-line/10 pb-3">
+                            <dt class="text-white/45">Stored Logo Path</dt>
+                            <dd class="max-w-[12rem] truncate text-right">{{ $club->getAttribute('Logo_Path') ?: 'Not set' }}</dd>
+                        </div>
                         <div class="flex items-center justify-between gap-3">
-                            <dt class="text-white/45">Stored Image Path</dt>
+                            <dt class="text-white/45">Stored Featured Path</dt>
                             <dd class="max-w-[12rem] truncate text-right">{{ $club->getAttribute('image_path') ?: 'Not set' }}</dd>
                         </div>
                     </dl>

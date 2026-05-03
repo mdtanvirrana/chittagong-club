@@ -9,7 +9,7 @@ class AffiliatedClubsController extends Controller
 {
     public function index()
     {
-        $clubs = collect(PortalCache::remember('affiliated_clubs_v2', now()->addMinutes(30), function (): array {
+        $clubs = collect(PortalCache::remember('affiliated_clubs_v3', now()->addMinutes(30), function (): array {
             return AffiliatedClub::query()
                 ->where('is_active', 1)
                 ->orderByRaw('CASE WHEN id_serial IS NULL THEN 1 ELSE 0 END')
@@ -29,6 +29,7 @@ class AffiliatedClubsController extends Controller
                     'tx_url',
                     'tx_fax',
                     'CEO',
+                    'Logo_Path',
                     'image_path',
                 ])
                 ->get()
@@ -74,6 +75,7 @@ class AffiliatedClubsController extends Controller
                         'website' => $c->tx_url ?? '',
                         'fax' => $c->tx_fax ?? '',
                         'ceo' => $c->CEO ?? '',
+                        'logo_url' => $c->display_logo_url,
                         'image_url' => $c->display_image_url,
                     ];
                 })

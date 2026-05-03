@@ -17,17 +17,17 @@
     }
 
     .login-input::placeholder {
-        color: #94a3b8 !important;
+        color: #1f2937 !important;
         opacity: 1;
     }
 
     .member-shell .blue-depth-gradient .login-input::placeholder {
-        color: #94a3b8 !important;
+        color: #1f2937 !important;
         opacity: 1;
     }
 
     .login-icon {
-        color: #94a3b8;
+        color: #1f2937;
         transition: color 180ms ease;
     }
 
@@ -38,7 +38,7 @@
     }
 
     .login-toggle {
-        color: #94a3b8;
+        color: #1f2937;
         transition: color 180ms ease;
     }
 
@@ -65,13 +65,13 @@
     }
 
     .auth-select:disabled {
-        color: rgba(17, 24, 39, 0.72);
+        color: rgba(31, 41, 55, 0.92);
         cursor: not-allowed;
         opacity: 1;
     }
 
     .auth-prefix {
-        color: rgba(17, 24, 39, 0.66);
+        color: rgba(31, 41, 55, 0.88);
         font-size: 0.95rem;
         font-weight: 700;
         letter-spacing: 0.04em;

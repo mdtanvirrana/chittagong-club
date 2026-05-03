@@ -64,10 +64,10 @@
             >
                 {{-- Avatar / placeholder --}}
                 <div class="shrink-0 size-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
-                    <template x-if="club.image_url">
-                        <img :src="club.image_url" :alt="club.name" class="h-full w-full object-cover">
+                    <template x-if="club.logo_url">
+                        <img :src="club.logo_url" :alt="club.name" class="h-full w-full object-cover">
                     </template>
-                    <template x-if="!club.image_url">
+                    <template x-if="!club.logo_url">
                         <span class="text-primary font-extrabold text-lg" x-text="club.initials"></span>
                     </template>
                 </div>
@@ -145,16 +145,26 @@
                     </div>
 
                     {{-- Name & branch --}}
-                    <div class="px-5 mb-5">
-                        <h2 class="text-white font-extrabold text-xl leading-tight" x-text="activeClub.name"></h2>
-                        <p class="text-primary text-sm font-semibold mt-0.5" x-text="activeClub.branch"
-                           x-show="activeClub.branch && activeClub.branch !== activeClub.name"></p>
-                        <template x-if="activeClub.ceo">
-                            <p class="text-white/40 text-xs mt-1">
-                                <span class="text-white/25">CEO / Head: </span>
-                                <span x-text="activeClub.ceo"></span>
-                            </p>
-                        </template>
+                    <div class="px-5 mb-5 flex items-start gap-3">
+                        <div class="shrink-0 size-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
+                            <template x-if="activeClub.logo_url">
+                                <img :src="activeClub.logo_url" :alt="activeClub.name" class="h-full w-full object-cover">
+                            </template>
+                            <template x-if="!activeClub.logo_url">
+                                <span class="text-primary font-extrabold text-xl" x-text="activeClub.initials"></span>
+                            </template>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h2 class="text-white font-extrabold text-xl leading-tight" x-text="activeClub.name"></h2>
+                            <p class="text-primary text-sm font-semibold mt-0.5" x-text="activeClub.branch"
+                               x-show="activeClub.branch && activeClub.branch !== activeClub.name"></p>
+                            <template x-if="activeClub.ceo">
+                                <p class="text-white/40 text-xs mt-1">
+                                    <span class="text-white/25">CEO / Head: </span>
+                                    <span x-text="activeClub.ceo"></span>
+                                </p>
+                            </template>
+                        </div>
                     </div>
 
                     {{-- Detail rows --}}

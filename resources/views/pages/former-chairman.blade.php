@@ -40,7 +40,7 @@
         {{-- Avatar: shrink-0 ensures the circle doesn't turn into an oval --}}
         <div class="shrink-0 size-14 rounded-full overflow-hidden border border-white/10 shadow-inner">
             @if ($m['has_photo'])
-                <img src="{{ $m['photo_url'] }}" alt="{{ $m['name'] }}" class="size-full object-cover">
+                <img src="{{ $m['photo_url'] }}" alt="{{ $m['name'] }}" class="member-avatar-photo">
             @else
                 <div class="size-full bg-primary/10 flex items-center justify-center">
                     <span class="text-primary font-extrabold text-base">{{ $m['initials'] }}</span>

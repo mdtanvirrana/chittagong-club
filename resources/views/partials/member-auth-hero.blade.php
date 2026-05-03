@@ -14,7 +14,7 @@
         <span class="gold-text-gradient company-name-canterbury" style="font-family: 'Canterbury', serif;">{{ $companyName }}</span>
     </h1>
 
-    <p class="text-center text-sm font-light uppercase tracking-widest text-black/70">
+    <p class="text-center text-sm font-light uppercase tracking-widest text-gray-800">
         {{ $eyebrow ?? 'Exclusive Member Access' }}
     </p>
 

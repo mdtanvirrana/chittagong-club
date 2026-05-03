@@ -67,9 +67,10 @@
                         :class="{ 'active:scale-95 transition-transform': {{ $member->hasProfilePhoto ? 'true' : 'false' }} }"
                         aria-label="Preview profile picture">
                     @if ($member->hasProfilePhoto)
-                        <span class="relative block size-full rounded-full overflow-hidden">
-                            <span class="size-full block bg-center bg-cover object-center"
-                                  style="background-image: url('{{ $member->profilePhotoUrl }}')"></span>
+                        <span class="relative block size-full rounded-full overflow-hidden bg-white">
+                            <img src="{{ $member->profilePhotoUrl }}"
+                                 alt="{{ $fullName }} profile picture"
+                                 class="member-avatar-photo rounded-full">
                         </span>
                     @else
                         <span class="size-full rounded-full bg-primary/10 flex items-center justify-center">
@@ -140,7 +141,7 @@
                     <div class="aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-primary/20 bg-white/5">
                         <img src="{{ $member->profilePhotoUrl }}"
                              alt="{{ $fullName }} full-size profile picture"
-                             class="size-full object-cover object-top">
+                             class="member-avatar-photo member-avatar-photo-preview">
                     </div>
 
                     <div class="pt-4 text-center">

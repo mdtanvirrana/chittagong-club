@@ -16,6 +16,7 @@ use App\Http\Controllers\ClubFacilitiesController;
 use App\Http\Controllers\CommitteeController;
 use App\Http\Controllers\EmployeeDirectoryController;
 use App\Http\Controllers\FormerChairmanController;
+use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\LegalPageController;
 use App\Http\Controllers\Member\DashboardController;
 use App\Http\Controllers\Member\LedgerController;
@@ -133,7 +134,7 @@ Route::middleware('auth.member')->group(function () {
     Route::get('/about', fn () => view('pages.about'))->name('about');
     Route::get('/dress-code', fn () => view('pages.dress-code'))->name('dress-code');
     Route::get('/general-rules', fn () => view('pages.general-rules'))->name('general-rules');
-    Route::get('/gallery', fn () => view('pages.gallery'))->name('gallery');
+    Route::get('/gallery', [GalleryController::class, 'index'])->name('gallery');
 });
 
 Route::controller(SSLCommerzPaymentController::class)

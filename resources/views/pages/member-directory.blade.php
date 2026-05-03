@@ -44,7 +44,7 @@
                         class="relative shrink-0 size-12 rounded-full overflow-hidden border border-white/10 bg-primary/10 flex items-center justify-center"
                         :class="m.has_photo ? 'active:scale-95 transition-transform' : 'cursor-default'"
                         :aria-label="'Preview ' + m.name + ' profile picture'">
-                    <img :src="m.has_photo ? m.photo_url : null" class="size-full object-cover"
+                    <img :src="m.has_photo ? m.photo_url : null" class="member-avatar-photo"
                          x-show="m.has_photo"
                          x-bind:alt="m.name + ' profile picture'">
                     <span class="text-primary font-bold text-sm" x-show="!m.has_photo" x-text="m.initials"></span>
@@ -110,7 +110,7 @@
                 <div class="aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-primary/20 bg-white/5">
                     <img x-bind:src="previewMember ? previewMember.photo_url : null"
                          x-bind:alt="previewMember ? previewMember.name + ' full-size profile picture' : 'Profile picture preview'"
-                         class="size-full object-cover object-top">
+                         class="member-avatar-photo member-avatar-photo-preview">
                 </div>
 
                 <div class="pt-4 text-center">

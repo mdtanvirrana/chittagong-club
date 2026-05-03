@@ -36,12 +36,16 @@ return [
     ],
 
     'sslcommerz' => [
-        'store_id' => env('SSLCZ_STORE_ID'),
-        'store_password' => env('SSLCZ_STORE_PASSWORD'),
-        'sandbox' => env('SSLCOMMERZ_SANDBOX', true),
+        'store_id' => env('SSLCOMMERZ_STORE_ID', env('SSLCZ_STORE_ID')),
+        'store_password' => env('SSLCOMMERZ_STORE_PASSWORD', env('SSLCZ_STORE_PASSWORD')),
+        'sandbox' => env('SSLCOMMERZ_SANDBOX', env('SSLCZ_IS_SANDBOX', true)),
         'currency' => env('SSLCOMMERZ_CURRENCY', 'BDT'),
         'sandbox_url' => env('SSLCOMMERZ_SANDBOX_URL', 'https://sandbox.sslcommerz.com'),
         'live_url' => env('SSLCOMMERZ_LIVE_URL', 'https://securepay.sslcommerz.com'),
+        'success_url' => env('SSLCOMMERZ_SUCCESS_URL', env('SSLCZ_SUCCESS_URL')),
+        'fail_url' => env('SSLCOMMERZ_FAIL_URL', env('SSLCZ_FAIL_URL')),
+        'cancel_url' => env('SSLCOMMERZ_CANCEL_URL', env('SSLCZ_CANCEL_URL')),
+        'ipn_url' => env('SSLCOMMERZ_IPN_URL', env('SSLCZ_IPN_URL')),
     ],
 
     'robi_sms' => [

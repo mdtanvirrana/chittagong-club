@@ -18,7 +18,7 @@
                         style="border: 4px solid var(--member-primary); box-shadow: 0 0 15px var(--member-primary-glow);"
                         aria-label="Preview profile picture">
                     @if ($profilePhotoUrl)
-                        <img class="size-full rounded-full object-cover object-top"
+                        <img class="member-avatar-photo rounded-full"
                              src="{{ $profilePhotoUrl }}"
                              alt="{{ $fullName }} profile picture">
                     @else
@@ -216,7 +216,7 @@
                     <div class="aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-primary/20 bg-white/5">
                         <img src="{{ $profilePhotoUrl }}"
                              alt="{{ $fullName }} full-size profile picture"
-                             class="size-full object-cover object-top">
+                             class="member-avatar-photo member-avatar-photo-preview">
                     </div>
 
                     <div class="pt-4 text-center">

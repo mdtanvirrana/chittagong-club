@@ -7,6 +7,7 @@
 
     $paymentNotice = match ($paymentState) {
         'success' => ['tone' => 'success', 'message' => 'Payment completed successfully.'],
+        'held' => ['tone' => 'warning', 'message' => 'Payment received and held for manual verification.'],
         'failed' => ['tone' => 'danger', 'message' => 'Payment failed. Please try again.'],
         'cancelled' => ['tone' => 'warning', 'message' => 'Payment was cancelled before completion.'],
         'verification_failed' => ['tone' => 'danger', 'message' => 'Payment callback received, but verification failed.'],
@@ -483,12 +484,41 @@
 
                         <div>
                             <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-white/40">Note</label>
-                            <textarea
+                            <input
                                 x-model="paymentForm.note"
-                                rows="4"
+                                type="text"
                                 placeholder="Payment note"
                                 class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                            ></textarea>
+                            />
+                        </div>
+
+                        <div class="overflow-hidden rounded-2xl border border-primary/35 bg-primary/10 shadow-[0_18px_42px_-30px_rgba(254,0,2,0.75)]">
+                            <div class="flex items-start gap-3 px-4 py-3">
+                                <div class="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-brand-blue shadow-lg shadow-primary/20">
+                                    <span class="material-symbols-outlined text-xl">priority_high</span>
+                                </div>
+
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <p class="text-[10px] font-extrabold uppercase tracking-[0.22em] text-primary">Convenience Fee</p>
+                                        <span class="rounded-full border border-primary/25 bg-white px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-primary">
+                                            Important
+                                        </span>
+                                    </div>
+
+                                    <div class="mt-3 grid gap-2">
+                                        <div class="flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-white/85 px-3 py-2">
+                                            <p class="text-xs font-bold leading-5 text-white/70">Others (Visa/Master/bKash)</p>
+                                            <p class="shrink-0 rounded-full bg-primary px-2.5 py-1 text-xs font-extrabold text-brand-blue">2.5%</p>
+                                        </div>
+
+                                        <div class="flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-white/85 px-3 py-2">
+                                            <p class="text-xs font-bold leading-5 text-white/70">Amex &amp; QCash</p>
+                                            <p class="shrink-0 rounded-full bg-primary px-2.5 py-1 text-xs font-extrabold text-brand-blue">3.5%</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="rounded-2xl border border-white/10 bg-white/5">

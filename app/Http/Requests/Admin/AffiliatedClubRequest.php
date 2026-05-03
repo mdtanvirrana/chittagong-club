@@ -16,6 +16,7 @@ class AffiliatedClubRequest extends FormRequest
         $this->merge([
             'is_active' => $this->boolean('is_active'),
             'remove_image' => $this->boolean('remove_image'),
+            'remove_logo' => $this->boolean('remove_logo'),
         ]);
     }
 
@@ -36,7 +37,9 @@ class AffiliatedClubRequest extends FormRequest
             'ceo' => ['nullable', 'string', 'max:100'],
             'vat_registration' => ['nullable', 'string', 'max:200'],
             'shop_id' => ['nullable', 'string', 'max:10'],
+            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
+            'remove_logo' => ['required', 'boolean'],
             'remove_image' => ['required', 'boolean'],
             'is_active' => ['required', 'boolean'],
         ];
@@ -47,6 +50,8 @@ class AffiliatedClubRequest extends FormRequest
         return [
             'serial.required' => 'Enter a serial number for display order.',
             'company.required' => 'Enter the affiliated club name.',
+            'logo.image' => 'Upload a valid logo image file.',
+            'logo.max' => 'The logo must be 5 MB or smaller.',
             'image.image' => 'Upload a valid image file.',
             'image.max' => 'The image must be 5 MB or smaller.',
         ];

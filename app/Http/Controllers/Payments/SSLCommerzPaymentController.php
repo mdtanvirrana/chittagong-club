@@ -55,10 +55,10 @@ class SSLCommerzPaymentController extends Controller
                 'total_amount' => number_format((float) $transaction->amount, 2, '.', ''),
                 'currency' => $transaction->currency,
                 'tran_id' => $transaction->transaction_id,
-                'success_url' => route('payments.sslcommerz.success'),
-                'fail_url' => route('payments.sslcommerz.fail'),
-                'cancel_url' => route('payments.sslcommerz.cancel'),
-                'ipn_url' => route('payments.sslcommerz.ipn'),
+                'success_url' => $this->callbackUrl('success'),
+                'fail_url' => $this->callbackUrl('fail'),
+                'cancel_url' => $this->callbackUrl('cancel'),
+                'ipn_url' => $this->callbackUrl('ipn'),
                 'product_name' => 'Ledger Payment',
                 'product_category' => 'membership-payment',
                 'product_profile' => 'non-physical-goods',
@@ -123,7 +123,7 @@ class SSLCommerzPaymentController extends Controller
         $result = $this->finalizeSuccessfulPayment($transaction, $request->all());
 
         return redirect()->route('ledger', [
-            'payment' => $result['ok'] ? 'success' : 'verification_failed',
+            'payment' => $result['state'],
             'tran_id' => $transaction->transaction_id,
         ]);
     }
@@ -159,7 +159,13 @@ class SSLCommerzPaymentController extends Controller
         if (($request->input('status') ?? '') === 'VALID' || ($request->input('status') ?? '') === 'VALIDATED') {
             $result = $this->finalizeSuccessfulPayment($transaction, $request->all());
 
-            return response()->json(['message' => $result['ok'] ? 'Payment processed.' : 'Payment validation failed.']);
+            return response()->json([
+                'message' => match ($result['state']) {
+                    'success' => 'Payment processed.',
+                    'held' => 'Payment held for manual review.',
+                    default => 'Payment validation failed.',
+                },
+            ]);
         }
 
         $this->markAsUnsuccessful($request->all(), strtolower((string) $request->input('status', 'failed')));
@@ -178,6 +184,18 @@ class SSLCommerzPaymentController extends Controller
             'last_status_at' => now(),
         ]);
 
+        $validationId = trim((string) ($payload['val_id'] ?? $transaction->validation_id ?? ''));
+
+        if ($validationId === '') {
+            $transaction->update([
+                'status' => 'verification_failed',
+                'validation_response' => json_encode(['reason' => 'Validation ID is missing from the SSLCommerz callback.']),
+                'last_status_at' => now(),
+            ]);
+
+            return ['ok' => false, 'state' => 'verification_failed'];
+        }
+
         $signaturePresent = isset($payload['verify_sign'], $payload['verify_key']);
 
         if ($signaturePresent && ! $this->sslCommerz->verifySignature($payload)) {
@@ -187,11 +205,11 @@ class SSLCommerzPaymentController extends Controller
                 'last_status_at' => now(),
             ]);
 
-            return ['ok' => false];
+            return ['ok' => false, 'state' => 'verification_failed'];
         }
 
         try {
-            $validation = $this->sslCommerz->validateOrder((string) ($payload['val_id'] ?? ''));
+            $validation = $this->sslCommerz->validateOrder($validationId);
         } catch (Throwable $e) {
             report($e);
 
@@ -201,11 +219,11 @@ class SSLCommerzPaymentController extends Controller
                 'last_status_at' => now(),
             ]);
 
-            return ['ok' => false];
+            return ['ok' => false, 'state' => 'verification_failed'];
         }
 
         $isValidStatus = in_array($validation['status'] ?? null, ['VALID', 'VALIDATED'], true);
-        $amountMatches = (float) ($validation['amount'] ?? 0) === (float) $transaction->amount;
+        $amountMatches = $this->amountsMatch($validation['amount'] ?? 0, $transaction->amount);
         $currencyMatches = strtoupper((string) ($validation['currency'] ?? '')) === strtoupper($transaction->currency);
         $transactionMatches = (string) ($validation['tran_id'] ?? '') === $transaction->transaction_id;
 
@@ -217,12 +235,35 @@ class SSLCommerzPaymentController extends Controller
                 'last_status_at' => now(),
             ]);
 
-            return ['ok' => false];
+            return ['ok' => false, 'state' => 'verification_failed'];
+        }
+
+        $paidAt = $this->parsePaidAt($validation['tran_date'] ?? null);
+
+        if ($this->shouldHoldForReview($validation)) {
+            $transaction->update([
+                'status' => 'held',
+                'ssl_status' => $validation['status'] ?? 'VALIDATED',
+                'validation_id' => $validation['val_id'] ?? $transaction->validation_id,
+                'bank_transaction_id' => $validation['bank_tran_id'] ?? $transaction->bank_transaction_id,
+                'card_type' => $validation['card_type'] ?? $transaction->card_type,
+                'store_amount' => $validation['store_amount'] ?? $transaction->store_amount,
+                'validation_response' => json_encode($validation),
+                'paid_at' => $paidAt,
+                'last_status_at' => now(),
+            ]);
+
+            Log::warning('SSLCommerz transaction held for manual review due to high risk level.', [
+                'transaction_id' => $transaction->transaction_id,
+                'member_id' => $transaction->member_id,
+                'risk_level' => $validation['risk_level'] ?? null,
+                'risk_title' => $validation['risk_title'] ?? null,
+            ]);
+
+            return ['ok' => false, 'state' => 'held'];
         }
 
         DB::transaction(function () use ($transaction, $validation) {
-            $paidAt = $this->parsePaidAt($validation['tran_date'] ?? null);
-
             $transaction->update([
                 'status' => 'success',
                 'ssl_status' => $validation['status'] ?? 'VALIDATED',
@@ -254,7 +295,7 @@ class SSLCommerzPaymentController extends Controller
             );
         });
 
-        return ['ok' => true];
+        return ['ok' => true, 'state' => 'success'];
     }
 
     private function markAsUnsuccessful(array $payload, string $status): void
@@ -303,6 +344,27 @@ class SSLCommerzPaymentController extends Controller
         } catch (Throwable) {
             return now();
         }
+    }
+
+    private function callbackUrl(string $type): string
+    {
+        $configured = trim((string) config('services.sslcommerz.'.$type.'_url'));
+
+        if ($configured !== '') {
+            return $configured;
+        }
+
+        return route('payments.sslcommerz.'.$type);
+    }
+
+    private function amountsMatch(float|string|int $expected, float|string|int $actual): bool
+    {
+        return number_format((float) $expected, 2, '.', '') === number_format((float) $actual, 2, '.', '');
+    }
+
+    private function shouldHoldForReview(array $validation): bool
+    {
+        return (string) ($validation['risk_level'] ?? '') === '1';
     }
 
     private function getMemberContact(string $memberId): array

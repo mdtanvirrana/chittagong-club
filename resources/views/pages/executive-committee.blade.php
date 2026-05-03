@@ -42,7 +42,7 @@
         {{-- Avatar: Shrink-0 prevents the image from squishing --}}
         <div class="shrink-0 size-14 sm:size-16 rounded-xl overflow-hidden border border-primary/20">
             @if ($m['has_photo'])
-                <img src="{{ $m['photo_url'] }}" alt="{{ $m['name'] }}" class="size-full object-cover">
+                <img src="{{ $m['photo_url'] }}" alt="{{ $m['name'] }}" class="member-avatar-photo">
             @else
                 <div class="size-full bg-primary/10 flex items-center justify-center">
                     <span class="text-primary font-extrabold text-base">{{ $m['initials'] }}</span>
