@@ -19,23 +19,23 @@ class RobiSmsService
     public function sendOtp(string $phone, string $message): void
     {
         $url = trim((string) config('services.robi_sms.url'));
-        $username = trim((string) config('services.robi_sms.username'));
-        $password = trim((string) config('services.robi_sms.password'));
-        $from = trim((string) config('services.robi_sms.from'));
+        $apiKey = trim((string) config('services.robi_sms.api_key'));
+        $type = trim((string) config('services.robi_sms.type', 'text'));
+        $senderId = trim((string) config('services.robi_sms.sender_id'));
         $to = $this->normalizeRecipient($phone);
         $payload = [
-            'Username' => $username,
-            'Password' => $password,
-            'From' => $from,
-            'To' => $to,
-            'Message' => $message,
+            'api_key' => $apiKey,
+            'type' => $type !== '' ? $type : 'text',
+            'contacts' => $to,
+            'senderid' => $senderId,
+            'msg' => $message,
         ];
 
-        if ($url === '' || $username === '' || $password === '' || $from === '' || $to === '') {
+        if ($url === '' || $apiKey === '' || $senderId === '' || $to === '') {
             throw new RuntimeException('SMS gateway is not configured.');
         }
 
-        Log::info('Sending OTP via Robi SMS gateway.', $this->logContext($url, $payload));
+        Log::info('Sending OTP via MRAM SMS gateway.', $this->logContext($url, $payload));
 
         $response = $this->http
             ->timeout((int) config('services.robi_sms.timeout', 10))
@@ -53,7 +53,7 @@ class RobiSmsService
                 return;
             }
 
-            Log::warning('Robi SMS gateway rejected OTP request.', [
+            Log::warning('MRAM SMS gateway rejected OTP request.', [
                 ...$this->logContext($url, $payload),
                 'gateway_response' => $gatewayResponse,
             ]);
@@ -71,7 +71,7 @@ class RobiSmsService
             $message = trim($response->body());
         }
 
-        Log::warning('Robi SMS gateway request failed.', [
+        Log::warning('MRAM SMS gateway request failed.', [
             ...$this->logContext($url, $payload),
             'http_status' => $response->status(),
             'response_excerpt' => $this->responseExcerpt($response->body()),
@@ -84,12 +84,11 @@ class RobiSmsService
     {
         return [
             'sms_url' => $url,
-            'sms_username' => $payload['Username'] ?? '',
-            'sms_from' => $payload['From'] ?? '',
-            'sms_to_masked' => $this->maskPhone((string) ($payload['To'] ?? '')),
-            'sms_to_length' => mb_strlen((string) ($payload['To'] ?? '')),
-            'message_length' => mb_strlen((string) ($payload['Message'] ?? '')),
-            'message_is_ascii' => ! preg_match('/[^\x00-\x7F]/', (string) ($payload['Message'] ?? '')),
+            'sms_sender_id' => $payload['senderid'] ?? '',
+            'sms_to_masked' => $this->maskPhone((string) ($payload['contacts'] ?? '')),
+            'sms_to_length' => mb_strlen((string) ($payload['contacts'] ?? '')),
+            'message_length' => mb_strlen((string) ($payload['msg'] ?? '')),
+            'message_is_ascii' => ! preg_match('/[^\x00-\x7F]/', (string) ($payload['msg'] ?? '')),
         ];
     }
 
@@ -177,6 +176,14 @@ class RobiSmsService
 
         if ($digits === '') {
             return '';
+        }
+
+        if (mb_strlen($digits) === 11 && str_starts_with($digits, '0')) {
+            return '88' . $digits;
+        }
+
+        if (mb_strlen($digits) === 10 && str_starts_with($digits, '1')) {
+            return '880' . $digits;
         }
 
         if (mb_strlen($digits) > 13) {

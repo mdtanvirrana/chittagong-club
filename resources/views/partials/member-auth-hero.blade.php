@@ -4,8 +4,8 @@
         <div class="relative flex h-32 w-32 items-center justify-center">
             <img
                 class="h-32 w-32 rounded-full object-contain"
-                src="{{ asset('logo.png') }}"
-                alt="Chittagong Club Logo"
+                src="{{ $companyLogoUrl }}"
+                alt="{{ $companyName }} Logo"
             />
         </div>
     </div>

@@ -72,7 +72,7 @@
     <div class="px-5 pt-5 pb-5 border-b border-primary/10 bg-white">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <img src="{{ asset('logo.png') }}" alt="CCL" class="size-9 rounded-full object-contain"/>
+                <img src="{{ $companyLogoUrl }}" alt="{{ $companyName }}" class="size-9 rounded-full object-contain"/>
                 <div>
                     <p class="company-name-canterbury text-slate-900 text-lg leading-tight">{{ $companyName }}</p>
                     <p class="text-primary text-[10px] font-bold uppercase tracking-wider">Est. 1878</p>

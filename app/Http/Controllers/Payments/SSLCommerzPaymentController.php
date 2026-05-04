@@ -263,7 +263,7 @@ class SSLCommerzPaymentController extends Controller
             return ['ok' => false, 'state' => 'held'];
         }
 
-        DB::transaction(function () use ($transaction, $validation) {
+        DB::transaction(function () use ($transaction, $validation, $paidAt) {
             $transaction->update([
                 'status' => 'success',
                 'ssl_status' => $validation['status'] ?? 'VALIDATED',

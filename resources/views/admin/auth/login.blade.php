@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - {{ $companyName }}</title>
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="icon" type="image/x-icon" href="{{ $companyFaviconUrl }}">
+    <link rel="apple-touch-icon" href="{{ $companyLogoUrl }}">
     @php
         $adminTheme = config('theme.admin', []);
         $adminDisplayFont = data_get($adminTheme, 'fonts.display.family', 'Space Grotesk');

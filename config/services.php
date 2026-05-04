@@ -49,10 +49,10 @@ return [
     ],
 
     'robi_sms' => [
-        'url' => env('ROBI_SMS_URL'),
-        'username' => env('ROBI_SMS_USERNAME'),
-        'password' => env('ROBI_SMS_PASSWORD'),
-        'from' => env('ROBI_SMS_FROM'),
+        'url' => env('ROBI_SMS_URL', 'https://msg.mram.com.bd/smsapi'),
+        'api_key' => env('ROBI_SMS_API_KEY'),
+        'type' => env('ROBI_SMS_TYPE', 'text'),
+        'sender_id' => env('ROBI_SMS_SENDER_ID', '8809601019288'),
         'timeout' => (int) env('ROBI_SMS_TIMEOUT', 10),
     ],
 

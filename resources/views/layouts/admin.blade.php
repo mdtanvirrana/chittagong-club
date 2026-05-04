@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('page_title', 'Admin Panel') - {{ $companyName }}</title>
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="icon" type="image/x-icon" href="{{ $companyFaviconUrl }}">
+    <link rel="apple-touch-icon" href="{{ $companyLogoUrl }}">
     @php
         $adminTheme = config('theme.admin', []);
         $adminDisplayFont = data_get($adminTheme, 'fonts.display.family', 'Space Grotesk');
@@ -198,6 +198,7 @@
     $mainContainerClass = trim($__env->yieldContent('main_container_class', 'w-full'));
     $navItems = [
         ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'match' => 'admin.dashboard', 'icon' => 'space_dashboard'],
+        ['label' => 'Company Profile', 'route' => 'admin.company-profile.index', 'match' => 'admin.company-profile.*', 'icon' => 'corporate_fare'],
         ['label' => 'Notices', 'route' => 'admin.notices.index', 'match' => 'admin.notices.*', 'icon' => 'campaign'],
         ['label' => 'Contacts', 'route' => 'admin.contacts.index', 'match' => 'admin.contacts.*', 'icon' => 'contacts'],
         ['label' => 'Affiliated Clubs', 'route' => 'admin.affiliated-clubs.index', 'match' => 'admin.affiliated-clubs.*', 'icon' => 'handshake'],
@@ -220,7 +221,7 @@
     >
         <div class="flex items-center justify-between">
             <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
-                <img src="{{ asset('logo.png') }}" alt="{{ $companyName }}" class="size-11 rounded-lg bg-admin-soft/80 object-contain p-1.5">
+                <img src="{{ $companyLogoUrl }}" alt="{{ $companyName }}" class="size-11 rounded-lg bg-admin-soft/80 object-contain p-1.5">
                 <div>
                     <p class="font-display text-base font-bold tracking-tight text-slate-900">Admin Panel</p>
                     <p class="text-[10px] uppercase tracking-[0.24em] text-admin-gold">{{ $companyName }}</p>

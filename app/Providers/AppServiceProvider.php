@@ -2,11 +2,10 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\DB;
+use App\Support\CompanyProfile;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
-use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -33,35 +32,14 @@ class AppServiceProvider extends ServiceProvider
             static $companyProfile;
 
             if ($companyProfile === null) {
-                $companyProfile = [
-                    'companyName' => 'Chittagong Club Ltd.',
-                    'companyAddress' => '',
-                    'companyAddressLines' => [],
-                    'companyAddressMapQuery' => 'Chittagong Club Ltd.',
-                ];
-
-                try {
-                    $profile = DB::table('CPROFILE')
-                        ->select(['COMPANY', 'HOAddress'])
-                        ->first();
-
-                    $companyName = trim((string) ($profile?->COMPANY ?? '')) ?: $companyProfile['companyName'];
-                    $companyAddress = trim((string) ($profile?->HOAddress ?? ''));
-
-                    $companyProfile = [
-                        'companyName' => $companyName,
-                        'companyAddress' => $companyAddress,
-                        'companyAddressLines' => $companyAddress !== ''
-                            ? preg_split('/\r\n|\r|\n/', $companyAddress)
-                            : [],
-                        'companyAddressMapQuery' => trim($companyName . ' ' . $companyAddress),
-                    ];
-                } catch (Throwable) {
-                    //
-                }
+                $companyProfile = CompanyProfile::current();
             }
 
-            $view->with($companyProfile);
+            $view->with($companyProfile + [
+                'companyProfile' => $companyProfile,
+                'companyLogoUrl' => $companyProfile['logoUrl'] ?? asset('logo.png'),
+                'companyFaviconUrl' => $companyProfile['logoUrl'] ?? asset('favicon.ico'),
+            ]);
         });
     }
 }

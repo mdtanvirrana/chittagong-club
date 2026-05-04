@@ -16,7 +16,7 @@
         'eyebrow' => 'Member First Login',
         'stepLabel' => 'Step 1 of 3',
         'sectionTitle' => 'Send OTP',
-        'sectionDescription' => 'Before setting your first password, confirm your member ID with a one-time code sent to your registered mobile number.',
+        'sectionDescription' => 'Enter your member ID to receive a one-time code on your registered mobile number.',
     ])
 
     <div class="flex flex-1 flex-col justify-start px-8 pb-12">
@@ -37,29 +37,28 @@
                 </div>
             @endif
 
-            <div class="auth-floating-card rounded-[1.75rem] px-5 py-5">
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary/70">Member ID</p>
-                <p class="mt-3 text-lg font-bold text-slate-900">{{ data_get($setupState, 'member_id') }}</p>
-                <p class="mt-2 text-sm leading-6 text-slate-700">{{ data_get($setupState, 'member_name', 'Member') }}</p>
-            </div>
-
-            <div class="auth-floating-card rounded-[1.75rem] px-5 py-5 text-center">
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary/70">OTP Delivery</p>
-                @if ($hasRegisteredPhone)
-                    <p class="mt-3 text-2xl font-bold tracking-[0.16em] text-slate-900">{{ data_get($setupState, 'phone.masked') }}</p>
-                    <p class="mt-3 text-sm leading-6 text-slate-600">
-                        Tap the button below to send a 6-digit OTP to your registered Bangladesh mobile number.
-                    </p>
-                @else
-                    <p class="mt-3 text-sm leading-6 text-slate-600">
-                        No registered Bangladesh mobile number is available for this member ID. Contact the club office to continue.
-                    </p>
-                @endif
+            <div class="space-y-2">
+                <label class="ml-1 block text-xs font-semibold uppercase tracking-widest text-primary/80">
+                    Membership ID
+                </label>
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                        <span class="material-symbols-outlined login-icon">badge</span>
+                    </div>
+                    <input
+                        name="member_id"
+                        type="text"
+                        value="{{ old('member_id', data_get($setupState, 'member_id')) }}"
+                        placeholder="e.g. CCL-88291"
+                        autocomplete="username"
+                        class="login-input block w-full rounded-xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all {{ $errors->has('member_id') ? 'border-red-500/50' : 'border-primary/10' }}"
+                    />
+                </div>
             </div>
 
             <button
                 type="submit"
-                :disabled="loading || !@js($hasRegisteredPhone)"
+                :disabled="loading"
                 class="flex w-full items-center justify-center gap-2 rounded-xl py-4 font-bold text-brand-blue gold-btn-gradient shadow-[0_10px_20px_-5px_rgba(242,204,13,0.3)] transition-all active:scale-[0.98] disabled:opacity-70"
             >
                 <span x-show="!loading">SEND OTP</span>

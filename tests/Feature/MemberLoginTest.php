@@ -46,16 +46,16 @@ test('member can sign in with an active customer record and Users_App credential
         ]);
 
     DB::shouldReceive('table')
-        ->twice()
+        ->once()
         ->with('Users_App')
         ->andReturn($credentialLookup);
 
     $credentialLookup->shouldReceive('where')
-        ->twice()
+        ->once()
         ->with('PrvcusID', 'CCL-1001')
         ->andReturnSelf();
     $credentialLookup->shouldReceive('value')
-        ->twice()
+        ->once()
         ->with('Password')
         ->andReturn(md5('secret123'));
 
@@ -124,16 +124,16 @@ test('member login fails when Users_App credentials do not match', function () {
         ]);
 
     DB::shouldReceive('table')
-        ->twice()
+        ->once()
         ->with('Users_App')
         ->andReturn($credentialLookup);
 
     $credentialLookup->shouldReceive('where')
-        ->twice()
+        ->once()
         ->with('PrvcusID', 'CCL-1002')
         ->andReturnSelf();
     $credentialLookup->shouldReceive('value')
-        ->twice()
+        ->once()
         ->with('Password')
         ->andReturn(md5('different-pass'));
 
@@ -149,7 +149,7 @@ test('member login fails when Users_App credentials do not match', function () {
         ]);
 });
 
-test('member is redirected to first-time password setup when no password exists', function () {
+test('member login fails with invalid credentials when no password exists', function () {
     $memberLookup = \Mockery::mock();
     $credentialLookup = \Mockery::mock();
 
@@ -208,10 +208,11 @@ test('member is redirected to first-time password setup when no password exists'
     ]);
 
     $response
-        ->assertRedirect(route('password.initial.create'))
-        ->assertSessionHas('member_initial_password_setup.member_id', 'CCL-1003')
-        ->assertSessionHas('member_initial_password_setup.member_name', 'No Password Member')
-        ->assertSessionHas('member_initial_password_setup.phone.e164_digits', '8801711721053');
+        ->assertRedirect(route('login'))
+        ->assertSessionHasErrors([
+            'member_id' => 'Invalid Membership ID or password.',
+        ])
+        ->assertSessionMissing('member_initial_password_setup');
 });
 
 test('member can create a first-time password through sms otp verification', function () {
@@ -228,36 +229,23 @@ test('member can create a first-time password through sms otp verification', fun
     $credentialSave = \Mockery::mock();
     $otpUseUpdate = \Mockery::mock();
     $capturedMessage = null;
-    $successXml = <<<'XML'
-<?xml version="1.0" encoding="UTF-8"?>
-<ArrayOfServiceClass>
-    <ServiceClass>
-        <MessageId>12345</MessageId>
-        <Status>0</Status>
-        <StatusText>success</StatusText>
-        <ErrorCode>0</ErrorCode>
-        <ErrorText></ErrorText>
-        <SMSCount>1</SMSCount>
-        <CurrentCredit>42.0</CurrentCredit>
-    </ServiceClass>
-</ArrayOfServiceClass>
-XML;
+    $successBody = 'SMS SUBMITTED: ID - 12345';
 
-    Http::fake(function ($request) use (&$capturedMessage, $successXml) {
-        $capturedMessage = $request->data()['Message'] ?? null;
-        expect($request->data()['Username'] ?? null)->toBe('sms-user');
-        expect($request->data()['Password'] ?? null)->toBe('sms-pass');
-        expect($request->data()['From'] ?? null)->toBe('8801847170339');
-        expect($request->data()['To'] ?? null)->toBe('01711721053');
+    Http::fake(function ($request) use (&$capturedMessage, $successBody) {
+        $capturedMessage = $request->data()['msg'] ?? null;
+        expect($request->data()['api_key'] ?? null)->toBe('sms-api-key');
+        expect($request->data()['type'] ?? null)->toBe('text');
+        expect($request->data()['senderid'] ?? null)->toBe('8809601019288');
+        expect($request->data()['contacts'] ?? null)->toBe('8801711721053');
         expect(isset($request->data()['submit']))->toBeFalse();
 
-        return Http::response($successXml, 200, ['Content-Type' => 'application/xml']);
+        return Http::response($successBody);
     });
 
-    Config::set('services.robi_sms.url', 'https://robi.example.test/sms');
-    Config::set('services.robi_sms.username', 'sms-user');
-    Config::set('services.robi_sms.password', 'sms-pass');
-    Config::set('services.robi_sms.from', '8801847170339');
+    Config::set('services.robi_sms.url', 'https://msg.example.test/smsapi');
+    Config::set('services.robi_sms.api_key', 'sms-api-key');
+    Config::set('services.robi_sms.type', 'text');
+    Config::set('services.robi_sms.sender_id', '8809601019288');
 
     DB::shouldReceive('table')
         ->once()
@@ -280,9 +268,19 @@ XML;
         ->once()
         ->with('c.PrvCusID', 'CCL-1003')
         ->andReturnSelf();
-    $sendMemberLookup->shouldReceive('exists')
+    $sendMemberLookup->shouldReceive('select')
         ->once()
-        ->andReturnTrue();
+        ->with(['c.PrvCusID', 'c.Title', 'c.CusName', 'c.Mobile', 'c.Phone'])
+        ->andReturnSelf();
+    $sendMemberLookup->shouldReceive('first')
+        ->once()
+        ->andReturn((object) [
+            'PrvCusID' => 'CCL-1003',
+            'Title' => '',
+            'CusName' => 'No Password Member',
+            'Mobile' => '01711721053',
+            'Phone' => null,
+        ]);
 
     DB::shouldReceive('table')
         ->once()
@@ -346,25 +344,10 @@ XML;
         ->andReturn(1);
 
     $sendResponse = $this
-        ->withSession([
-            'member_initial_password_setup' => [
-                'member_id' => 'CCL-1003',
-                'member_name' => 'No Password Member',
-                'phone' => [
-                    'national' => '01711721053',
-                    'e164' => '+8801711721053',
-                    'e164_digits' => '8801711721053',
-                    'masked' => '+880 17*****053',
-                ],
-                'otp_id' => null,
-                'sent_at' => null,
-                'expires_at' => null,
-                'attempts' => 0,
-                'verified_at' => null,
-                'verified_until' => null,
-            ],
-        ])
-        ->post(route('password.initial.send'));
+        ->from(route('password.initial.create'))
+        ->post(route('password.initial.send'), [
+            'member_id' => 'CCL-1003',
+        ]);
 
     preg_match('/(\d{6})/', (string) $capturedMessage, $matches);
     $otp = $matches[1] ?? null;
@@ -373,6 +356,9 @@ XML;
 
     $sendResponse
         ->assertRedirect(route('password.initial.create'))
+        ->assertSessionHas('member_initial_password_setup.member_id', 'CCL-1003')
+        ->assertSessionHas('member_initial_password_setup.member_name', 'No Password Member')
+        ->assertSessionHas('member_initial_password_setup.phone.e164_digits', '8801711721053')
         ->assertSessionHas('member_initial_password_setup.otp_id', 701)
         ->assertSessionHas('password_setup_status', 'We sent a 6-digit code to +880 17*****053.');
 

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\AffiliatedClubController as AdminAffiliatedClubController;
+use App\Http\Controllers\Admin\CompanyProfileController as AdminCompanyProfileController;
 use App\Http\Controllers\Admin\ContactController as AdminContactController;
 use App\Http\Controllers\Admin\CircularController as AdminCircularController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CircularController;
 use App\Http\Controllers\ClubFacilitiesController;
+use App\Http\Controllers\ClubInfoPageController;
 use App\Http\Controllers\CommitteeController;
 use App\Http\Controllers\EmployeeDirectoryController;
 use App\Http\Controllers\FormerChairmanController;
@@ -68,6 +70,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/pictures', [AdminPictureUploadController::class, 'index'])->name('pictures.index');
         Route::post('/pictures', [AdminPictureUploadController::class, 'store'])->name('pictures.store');
         Route::delete('/pictures', [AdminPictureUploadController::class, 'destroy'])->name('pictures.destroy');
+        Route::get('/company-profile', [AdminCompanyProfileController::class, 'index'])->name('company-profile.index');
+        Route::get('/company-profile/edit', [AdminCompanyProfileController::class, 'edit'])->name('company-profile.edit');
+        Route::put('/company-profile', [AdminCompanyProfileController::class, 'update'])->name('company-profile.update');
 
         Route::get('/notices', [AdminNoticeController::class, 'index'])->name('notices.index');
         Route::get('/notices/create', [AdminNoticeController::class, 'create'])->name('notices.create');
@@ -132,8 +137,8 @@ Route::middleware('auth.member')->group(function () {
         'employee-directory'
     );
     Route::get('/about', fn () => view('pages.about'))->name('about');
-    Route::get('/dress-code', fn () => view('pages.dress-code'))->name('dress-code');
-    Route::get('/general-rules', fn () => view('pages.general-rules'))->name('general-rules');
+    Route::get('/dress-code', [ClubInfoPageController::class, 'dressCode'])->name('dress-code');
+    Route::get('/general-rules', [ClubInfoPageController::class, 'generalRules'])->name('general-rules');
     Route::get('/gallery', [GalleryController::class, 'index'])->name('gallery');
 });
 

@@ -16,36 +16,23 @@ test('member can reset password with sms otp flow', function () {
     $passwordHistory = \Mockery::mock();
     $credentialSave = \Mockery::mock();
     $capturedMessage = null;
-    $successXml = <<<'XML'
-<?xml version="1.0" encoding="UTF-8"?>
-<ArrayOfServiceClass>
-    <ServiceClass>
-        <MessageId>12345</MessageId>
-        <Status>0</Status>
-        <StatusText>success</StatusText>
-        <ErrorCode>0</ErrorCode>
-        <ErrorText></ErrorText>
-        <SMSCount>1</SMSCount>
-        <CurrentCredit>42.0</CurrentCredit>
-    </ServiceClass>
-</ArrayOfServiceClass>
-XML;
+    $successBody = 'SMS SUBMITTED: ID - 12345';
 
-    Http::fake(function ($request) use (&$capturedMessage, $successXml) {
-        $capturedMessage = $request->data()['Message'] ?? null;
-        expect($request->data()['Username'] ?? null)->toBe('sms-user');
-        expect($request->data()['Password'] ?? null)->toBe('sms-pass');
-        expect($request->data()['From'] ?? null)->toBe('8801847170339');
-        expect($request->data()['To'] ?? null)->toBe('01711721053');
+    Http::fake(function ($request) use (&$capturedMessage, $successBody) {
+        $capturedMessage = $request->data()['msg'] ?? null;
+        expect($request->data()['api_key'] ?? null)->toBe('sms-api-key');
+        expect($request->data()['type'] ?? null)->toBe('text');
+        expect($request->data()['senderid'] ?? null)->toBe('8809601019288');
+        expect($request->data()['contacts'] ?? null)->toBe('8801711721053');
         expect(isset($request->data()['submit']))->toBeFalse();
 
-        return Http::response($successXml, 200, ['Content-Type' => 'application/xml']);
+        return Http::response($successBody);
     });
 
-    Config::set('services.robi_sms.url', 'https://robi.example.test/sms');
-    Config::set('services.robi_sms.username', 'sms-user');
-    Config::set('services.robi_sms.password', 'sms-pass');
-    Config::set('services.robi_sms.from', '8801847170339');
+    Config::set('services.robi_sms.url', 'https://msg.example.test/smsapi');
+    Config::set('services.robi_sms.api_key', 'sms-api-key');
+    Config::set('services.robi_sms.type', 'text');
+    Config::set('services.robi_sms.sender_id', '8809601019288');
 
     DB::shouldReceive('raw')
         ->twice()
@@ -259,35 +246,22 @@ test('member sees validation error for an invalid otp', function () {
     $otpInsert = \Mockery::mock();
     $otpSendUpdate = \Mockery::mock();
     $otpLookup = \Mockery::mock();
-    $successXml = <<<'XML'
-<?xml version="1.0" encoding="UTF-8"?>
-<ArrayOfServiceClass>
-    <ServiceClass>
-        <MessageId>12345</MessageId>
-        <Status>0</Status>
-        <StatusText>success</StatusText>
-        <ErrorCode>0</ErrorCode>
-        <ErrorText></ErrorText>
-        <SMSCount>1</SMSCount>
-        <CurrentCredit>42.0</CurrentCredit>
-    </ServiceClass>
-</ArrayOfServiceClass>
-XML;
+    $successBody = 'SMS SUBMITTED: ID - 12345';
 
-    Http::fake(function ($request) use ($successXml) {
-        expect($request->data()['Username'] ?? null)->toBe('sms-user');
-        expect($request->data()['Password'] ?? null)->toBe('sms-pass');
-        expect($request->data()['From'] ?? null)->toBe('8801847170339');
-        expect($request->data()['To'] ?? null)->toBe('01711721053');
+    Http::fake(function ($request) use ($successBody) {
+        expect($request->data()['api_key'] ?? null)->toBe('sms-api-key');
+        expect($request->data()['type'] ?? null)->toBe('text');
+        expect($request->data()['senderid'] ?? null)->toBe('8809601019288');
+        expect($request->data()['contacts'] ?? null)->toBe('8801711721053');
         expect(isset($request->data()['submit']))->toBeFalse();
 
-        return Http::response($successXml, 200, ['Content-Type' => 'application/xml']);
+        return Http::response($successBody);
     });
 
-    Config::set('services.robi_sms.url', 'https://robi.example.test/sms');
-    Config::set('services.robi_sms.username', 'sms-user');
-    Config::set('services.robi_sms.password', 'sms-pass');
-    Config::set('services.robi_sms.from', '8801847170339');
+    Config::set('services.robi_sms.url', 'https://msg.example.test/smsapi');
+    Config::set('services.robi_sms.api_key', 'sms-api-key');
+    Config::set('services.robi_sms.type', 'text');
+    Config::set('services.robi_sms.sender_id', '8809601019288');
 
     DB::shouldReceive('raw')
         ->twice()

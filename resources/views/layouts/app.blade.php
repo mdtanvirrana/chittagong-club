@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@hasSection('page_title')@yield('page_title') — {{ $companyName }}@else{{ $companyName }}@endif</title>
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
-    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}" />
+    <link rel="icon" type="image/x-icon" href="{{ $companyFaviconUrl }}" />
+    <link rel="apple-touch-icon" href="{{ $companyLogoUrl }}" />
     @php
         $memberTheme = config('theme.member', []);
         $memberDisplayFont = data_get($memberTheme, 'fonts.display.family', 'Manrope');

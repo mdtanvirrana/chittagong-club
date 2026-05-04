@@ -7,15 +7,15 @@ use Throwable;
 
 class CompanyProfile
 {
+    private static ?array $profile = null;
+
     public static function current(): array
     {
-        static $profile;
-
-        if ($profile !== null) {
-            return $profile;
+        if (self::$profile !== null) {
+            return self::$profile;
         }
 
-        $profile = [
+        self::$profile = [
             'companyName' => 'Chittagong Club Ltd.',
             'branchName' => 'CCL',
             'shortName' => 'CCL',
@@ -28,6 +28,10 @@ class CompanyProfile
             'website' => null,
             'websiteUrl' => null,
             'email' => null,
+            'logoPath' => null,
+            'logoUrl' => asset('logo.png'),
+            'clubPhotoPath' => null,
+            'clubPhotoUrl' => null,
         ];
 
         try {
@@ -44,17 +48,19 @@ class CompanyProfile
             $email = static::extractEmail($contactSummary)
                 ?: static::firstFilled($record, ['Email', 'email', 'Mail', 'mail']);
             $phones = static::extractPhones($contactSummary);
+            $logoPath = static::firstFilled($record, ['LogoPath', 'Logo_Path', 'logo_path', 'Logo']);
+            $clubPhotoPath = static::firstFilled($record, ['ClubPhotoPath', 'club_photo_path', 'PhotoPath']);
 
-            $companyName = $companyName !== '' ? $companyName : $profile['companyName'];
-            $branchName = $branchName !== '' ? $branchName : $profile['branchName'];
-            $shortName = static::resolveShortName($branchName, $companyName, $profile['shortName']);
+            $companyName = $companyName !== '' ? $companyName : self::$profile['companyName'];
+            $branchName = $branchName !== '' ? $branchName : self::$profile['branchName'];
+            $shortName = static::resolveShortName($branchName, $companyName, self::$profile['shortName']);
             $addressLines = array_values(array_filter(
                 preg_split('/\r\n|\r|\n/', $address) ?: [],
                 fn (?string $line): bool => trim((string) $line) !== ''
             ));
             $addressText = implode(', ', $addressLines);
 
-            $profile = [
+            self::$profile = [
                 'companyName' => $companyName,
                 'branchName' => $branchName,
                 'shortName' => $shortName,
@@ -67,12 +73,21 @@ class CompanyProfile
                 'website' => $website !== '' ? $website : null,
                 'websiteUrl' => static::websiteUrl($website),
                 'email' => $email !== '' ? $email : null,
+                'logoPath' => $logoPath !== '' ? $logoPath : null,
+                'logoUrl' => static::publicAssetUrl($logoPath) ?: asset('logo.png'),
+                'clubPhotoPath' => $clubPhotoPath !== '' ? $clubPhotoPath : null,
+                'clubPhotoUrl' => static::publicAssetUrl($clubPhotoPath),
             ];
         } catch (Throwable) {
             //
         }
 
-        return $profile;
+        return self::$profile;
+    }
+
+    public static function clear(): void
+    {
+        self::$profile = null;
     }
 
     private static function firstFilled(mixed $record, array $keys): string
@@ -173,5 +188,29 @@ class CompanyProfile
         return preg_match('/^https?:\/\//i', $website) === 1
             ? $website
             : 'https://' . ltrim($website, '/');
+    }
+
+    private static function publicAssetUrl(?string $path): ?string
+    {
+        $value = trim((string) $path);
+
+        if ($value === '' || $value === '0' || $value === '?') {
+            return null;
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            return $value;
+        }
+
+        $relativePath = ltrim($value, '/');
+        $absolutePath = public_path($relativePath);
+
+        if (! is_file($absolutePath)) {
+            return null;
+        }
+
+        $version = max((int) @filemtime($absolutePath), (int) @filectime($absolutePath));
+
+        return asset($relativePath) . ($version > 0 ? '?v=' . $version : '');
     }
 }

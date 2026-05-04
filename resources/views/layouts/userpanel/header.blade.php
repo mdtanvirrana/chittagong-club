@@ -6,8 +6,8 @@
             <span class="material-symbols-outlined text-white">menu</span>
         </button>
         <img class="w-8 h-8 object-contain rounded-full"
-             src="{{ asset('logo.png') }}"
-             alt="Chittagong Club Logo" />
+             src="{{ $companyLogoUrl }}"
+             alt="{{ $companyName }} Logo" />
         <h1 class="company-name-canterbury text-white text-2xl leading-tight">{{ $companyName }}</h1>
     </div>
 

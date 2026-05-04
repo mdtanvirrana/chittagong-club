@@ -130,7 +130,7 @@
                             :src="previewUrl"
                             alt="{{ $circular->tx_title ?: 'Circular image preview' }}"
                             class="h-48 w-full object-cover"
-                            onerror="this.onerror=null;this.src=@js(asset('logo.png'))"
+                            onerror="this.onerror=null;this.src=@js($companyLogoUrl)"
                         >
                     </div>
 

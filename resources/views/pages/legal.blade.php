@@ -39,7 +39,7 @@
 
                 <!-- Company block -->
                 <div class="mt-5 flex items-center gap-3 rounded-[1.6rem] border border-white/10 bg-white/10 px-4 py-3">
-                    <img src="{{ asset('logo.png') }}" alt="{{ $companyName }}"
+                    <img src="{{ $companyLogoUrl }}" alt="{{ $companyName }}"
                          class="company-name-canterbury size-11 rounded-full border border-white/15 bg-white object-contain p-1.5"/>
 
                     <div>

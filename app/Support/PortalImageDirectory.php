@@ -11,6 +11,8 @@ class PortalImageDirectory
     public const EMPLOYEE_DIRECTORY = 'employee-directory';
     public const FACILITIES_DIRECTORY = 'facilities';
     public const GALLERY_DIRECTORY = 'gallery';
+    public const DRESS_CODE_DIRECTORY = 'dress-code';
+    public const GENERAL_RULES_DIRECTORY = 'rules';
 
     private const UPLOAD_TARGETS = [
         'member_photo' => [
@@ -36,6 +38,14 @@ class PortalImageDirectory
         'gallery_photo' => [
             'label' => 'Gallery',
             'folder' => self::GALLERY_DIRECTORY,
+        ],
+        'dress_code_photo' => [
+            'label' => 'Dress Code',
+            'folder' => self::DRESS_CODE_DIRECTORY,
+        ],
+        'general_rules_photo' => [
+            'label' => 'General Rules',
+            'folder' => self::GENERAL_RULES_DIRECTORY,
         ],
         'children1_photo' => [
             'label' => 'Children 1 Photo',

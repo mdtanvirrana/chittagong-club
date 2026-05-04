@@ -58,25 +58,6 @@ class AuthController extends Controller
                 ->withErrors(['member_id' => 'Invalid Membership ID or password.']);
         }
 
-        if (MemberAccess::passwordSetupRequired($memberId)) {
-            $request->session()->put(self::INITIAL_PASSWORD_SESSION_KEY, [
-                'member_id' => $member->PrvCusID,
-                'member_name' => MemberAccess::displayName($member),
-                'phone' => MemberAccess::registeredPhone($member),
-                'otp_id' => null,
-                'sent_at' => null,
-                'expires_at' => null,
-                'attempts' => 0,
-                'verified_at' => null,
-                'verified_until' => null,
-            ]);
-            $request->session()->regenerateToken();
-
-            return redirect()
-                ->route('password.initial.create')
-                ->with('password_setup_status', 'No password is set for this member ID. Create a new password to continue.');
-        }
-
         if (! MemberAccess::credentialsMatch($memberId, $password)) {
             return back()
                 ->withInput(['member_id' => $memberId])
@@ -99,7 +80,9 @@ class AuthController extends Controller
         $state = $this->initialPasswordState($request);
 
         if (! $state) {
-            return redirect()->route('login');
+            return $this->guestView('pages.initial-password-start', [
+                'setupState' => null,
+            ]);
         }
 
         if (! MemberAccess::passwordSetupRequired((string) data_get($state, 'member_id'))) {
@@ -124,48 +107,59 @@ class AuthController extends Controller
 
         return $this->guestView('pages.initial-password-start', [
             'setupState' => $state,
-            'hasRegisteredPhone' => filled(data_get($state, 'phone.e164_digits')),
         ]);
     }
 
     public function sendInitialPasswordOtp(Request $request, RobiSmsService $robiSms)
     {
-        $state = $this->initialPasswordState($request);
+        $validated = $request->validate([
+            'member_id' => ['required', 'string', 'max:40'],
+        ], [
+            'member_id.required' => 'Enter your membership ID.',
+            'member_id.max' => 'The membership ID may not be greater than 40 characters.',
+        ]);
 
-        if (! $state) {
-            return redirect()
-                ->route('login')
-                ->withErrors(['member_id' => 'Start from the member login page to set your first password.']);
-        }
+        $memberId = trim((string) $validated['member_id']);
+        $member = MemberAccess::findActiveMember($memberId, [
+            'c.PrvCusID',
+            'c.Title',
+            'c.CusName',
+            'c.Mobile',
+            'c.Phone',
+        ]);
 
-        $memberId = trim((string) data_get($state, 'member_id'));
-
-        if (! MemberAccess::activeMemberExists($memberId)) {
-            $this->clearInitialPasswordState($request);
-
-            return redirect()
-                ->route('login')
-                ->withErrors(['member_id' => 'Member not found.']);
+        if (! $member) {
+            throw ValidationException::withMessages([
+                'member_id' => 'Member not found.',
+            ]);
         }
 
         if (! MemberAccess::passwordSetupRequired($memberId)) {
             $this->clearInitialPasswordState($request);
 
-            return redirect()
-                ->route('login')
-                ->with('password_reset_status', 'Password already exists. Sign in with your current password.');
+            throw ValidationException::withMessages([
+                'member_id' => 'Password already exists for this member ID. Sign in or use Forgot Password.',
+            ]);
         }
+
+        $state = [
+            'member_id' => $member->PrvCusID,
+            'member_name' => MemberAccess::displayName($member),
+            'phone' => MemberAccess::registeredPhone($member),
+            'otp_id' => null,
+            'sent_at' => null,
+            'expires_at' => null,
+            'attempts' => 0,
+            'verified_at' => null,
+            'verified_until' => null,
+        ];
 
         $phone = data_get($state, 'phone');
 
         if (! is_array($phone) || ! filled(data_get($phone, 'e164_digits'))) {
-            return redirect()
-                ->route('password.initial.create')
-                ->withErrors(['phone' => 'No registered Bangladesh mobile number was found for this member ID. Contact the club office.']);
-        }
-
-        if ((int) data_get($state, 'otp_id') > 0 && ! $this->initialPasswordOtpVerified($state)) {
-            $this->updateOtpStatus((int) data_get($state, 'otp_id'), 'RESENT');
+            throw ValidationException::withMessages([
+                'member_id' => 'No registered Bangladesh mobile number was found for this member ID. Contact the club office.',
+            ]);
         }
 
         try {
@@ -205,8 +199,8 @@ class AuthController extends Controller
 
         if (! $state) {
             return redirect()
-                ->route('login')
-                ->withErrors(['member_id' => 'Start from the member login page to set your first password.']);
+                ->route('password.initial.create')
+                ->withErrors(['member_id' => 'Start from the First Login Password Set page.']);
         }
 
         $otpRecord = $this->otpRecord((int) data_get($state, 'otp_id'));
@@ -315,8 +309,8 @@ class AuthController extends Controller
 
         if (! $state) {
             return redirect()
-                ->route('login')
-                ->withErrors(['member_id' => 'Start from the member login page to set your first password.']);
+                ->route('password.initial.create')
+                ->withErrors(['member_id' => 'Start from the First Login Password Set page.']);
         }
 
         if (! $this->initialPasswordOtpVerified($state)) {

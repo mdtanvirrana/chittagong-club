@@ -125,6 +125,16 @@
 
             </form>
 
+            <div class="mt-5">
+                <a
+                    href="{{ route('password.initial.create') }}"
+                    class="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/15 bg-white/70 px-4 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-primary shadow-[0_14px_32px_-28px_rgba(185,28,28,0.35)] transition hover:bg-white/90"
+                >
+                    <span class="material-symbols-outlined text-base">lock_reset</span>
+                    First Login Password Set
+                </a>
+            </div>
+
             <section class="mt-6 border-t border-primary/10 pt-4">
                 <p class="text-center text-[10px] font-bold uppercase tracking-[0.25em] text-primary/70">Club Policies</p>
                 <div class="mt-5 flex flex-col items-center space-y-3 text-sm font-medium">
