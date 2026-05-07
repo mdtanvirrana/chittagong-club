@@ -15,6 +15,7 @@ class CompanyProfileRequest extends FormRequest
     {
         $this->merge([
             'remove_logo' => $this->boolean('remove_logo'),
+            'remove_club_photo' => $this->boolean('remove_club_photo'),
         ]);
     }
 
@@ -30,12 +31,12 @@ class CompanyProfileRequest extends FormRequest
             'vat_registration' => ['nullable', 'string', 'max:200'],
             'shop_id' => ['nullable', 'string', 'max:50'],
             'ceo' => ['nullable', 'string', 'max:100'],
-            'l1' => ['nullable', 'string', 'max:400'],
-            'l2' => ['nullable', 'string', 'max:400'],
             'logo_path' => ['nullable', 'string', 'max:400'],
             'club_photo_path' => ['nullable', 'string', 'max:400'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
+            'club_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
             'remove_logo' => ['required', 'boolean'],
+            'remove_club_photo' => ['required', 'boolean'],
         ];
     }
 
@@ -45,6 +46,8 @@ class CompanyProfileRequest extends FormRequest
             'company.required' => 'Enter the company name.',
             'logo.image' => 'Upload a valid logo image file.',
             'logo.max' => 'The logo must be 5 MB or smaller.',
+            'club_photo.image' => 'Upload a valid club photo image file.',
+            'club_photo.max' => 'The club photo must be 5 MB or smaller.',
         ];
     }
 }

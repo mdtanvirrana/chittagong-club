@@ -26,8 +26,6 @@ class CompanyProfileController extends Controller
         'BranchTel' => ['input' => 'branch_tel', 'label' => 'Branch Contact', 'type' => 'text'],
         'VATREGISTRATION' => ['input' => 'vat_registration', 'label' => 'VAT Registration', 'type' => 'text'],
         'Shopid' => ['input' => 'shop_id', 'label' => 'Shop ID', 'type' => 'text'],
-        'L1' => ['input' => 'l1', 'label' => 'L1', 'type' => 'text'],
-        'L2' => ['input' => 'l2', 'label' => 'L2', 'type' => 'text'],
         'LogoPath' => ['input' => 'logo_path', 'label' => 'Logo Path', 'type' => 'text'],
         'ClubPhotoPath' => ['input' => 'club_photo_path', 'label' => 'Club Photo Path', 'type' => 'text'],
     ];
@@ -60,7 +58,7 @@ class CompanyProfileController extends Controller
         $payload = [];
 
         foreach (self::FIELD_DEFINITIONS as $column => $definition) {
-            if ($column === 'LogoPath' || ! in_array($column, $columns, true)) {
+            if (in_array($column, ['LogoPath', 'ClubPhotoPath'], true) || ! in_array($column, $columns, true)) {
                 continue;
             }
 
@@ -71,6 +69,13 @@ class CompanyProfileController extends Controller
             $payload['LogoPath'] = $this->resolveLogoPath(
                 $request,
                 $this->recordValue($currentRecord, 'LogoPath')
+            );
+        }
+
+        if (in_array('ClubPhotoPath', $columns, true)) {
+            $payload['ClubPhotoPath'] = $this->resolveClubPhotoPath(
+                $request,
+                $this->recordValue($currentRecord, 'ClubPhotoPath')
             );
         }
 
@@ -166,41 +171,71 @@ class CompanyProfileController extends Controller
 
     private function resolveLogoPath(Request $request, ?string $currentPath): ?string
     {
-        if ($request->boolean('remove_logo') && ! $request->hasFile('logo')) {
-            $this->deleteManagedLogo($currentPath);
+        return $this->resolveManagedImagePath(
+            $request,
+            $currentPath,
+            'logo',
+            'logo_path',
+            'remove_logo',
+            'company-logo'
+        );
+    }
+
+    private function resolveClubPhotoPath(Request $request, ?string $currentPath): ?string
+    {
+        return $this->resolveManagedImagePath(
+            $request,
+            $currentPath,
+            'club_photo',
+            'club_photo_path',
+            'remove_club_photo',
+            'club-photo'
+        );
+    }
+
+    private function resolveManagedImagePath(
+        Request $request,
+        ?string $currentPath,
+        string $fileInput,
+        string $pathInput,
+        string $removeInput,
+        string $filenamePrefix
+    ): ?string {
+        if ($request->boolean($removeInput) && ! $request->hasFile($fileInput)) {
+            $this->deleteManagedImage($currentPath);
 
             return null;
         }
 
-        if (! $request->hasFile('logo')) {
-            $logoPath = $this->nullableInput($request->input('logo_path'));
+        if (! $request->hasFile($fileInput)) {
+            $path = $this->nullableInput($request->input($pathInput));
 
-            if ($logoPath !== trim((string) $currentPath)) {
-                $this->deleteManagedLogo($currentPath);
+            if ($path !== trim((string) $currentPath)) {
+                $this->deleteManagedImage($currentPath);
             }
 
-            return $logoPath;
+            return $path;
         }
 
-        $logo = $request->file('logo');
+        $image = $request->file($fileInput);
 
-        if ($logo === null || ! $logo->isValid()) {
-            return $this->nullableInput($request->input('logo_path')) ?: $currentPath;
+        if ($image === null || ! $image->isValid()) {
+            return $this->nullableInput($request->input($pathInput)) ?: $currentPath;
         }
 
         $directory = public_path('company_profile');
         File::ensureDirectoryExists($directory);
 
-        $extension = strtolower($logo->getClientOriginalExtension() ?: $logo->extension() ?: 'png');
-        $filename = sprintf('company-logo-%s-%s.%s', now()->format('YmdHis'), Str::lower(Str::random(8)), $extension);
+        $extension = strtolower($image->getClientOriginalExtension() ?: $image->extension() ?: 'png');
+        $filename = sprintf('%s-%s-%s.%s', $filenamePrefix, now()->format('YmdHis'), Str::lower(Str::random(8)), $extension);
 
-        $logo->move($directory, $filename);
-        $this->deleteManagedLogo($currentPath);
+        $image->move($directory, $filename);
+        $this->deleteManagedImage($currentPath);
 
         return 'company_profile/' . $filename;
     }
 
-    private function deleteManagedLogo(?string $path): void
+    private function deleteManagedImage(?string $path): void
     {
         $path = trim((string) $path);
 

@@ -14,7 +14,7 @@
         <span class="gold-text-gradient company-name-canterbury" style="font-family: 'Canterbury', serif;">{{ $companyName }}</span>
     </h1>
 
-    <p class="text-center text-sm font-light uppercase tracking-widest text-gray-800">
+    <p class="text-center text-sm font-light uppercase tracking-widest text-black">
         {{ $eyebrow ?? 'Exclusive Member Access' }}
     </p>
 
@@ -25,11 +25,11 @@
             @endif
 
             @if (filled($sectionTitle ?? ''))
-                <h2 class="mt-3 text-2xl font-bold tracking-tight text-slate-900">{{ $sectionTitle }}</h2>
+                <h2 class="mt-3 text-2xl font-bold tracking-tight text-black">{{ $sectionTitle }}</h2>
             @endif
 
             @if (filled($sectionDescription ?? ''))
-                <p class="mt-3 text-sm leading-6 text-slate-600">{{ $sectionDescription }}</p>
+                <p class="mt-3 text-sm leading-6 text-black">{{ $sectionDescription }}</p>
             @endif
         </div>
     @endif

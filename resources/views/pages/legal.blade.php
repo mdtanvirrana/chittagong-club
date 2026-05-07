@@ -59,8 +59,8 @@
                             <span class="material-symbols-outlined text-[22px]">{{ $section['icon'] }}</span>
                         </div>
                         <div class="min-w-0">
-                            <h2 class="text-lg font-bold text-slate-900">{{ $section['title'] }}</h2>
-                            <div class="mt-3 space-y-3 text-sm leading-6 text-slate-600">
+                            <h2 class="text-lg font-bold text-black">{{ $section['title'] }}</h2>
+                            <div class="mt-3 space-y-3 text-sm leading-6 text-black">
                                 @foreach ($section['body'] as $paragraph)
                                     <p>{{ $paragraph }}</p>
                                 @endforeach
@@ -78,14 +78,14 @@
                             <div
                                 class="flex items-center justify-between gap-4 border-b border-primary/10 bg-primary/5 px-4 py-3.5">
                                 <div>
-                                    <p class="text-base font-bold text-slate-900">{{ $group['department'] }}</p>
+                                    <p class="text-base font-bold text-black">{{ $group['department'] }}</p>
                                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/65">
                                         {{ $group['total_entries'] }} contact
                                         line{{ $group['total_entries'] > 1 ? 's' : '' }}
                                     </p>
                                 </div>
 
-                                <div class="text-right text-[11px] leading-5 text-slate-500">
+                                <div class="text-right text-[11px] leading-5 text-black">
                                     @if ($group['phone_count'] > 0)
                                         <p>{{ $group['phone_count'] }} phone</p>
                                     @endif
@@ -110,9 +110,9 @@
                                                         <span
                                                             class="material-symbols-outlined mt-0.5 text-primary">call</span>
                                                         <div class="min-w-0">
-                                                            <p class="text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                                                            <p class="text-[10px] uppercase tracking-[0.18em] text-black">
                                                                 Phone</p>
-                                                            <p class="break-words text-[15px] font-semibold leading-5 text-slate-800">{{ $entry['phone'] }}</p>
+                                                            <p class="break-words text-[15px] font-semibold leading-5 text-black">{{ $entry['phone'] }}</p>
                                                         </div>
                                                     </a>
                                                 @endif
@@ -123,9 +123,9 @@
                                                         <span
                                                             class="material-symbols-outlined mt-0.5 text-primary">mail</span>
                                                         <div class="min-w-0">
-                                                            <p class="text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                                                            <p class="text-[10px] uppercase tracking-[0.18em] text-black">
                                                                 Email</p>
-                                                            <p class="break-all text-[15px] font-semibold leading-5 text-slate-800">{{ $entry['email'] }}</p>
+                                                            <p class="break-all text-[15px] font-semibold leading-5 text-black">{{ $entry['email'] }}</p>
                                                         </div>
                                                     </a>
                                                 @endif
@@ -142,8 +142,8 @@
                                 class="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                                 <span class="material-symbols-outlined text-3xl">contact_support</span>
                             </div>
-                            <h3 class="mt-4 text-base font-bold text-slate-900">No contact information available</h3>
-                            <p class="mt-2 text-sm leading-6 text-slate-500">The public contact directory is empty right
+                            <h3 class="mt-4 text-base font-bold text-black">No contact information available</h3>
+                            <p class="mt-2 text-sm leading-6 text-black">The public contact directory is empty right
                                 now. Once contacts are published from the admin panel, they will appear here
                                 automatically.</p>
                         </div>

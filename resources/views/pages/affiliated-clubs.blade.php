@@ -7,15 +7,31 @@
     x-data="{
         search: '',
         activeClub: null,
-        clubs: {{ json_encode($clubs) }},
+        clubs: @js($clubs),
 
         get filtered() {
             if (!this.search) return this.clubs;
             const q = this.search.toLowerCase();
             return this.clubs.filter(c =>
                 c.name.toLowerCase().includes(q) ||
+                (c.country && c.country.toLowerCase().includes(q)) ||
                 (c.address && c.address.toLowerCase().includes(q))
             );
+        },
+        get filteredGroups() {
+            const groups = new Map();
+
+            this.filtered.forEach((club) => {
+                const country = club.country || 'Country not set';
+
+                if (!groups.has(country)) {
+                    groups.set(country, []);
+                }
+
+                groups.get(country).push(club);
+            });
+
+            return Array.from(groups, ([country, clubs]) => ({ country, clubs }));
         },
         open(club) { this.activeClub = club; },
         close() { this.activeClub = null; }
@@ -55,43 +71,52 @@
     </div>
 
     {{-- Club list --}}
-    <main class="px-4 space-y-3">
+    <main class="px-4 space-y-5">
 
-        <template x-for="club in filtered" :key="club.id">
-            <button
-                @click="open(club)"
-                class="w-full flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl p-4 text-left active:scale-[0.98] transition-transform"
-            >
-                {{-- Avatar / placeholder --}}
-                <div class="shrink-0 size-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
-                    <template x-if="club.logo_url">
-                        <img :src="club.logo_url" :alt="club.name" class="h-full w-full object-cover">
-                    </template>
-                    <template x-if="!club.logo_url">
-                        <span class="text-primary font-extrabold text-lg" x-text="club.initials"></span>
-                    </template>
+        <template x-for="group in filteredGroups" :key="group.country">
+            <section class="space-y-3">
+                <div class="flex items-center justify-between px-1">
+                    <h2 class="text-white/75 text-[11px] font-extrabold uppercase tracking-[0.18em]" x-text="group.country"></h2>
+                    <span class="text-white/30 text-xs" x-text="group.clubs.length + (group.clubs.length === 1 ? ' club' : ' clubs')"></span>
                 </div>
 
-                {{-- Info --}}
-                <div class="flex-1 min-w-0">
-                    <p class="text-white font-bold text-sm leading-tight line-clamp-1" x-text="club.name"></p>
-                    <p class="text-white/40 text-xs mt-0.5 line-clamp-2 leading-relaxed" x-text="club.address || 'Address not available'"></p>
-                </div>
+                <template x-for="club in group.clubs" :key="club.id">
+                    <button
+                        @click="open(club)"
+                        class="w-full flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl p-4 text-left active:scale-[0.98] transition-transform"
+                    >
+                        {{-- Avatar / placeholder --}}
+                        <div class="shrink-0 size-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
+                            <template x-if="club.logo_url">
+                                <img :src="club.logo_url" :alt="club.name" class="h-full w-full object-cover">
+                            </template>
+                            <template x-if="!club.logo_url">
+                                <span class="text-primary font-extrabold text-lg" x-text="club.initials"></span>
+                            </template>
+                        </div>
 
-                {{-- Call icon --}}
-                <template x-if="club.first_phone">
-                    <a :href="'tel:' + club.first_phone.replace(/\s+/g, '')"
-                       @click.stop
-                       class="shrink-0 flex size-10 items-center justify-center rounded-full bg-primary/10 border border-primary/20 active:scale-90 transition-transform">
-                        <span class="material-symbols-outlined text-primary text-lg">call</span>
-                    </a>
+                        {{-- Info --}}
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white font-bold text-sm leading-tight line-clamp-1" x-text="club.name"></p>
+                            <p class="text-white/40 text-xs mt-0.5 line-clamp-2 leading-relaxed" x-text="club.address || 'Address not available'"></p>
+                        </div>
+
+                        {{-- Call icon --}}
+                        <template x-if="club.first_phone">
+                            <a :href="'tel:' + club.first_phone.replace(/\s+/g, '')"
+                               @click.stop
+                               class="shrink-0 flex size-10 items-center justify-center rounded-full bg-primary/10 border border-primary/20 active:scale-90 transition-transform">
+                                <span class="material-symbols-outlined text-primary text-lg">call</span>
+                            </a>
+                        </template>
+                        <template x-if="!club.first_phone">
+                            <div class="shrink-0 size-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10">
+                                <span class="material-symbols-outlined text-white/20 text-lg">phone_disabled</span>
+                            </div>
+                        </template>
+                    </button>
                 </template>
-                <template x-if="!club.first_phone">
-                    <div class="shrink-0 size-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10">
-                        <span class="material-symbols-outlined text-white/20 text-lg">phone_disabled</span>
-                    </div>
-                </template>
-            </button>
+            </section>
         </template>
 
         {{-- Empty state --}}
@@ -169,6 +194,14 @@
 
                     {{-- Detail rows --}}
                     <div class="mx-4 bg-white/5 border border-white/10 rounded-2xl divide-y divide-white/5 mb-4">
+
+                        {{-- Country --}}
+                        <template x-if="activeClub.country">
+                            <div class="flex items-start gap-3 px-4 py-3">
+                                <span class="material-symbols-outlined text-primary text-base mt-0.5 shrink-0">public</span>
+                                <p class="text-white/70 text-sm leading-relaxed" x-text="activeClub.country"></p>
+                            </div>
+                        </template>
 
                         {{-- Address --}}
                         <template x-if="activeClub.address">

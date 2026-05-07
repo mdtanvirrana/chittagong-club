@@ -13,7 +13,7 @@
     <div class="h-12 w-full"></div>
 
     @include('partials.member-auth-hero', [
-        'eyebrow' => 'Member First Login',
+        'eyebrow' => 'Registration',
         'stepLabel' => 'Step 3 of 3',
         'sectionTitle' => 'Create Your Password',
         'sectionDescription' => 'OTP confirmed. Set your password now, then sign in from the login page.',
@@ -39,8 +39,8 @@
 
             <div class="auth-floating-card rounded-[1.75rem] px-5 py-5">
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary/70">Member ID</p>
-                <p class="mt-3 text-lg font-bold text-slate-900">{{ data_get($setupState, 'member_id') }}</p>
-                <p class="mt-2 text-sm leading-6 text-slate-700">{{ data_get($setupState, 'member_name', 'Member') }}</p>
+                <p class="mt-3 text-lg font-bold text-black">{{ data_get($setupState, 'member_id') }}</p>
+                <p class="mt-2 text-sm leading-6 text-black">{{ data_get($setupState, 'member_name', 'Member') }}</p>
             </div>
 
             <div class="space-y-2">

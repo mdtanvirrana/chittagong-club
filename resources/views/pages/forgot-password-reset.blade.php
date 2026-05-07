@@ -23,13 +23,6 @@
         <form action="{{ route('password.forgot.update') }}" method="POST" class="space-y-6" @submit="loading = true">
             @csrf
 
-            @if (session('password_reset_status'))
-                <div class="flex items-center gap-3 rounded-xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3">
-                    <span class="material-symbols-outlined shrink-0 text-emerald-300">check_circle</span>
-                    <p class="text-sm text-emerald-700">{{ session('password_reset_status') }}</p>
-                </div>
-            @endif
-
             @if ($errors->any())
                 <div class="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/15 px-4 py-3">
                     <span class="material-symbols-outlined shrink-0 text-red-400">error</span>
@@ -40,7 +33,7 @@
             @if ($requiresMemberSelection)
                 <div class="auth-floating-card rounded-[1.75rem] px-5 py-5">
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary/70">Shared Mobile Number</p>
-                    <p class="mt-3 text-sm leading-6 text-slate-700">
+                    <p class="mt-3 text-sm leading-6 text-black">
                         This Bangladesh mobile number is linked to multiple member logins. Choose the correct member ID before changing the password.
                     </p>
                 </div>
@@ -77,7 +70,6 @@
                     <input
                         name="password"
                         :type="showPassword ? 'text' : 'password'"
-                        placeholder="••••••••"
                         autocomplete="new-password"
                         class="login-input block w-full rounded-xl border border-primary/10 py-4 pl-12 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all {{ $errors->has('password') ? 'border-red-500/50' : 'border-primary/10' }}"
                     />
@@ -103,7 +95,6 @@
                     <input
                         name="password_confirmation"
                         :type="showConfirmPassword ? 'text' : 'password'"
-                        placeholder="••••••••"
                         autocomplete="new-password"
                         class="login-input block w-full rounded-xl border border-primary/10 py-4 pl-12 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
                     />

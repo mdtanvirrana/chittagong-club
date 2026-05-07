@@ -33,7 +33,7 @@ return [
     */
 
     'lifetime' => max(
-        (int) env('SESSION_LIFETIME', 120),
+        (int) env('SESSION_LIFETIME', 10080),
         (int) env('MEMBER_SESSION_LIFETIME', 5),
     ),
 

@@ -199,11 +199,13 @@
     $navItems = [
         ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'match' => 'admin.dashboard', 'icon' => 'space_dashboard'],
         ['label' => 'Company Profile', 'route' => 'admin.company-profile.index', 'match' => 'admin.company-profile.*', 'icon' => 'corporate_fare'],
+        ['label' => 'Admin Accounts', 'route' => 'admin.admin-users.index', 'match' => 'admin.admin-users.*', 'icon' => 'admin_panel_settings'],
         ['label' => 'Notices', 'route' => 'admin.notices.index', 'match' => 'admin.notices.*', 'icon' => 'campaign'],
         ['label' => 'Contacts', 'route' => 'admin.contacts.index', 'match' => 'admin.contacts.*', 'icon' => 'contacts'],
         ['label' => 'Affiliated Clubs', 'route' => 'admin.affiliated-clubs.index', 'match' => 'admin.affiliated-clubs.*', 'icon' => 'handshake'],
         ['label' => 'Circulars', 'route' => 'admin.circulars.index', 'match' => 'admin.circulars.*', 'icon' => 'article'],
         ['label' => 'Upload Pictures', 'route' => 'admin.pictures.create', 'match' => 'admin.pictures.*', 'icon' => 'upload_file'],
+        ['label' => 'Upload Gallary', 'route' => 'admin.gallery.create', 'match' => 'admin.gallery.*', 'icon' => 'photo_library'],
     ];
 @endphp
 
@@ -321,12 +323,12 @@
                             </div>
                         </div>
 
-                        <div class="mt-4 rounded-lg border border-admin-line/35 bg-admin-soft/60 px-3.5 py-3">
+                        <a href="{{ route('admin.profile.edit') }}" class="mt-4 flex rounded-lg border border-admin-line/35 bg-admin-soft/60 px-3.5 py-3 transition hover:border-admin-line/60 hover:bg-admin-soft/80">
                             <div class="flex items-center gap-3 text-slate-600">
                                 <span class="material-symbols-outlined text-[18px] text-admin-gold">settings</span>
                                 <p class="text-xs font-semibold uppercase tracking-[0.16em]">Profile Settings</p>
                             </div>
-                        </div>
+                        </a>
                     </div>
                 </div>
             </div>

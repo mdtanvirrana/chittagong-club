@@ -13,6 +13,7 @@ test('member can reset password with sms otp flow', function () {
     $otpLookup = \Mockery::mock();
     $otpVerifyUpdate = \Mockery::mock();
     $otpUseUpdate = \Mockery::mock();
+    $changeCredentialLookup = \Mockery::mock();
     $passwordHistory = \Mockery::mock();
     $credentialSave = \Mockery::mock();
     $capturedMessage = null;
@@ -47,6 +48,10 @@ test('member can reset password with sms otp flow', function () {
         ->once()
         ->with('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.CardID')
         ->andReturnSelf();
+    $lookup->shouldReceive('leftJoin')
+        ->once()
+        ->with('Users_App as ua', 'c.PrvCusID', '=', 'ua.PrvcusID')
+        ->andReturnSelf();
     $lookup->shouldReceive('where')
         ->once()
         ->with('cc.GM', 'M')
@@ -60,7 +65,7 @@ test('member can reset password with sms otp flow', function () {
         ->with(\Mockery::type('array'))
         ->andReturnSelf();
     $lookup->shouldReceive('where')
-        ->once()
+        ->twice()
         ->with(\Mockery::type('Closure'))
         ->andReturnSelf();
     $lookup->shouldReceive('get')
@@ -80,7 +85,7 @@ test('member can reset password with sms otp flow', function () {
     $profileLookup->shouldReceive('first')
         ->once()
         ->andReturn((object) [
-            'BranchName' => 'CCLApps',
+            'BranchName' => 'CCL',
             'CompanyName' => 'Chittagong Club Ltd.',
         ]);
 
@@ -95,7 +100,7 @@ test('member can reset password with sms otp flow', function () {
             return $values['PrvcusID'] === 'A-0005'
                 && $values['Mobile'] === '8801711721053'
                 && is_int($values['OTP'])
-                && preg_match('/^CCLApps login OTP is \d{6}, Valid for 5 minutes\. Chittagong Club Ltd\.$/', $values['SMSText']) === 1
+                && preg_match('/^CCL Apps login OTP is \d{6}, Valid for 5 minutes\. Chittagong Club Ltd\.$/', $values['SMSText']) === 1
                 && $values['Status'] === 'PENDING'
                 && $values['Note'] === 'forget'
                 && isset($values['SDate'], $values['STime'], $values['EDate'], $values['ETime']);
@@ -178,6 +183,23 @@ test('member can reset password with sms otp flow', function () {
     $verifyResponse
         ->assertRedirect(route('password.forgot.reset'))
         ->assertSessionHas('password_reset_status', 'OTP confirmed. Set a new password now.');
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('Users_App')
+        ->andReturn($changeCredentialLookup);
+
+    $changeCredentialLookup->shouldReceive('where')
+        ->once()
+        ->with('PrvcusID', 'A-0005')
+        ->andReturnSelf();
+    $changeCredentialLookup->shouldReceive('first')
+        ->once()
+        ->with(['Password', 'is_admin'])
+        ->andReturn((object) [
+            'Password' => md5('old-pass'),
+            'is_admin' => 0,
+        ]);
 
     DB::shouldReceive('table')
         ->once()
@@ -276,6 +298,10 @@ test('member sees validation error for an invalid otp', function () {
         ->once()
         ->with('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.CardID')
         ->andReturnSelf();
+    $lookup->shouldReceive('leftJoin')
+        ->once()
+        ->with('Users_App as ua', 'c.PrvCusID', '=', 'ua.PrvcusID')
+        ->andReturnSelf();
     $lookup->shouldReceive('where')
         ->once()
         ->with('cc.GM', 'M')
@@ -289,7 +315,7 @@ test('member sees validation error for an invalid otp', function () {
         ->with(\Mockery::type('array'))
         ->andReturnSelf();
     $lookup->shouldReceive('where')
-        ->once()
+        ->twice()
         ->with(\Mockery::type('Closure'))
         ->andReturnSelf();
     $lookup->shouldReceive('get')
@@ -309,7 +335,7 @@ test('member sees validation error for an invalid otp', function () {
     $profileLookup->shouldReceive('first')
         ->once()
         ->andReturn((object) [
-            'BranchName' => 'CCLApps',
+            'BranchName' => 'CCL',
             'CompanyName' => 'Chittagong Club Ltd.',
         ]);
 

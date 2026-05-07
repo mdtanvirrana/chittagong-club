@@ -70,7 +70,7 @@
 
             {{-- Area / Term Description --}}
             @if ($m['area'])
-            <p class="text-white/40 text-[10px] leading-snug line-clamp-2 italic">
+            <p class="text-black text-[12px] line-clamp-2 ">
                 {{ $m['area'] }}
             </p>
             @endif

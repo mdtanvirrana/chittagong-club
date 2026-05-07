@@ -29,9 +29,9 @@
             ]);
         };
         $memberPrimaryRgb = $hexToRgb(data_get($memberTheme, 'colors.primary', '#c5162e'), '197, 22, 46');
-        $memberInkRgb = $hexToRgb(data_get($memberTheme, 'colors.text', '#111827'), '17, 24, 39');
-        $memberInkSoftRgb = $hexToRgb(data_get($memberTheme, 'colors.text_soft', '#1f2937'), '31, 41, 55');
-        $memberInkMutedRgb = $hexToRgb(data_get($memberTheme, 'colors.text_muted', '#1f2937'), '31, 41, 55');
+        $memberInkRgb = $hexToRgb(data_get($memberTheme, 'colors.text', '#000000'), '0, 0, 0');
+        $memberInkSoftRgb = $hexToRgb(data_get($memberTheme, 'colors.text_soft', '#000000'), '0, 0, 0');
+        $memberInkMutedRgb = $hexToRgb(data_get($memberTheme, 'colors.text_muted', '#000000'), '0, 0, 0');
         $memberContrast = data_get($memberTheme, 'colors.text_contrast', '#fff7f7');
         $memberContrastSoft = data_get($memberTheme, 'colors.text_contrast_soft', '#ffe2e2');
         $memberContrastMuted = data_get($memberTheme, 'colors.text_contrast_muted', '#ffc9c9');
@@ -95,11 +95,11 @@
             --member-surface-soft: {{ data_get($memberTheme, 'colors.surface_soft', 'rgba(255, 255, 255, 0.86)') }};
             --member-border: {{ data_get($memberTheme, 'colors.surface_border', 'rgba(197, 22, 46, 0.12)') }};
             --member-border-soft: {{ data_get($memberTheme, 'colors.surface_border_soft', 'rgba(197, 22, 46, 0.08)') }};
-            --member-ink: {{ data_get($memberTheme, 'colors.text', '#111827') }};
+            --member-ink: {{ data_get($memberTheme, 'colors.text', '#000000') }};
             --member-ink-rgb: {{ $memberInkRgb }};
-            --member-ink-soft: {{ data_get($memberTheme, 'colors.text_soft', '#1f2937') }};
+            --member-ink-soft: {{ data_get($memberTheme, 'colors.text_soft', '#000000') }};
             --member-ink-soft-rgb: {{ $memberInkSoftRgb }};
-            --member-ink-muted: {{ data_get($memberTheme, 'colors.text_muted', '#1f2937') }};
+            --member-ink-muted: {{ data_get($memberTheme, 'colors.text_muted', '#000000') }};
             --member-ink-muted-rgb: {{ $memberInkMutedRgb }};
             --member-contrast: {{ $memberContrast }};
             --member-contrast-rgb: {{ $memberContrastRgb }};
@@ -129,7 +129,7 @@
         }
 
         .member-shell {
-            color: var(--member-ink);
+            color: #000000;
             --userpanel-header-offset: 4.5rem;
         }
 
@@ -330,7 +330,7 @@
         .member-shell [class~="text-neutral-900"],
         .member-shell [class~="text-neutral-800"],
         .member-shell [class~="text-neutral-700"] {
-            color: var(--member-ink) !important;
+            color: #000000 !important;
         }
 
         .member-shell [class~="text-slate-600"],
@@ -349,7 +349,7 @@
         .member-shell [class~="text-neutral-500"],
         .member-shell [class~="text-neutral-400"],
         .member-shell [class~="text-neutral-300"] {
-            color: var(--member-ink-muted) !important;
+            color: #000000 !important;
         }
         .member-shell [class~="text-club-gold"] { color: var(--member-primary) !important; }
         .member-shell [class~="text-brand-blue"] { color: var(--member-contrast) !important; }
@@ -764,7 +764,7 @@
     @include('partials.canterbury-font')
     @stack('styles')
 </head>
-<body class="antialiased font-display text-slate-900">
+<body class="antialiased font-display text-black">
 
 <div class="mobile-container">
     <div class="member-shell">

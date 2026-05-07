@@ -13,7 +13,7 @@
     <div class="h-12 w-full"></div>
 
     @include('partials.member-auth-hero', [
-        'eyebrow' => 'Member First Login',
+        'eyebrow' => 'Registration',
         'stepLabel' => 'Step 2 of 3',
         'sectionTitle' => 'Confirm OTP',
         'sectionDescription' => 'A 6-digit code was sent to ' . data_get($setupState, 'phone.masked') . '. The OTP stays valid for 5 minutes.',
@@ -23,27 +23,12 @@
         <form action="{{ route('password.initial.verify.store') }}" method="POST" class="space-y-6" @submit="loading = true">
             @csrf
 
-            @if (session('password_setup_status'))
-                <div class="flex items-center gap-3 rounded-xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3">
-                    <span class="material-symbols-outlined shrink-0 text-emerald-300">check_circle</span>
-                    <p class="text-sm text-emerald-700">{{ session('password_setup_status') }}</p>
-                </div>
-            @endif
-
             @if ($errors->any())
                 <div class="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/15 px-4 py-3">
                     <span class="material-symbols-outlined shrink-0 text-red-400">error</span>
                     <p class="text-sm text-red-700">{{ $errors->first() }}</p>
                 </div>
             @endif
-
-            <div class="auth-floating-card rounded-[1.75rem] px-5 py-5 text-center">
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary/70">SMS Sent To</p>
-                <p class="mt-3 text-2xl font-bold tracking-[0.24em] text-slate-900">{{ data_get($setupState, 'phone.masked') }}</p>
-                <p class="mt-3 text-sm leading-6 text-slate-600">
-                    Enter the 6-digit OTP exactly as received. If it expires, resend a new code.
-                </p>
-            </div>
 
             <div class="space-y-2">
                 <label class="ml-1 block text-xs font-semibold uppercase tracking-widest text-primary/80">
@@ -88,7 +73,7 @@
             <button
                 type="submit"
                 :disabled="resending"
-                class="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/15 bg-white/65 px-4 py-3 text-sm font-semibold tracking-wide text-slate-700 shadow-[0_14px_32px_-28px_rgba(185,28,28,0.35)] transition hover:bg-white/85 disabled:opacity-70"
+                class="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/15 bg-white/65 px-4 py-3 text-sm font-semibold tracking-wide text-black shadow-[0_14px_32px_-28px_rgba(185,28,28,0.35)] transition hover:bg-white/85 disabled:opacity-70"
             >
                 <span x-show="!resending">RESEND CODE</span>
                 <span x-show="resending" class="flex items-center gap-2">
@@ -104,7 +89,7 @@
 
         <a
             href="{{ route('login') }}"
-            class="mt-4 flex items-center justify-center gap-2 text-sm font-semibold tracking-wide text-slate-600 transition hover:text-slate-900"
+            class="mt-4 flex items-center justify-center gap-2 text-sm font-semibold tracking-wide text-black transition hover:text-black"
         >
             <span class="material-symbols-outlined text-base">arrow_back</span>
             Back to Sign In

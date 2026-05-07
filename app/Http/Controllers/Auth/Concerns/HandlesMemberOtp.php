@@ -100,10 +100,10 @@ trait HandlesMemberOtp
     private function otpSmsMessage(string $otp): string
     {
         $branding = $this->otpSmsBranding();
-        $message = "{$branding['branch_name']} login OTP is {$otp}, Valid for " . self::OTP_TTL_MINUTES . ' minutes.';
+        $message = "{$branding['short_name']} Apps login OTP is {$otp}, Valid for " . self::OTP_TTL_MINUTES . ' minutes.';
 
         if ($branding['company_name'] !== '') {
-            $message .= ' ' . $branding['company_name'];
+            $message .= ' ' . rtrim($branding['company_name'], '.') . '.';
         }
 
         return $message;
@@ -112,7 +112,7 @@ trait HandlesMemberOtp
     private function otpSmsBranding(): array
     {
         $branding = [
-            'branch_name' => 'CCLApps',
+            'short_name' => 'CCL',
             'company_name' => 'Chittagong Club Ltd.',
         ];
 
@@ -135,7 +135,7 @@ trait HandlesMemberOtp
             ));
 
             $branding = [
-                'branch_name' => $branchName !== '' ? $branchName : $branding['branch_name'],
+                'short_name' => $this->otpSmsShortName($branchName, $companyName, $branding['short_name']),
                 'company_name' => $companyName !== '' ? $companyName : $branding['company_name'],
             ];
         } catch (Throwable) {
@@ -143,6 +143,36 @@ trait HandlesMemberOtp
         }
 
         return $branding;
+    }
+
+    private function otpSmsShortName(string $branchName, string $companyName, string $fallback): string
+    {
+        $branchToken = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $branchName));
+
+        if ($branchToken !== '' && strlen($branchToken) <= 8 && ! str_contains($branchToken, 'APP')) {
+            return $branchToken;
+        }
+
+        $branchWithoutAppsToken = (string) preg_replace('/APPS?$/', '', $branchToken);
+
+        if ($branchWithoutAppsToken !== '' && strlen($branchWithoutAppsToken) <= 8) {
+            return $branchWithoutAppsToken;
+        }
+
+        $words = preg_split('/\s+/', preg_replace('/[^A-Za-z0-9 ]/', ' ', $companyName) ?: '') ?: [];
+        $shortName = '';
+
+        foreach ($words as $word) {
+            $normalized = strtolower(trim($word));
+
+            if ($normalized === '' || in_array($normalized, ['the', 'and', 'of'], true)) {
+                continue;
+            }
+
+            $shortName .= strtoupper(substr($normalized, 0, 1));
+        }
+
+        return $shortName !== '' ? $shortName : $fallback;
     }
 
     private function truncateOtpText(?string $value, int $length, string $fallback): string

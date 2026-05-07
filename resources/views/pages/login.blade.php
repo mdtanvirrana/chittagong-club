@@ -63,7 +63,6 @@
                             name="member_id"
                             type="text"
                             value="{{ old('member_id') }}"
-                            placeholder="e.g. CCL-88291"
                             autocomplete="username"
                             class="login-input block w-full {{ $errors->has('member_id') ? 'border-red-500/50' : 'border-primary/10' }} rounded-xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
                         />
@@ -81,7 +80,6 @@
                         <input
                             name="password"
                             :type="showPassword ? 'text' : 'password'"
-                            placeholder="••••••••"
                             autocomplete="current-password"
                             class="login-input block w-full border border-primary/10 rounded-xl py-4 pl-12 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
                         />
@@ -125,24 +123,24 @@
 
             </form>
 
-            <div class="mt-5">
+            <div class="mt-10 mx-auto ">
                 <a
                     href="{{ route('password.initial.create') }}"
-                    class="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/15 bg-white/70 px-4 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-primary shadow-[0_14px_32px_-28px_rgba(185,28,28,0.35)] transition hover:bg-white/90"
+                    class="flex w-full items-center justify-center gap-1 rounded-lg border border-primary/15 bg-white/70 px-2 py-1.5 text-xs  text-primary/80  font-semibold uppercase tracking-wide text-primary shadow-sm transition hover:bg-white/90"
                 >
-                    <span class="material-symbols-outlined text-base">lock_reset</span>
-                    First Login Password Set
+                    <span class="material-symbols-outlined text-sm  text-primary/80 ">lock_reset</span>
+                   <span class=" text-primary/80 ">Registration</span>
                 </a>
             </div>
 
             <section class="mt-6 border-t border-primary/10 pt-4">
                 <p class="text-center text-[10px] font-bold uppercase tracking-[0.25em] text-primary/70">Club Policies</p>
                 <div class="mt-5 flex flex-col items-center space-y-3 text-sm font-medium">
-                    <a href="{{ route('legal.terms') }}" class="text-gray-600 hover:text-primary hover:underline transition">Terms &amp; Conditions</a>
-                    <a href="{{ route('legal.refund') }}" class="text-gray-600 hover:text-primary hover:underline transition">Return and Refund Policy</a>
-                    <a href="{{ route('legal.privacy') }}" class="text-gray-600 hover:text-primary hover:underline transition">Privacy Policy</a>
-                    <a href="{{ route('legal.data') }}" class="text-gray-600 hover:text-primary hover:underline transition">Data Policy</a>
-                    <a href="{{ route('legal.contact') }}" class="text-gray-600 hover:text-primary hover:underline transition">Contact Us</a>
+                    <a href="{{ route('legal.terms') }}" class="text-black hover:text-primary hover:underline transition">Terms &amp; Conditions</a>
+                    <a href="{{ route('legal.refund') }}" class="text-black hover:text-primary hover:underline transition">Return and Refund Policy</a>
+                    <a href="{{ route('legal.privacy') }}" class="text-black hover:text-primary hover:underline transition">Privacy Policy</a>
+                    <a href="{{ route('legal.data') }}" class="text-black hover:text-primary hover:underline transition">Data Policy</a>
+                    <a href="{{ route('legal.contact') }}" class="text-black hover:text-primary hover:underline transition">Contact Us</a>
                 </div>
             </section>
         </div>

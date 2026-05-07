@@ -18,7 +18,13 @@ test('guest is redirected to admin login for admin dashboard', function () {
     $response->assertRedirect(route('admin.login'));
 });
 
+test('admin session lasts seven days while member inactivity timeout stays short', function () {
+    expect(config('session.lifetime'))->toBe(10080)
+        ->and(config('auth.member_session_lifetime'))->toBe(5);
+});
+
 test('admin can sign in with the Users_App md5 credential', function () {
+    $adminId = 'admin';
     $guard = \Mockery::mock();
     $credentialLookup = \Mockery::mock();
 
@@ -33,10 +39,9 @@ test('admin can sign in with the Users_App md5 credential', function () {
 
     $guard->shouldReceive('login')
         ->once()
-        ->with(\Mockery::on(function (AdminUser $admin): bool {
-            return $admin->userid === AdminUser::LOGIN_ID
-                && $admin->PrvcusID === AdminUser::LOGIN_ID;
-        }));
+        ->with(\Mockery::on(fn (AdminUser $admin): bool => $admin->userid === $adminId
+            && $admin->PrvcusID === $adminId
+            && $admin->is_admin === true));
 
     DB::shouldReceive('table')
         ->once()
@@ -45,13 +50,18 @@ test('admin can sign in with the Users_App md5 credential', function () {
 
     $credentialLookup->shouldReceive('where')
         ->once()
-        ->with('PrvcusID', AdminUser::LOGIN_ID)
+        ->with('PrvcusID', $adminId)
+        ->andReturnSelf();
+    $credentialLookup->shouldReceive('where')
+        ->once()
+        ->with('is_admin', 1)
         ->andReturnSelf();
     $credentialLookup->shouldReceive('first')
         ->once()
         ->andReturn((object) [
-            'PrvcusID' => AdminUser::LOGIN_ID,
+            'PrvcusID' => $adminId,
             'Password' => md5('123456'),
+            'is_admin' => 1,
         ]);
 
     $response = $this->post(route('admin.login.store'), [
@@ -63,6 +73,7 @@ test('admin can sign in with the Users_App md5 credential', function () {
 });
 
 test('admin login fails when password does not match the md5 credential', function () {
+    $adminId = 'admin';
     $guard = \Mockery::mock();
     $credentialLookup = \Mockery::mock();
 
@@ -83,13 +94,18 @@ test('admin login fails when password does not match the md5 credential', functi
 
     $credentialLookup->shouldReceive('where')
         ->once()
-        ->with('PrvcusID', AdminUser::LOGIN_ID)
+        ->with('PrvcusID', $adminId)
+        ->andReturnSelf();
+    $credentialLookup->shouldReceive('where')
+        ->once()
+        ->with('is_admin', 1)
         ->andReturnSelf();
     $credentialLookup->shouldReceive('first')
         ->once()
         ->andReturn((object) [
-            'PrvcusID' => AdminUser::LOGIN_ID,
+            'PrvcusID' => $adminId,
             'Password' => md5('123456'),
+            'is_admin' => 1,
         ]);
 
     $response = $this
@@ -106,8 +122,9 @@ test('admin login fails when password does not match the md5 credential', functi
         ]);
 });
 
-test('admin login rejects non-admin user ids', function () {
+test('admin login rejects user ids without admin access', function () {
     $guard = \Mockery::mock();
+    $credentialLookup = \Mockery::mock();
 
     Auth::shouldReceive('guard')
         ->once()
@@ -119,7 +136,22 @@ test('admin login rejects non-admin user ids', function () {
         ->andReturnFalse();
     $guard->shouldNotReceive('login');
 
-    DB::shouldReceive('table')->never();
+    DB::shouldReceive('table')
+        ->once()
+        ->with('Users_App')
+        ->andReturn($credentialLookup);
+
+    $credentialLookup->shouldReceive('where')
+        ->once()
+        ->with('PrvcusID', 'member-1001')
+        ->andReturnSelf();
+    $credentialLookup->shouldReceive('where')
+        ->once()
+        ->with('is_admin', 1)
+        ->andReturnSelf();
+    $credentialLookup->shouldReceive('first')
+        ->once()
+        ->andReturnNull();
 
     $response = $this
         ->from(route('admin.login'))

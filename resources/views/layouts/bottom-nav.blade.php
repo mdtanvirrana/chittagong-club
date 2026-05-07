@@ -7,21 +7,21 @@
 
         {{-- Home --}}
         <a href="{{ route('dashboard') }}"
-           class="flex flex-col items-center gap-1 transition-colors {{ Route::currentRouteName() === 'dashboard' ? 'text-primary' : 'text-slate-400' }}">
+           class="flex flex-col items-center gap-1 transition-colors {{ Route::currentRouteName() === 'dashboard' ? 'text-primary' : 'text-black' }}">
             <span class="material-symbols-outlined">home</span>
             <span class="text-[10px] font-bold uppercase tracking-wider">Home</span>
         </a>
 
         {{-- Members --}}
         <a href="{{ route('gallery') }}"
-           class="flex flex-col items-center gap-1 transition-colors {{ Route::currentRouteName() === 'gallery' ? 'text-primary' : 'text-slate-400' }}">
+           class="flex flex-col items-center gap-1 transition-colors {{ Route::currentRouteName() === 'gallery' ? 'text-primary' : 'text-black' }}">
             <span class="material-symbols-outlined">photo_library</span>
             <span class="text-[10px] font-bold uppercase tracking-wider">Gallery</span>
         </a>
 
         {{-- Notice Board --}}
         <a href="{{ route('notice-board') }}"
-           class="flex flex-col items-center gap-1 transition-colors {{ Route::currentRouteName() === 'notice-board' ? 'text-primary' : 'text-slate-400' }}">
+           class="flex flex-col items-center gap-1 transition-colors {{ Route::currentRouteName() === 'notice-board' ? 'text-primary' : 'text-black' }}">
             <span class="material-symbols-outlined">campaign</span>
             <span class="text-[10px] font-bold uppercase tracking-wider">Notices</span>
         </a>
@@ -35,7 +35,7 @@
 
         {{-- Profile --}}
         <a href="{{ route('profile') }}"
-           class="flex flex-col items-center gap-1 transition-colors {{ Route::currentRouteName() === 'profile' ? 'text-primary' : 'text-slate-400' }}">
+           class="flex flex-col items-center gap-1 transition-colors {{ Route::currentRouteName() === 'profile' ? 'text-primary' : 'text-black' }}">
             <span class="material-symbols-outlined">person</span>
             <span class="text-[10px] font-bold uppercase tracking-wider">Profile</span>
         </a>

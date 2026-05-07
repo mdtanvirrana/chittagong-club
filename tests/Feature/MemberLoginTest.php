@@ -54,10 +54,13 @@ test('member can sign in with an active customer record and Users_App credential
         ->once()
         ->with('PrvcusID', 'CCL-1001')
         ->andReturnSelf();
-    $credentialLookup->shouldReceive('value')
+    $credentialLookup->shouldReceive('first')
         ->once()
-        ->with('Password')
-        ->andReturn(md5('secret123'));
+        ->with(['Password', 'is_admin'])
+        ->andReturn((object) [
+            'Password' => md5('secret123'),
+            'is_admin' => 0,
+        ]);
 
     DB::shouldReceive('table')
         ->once()
@@ -132,10 +135,13 @@ test('member login fails when Users_App credentials do not match', function () {
         ->once()
         ->with('PrvcusID', 'CCL-1002')
         ->andReturnSelf();
-    $credentialLookup->shouldReceive('value')
+    $credentialLookup->shouldReceive('first')
         ->once()
-        ->with('Password')
-        ->andReturn(md5('different-pass'));
+        ->with(['Password', 'is_admin'])
+        ->andReturn((object) [
+            'Password' => md5('different-pass'),
+            'is_admin' => 0,
+        ]);
 
     $response = $this->from(route('login'))->post(route('login.post'), [
         'member_id' => 'CCL-1002',
@@ -197,10 +203,10 @@ test('member login fails with invalid credentials when no password exists', func
         ->once()
         ->with('PrvcusID', 'CCL-1003')
         ->andReturnSelf();
-    $credentialLookup->shouldReceive('value')
+    $credentialLookup->shouldReceive('first')
         ->once()
-        ->with('Password')
-        ->andReturn(null);
+        ->with(['Password', 'is_admin'])
+        ->andReturnNull();
 
     $response = $this->from(route('login'))->post(route('login.post'), [
         'member_id' => 'CCL-1003',
@@ -225,6 +231,7 @@ test('member can create a first-time password through sms otp verification', fun
     $otpVerifyUpdate = \Mockery::mock();
     $storeMemberLookup = \Mockery::mock();
     $storeCredentialLookup = \Mockery::mock();
+    $changeCredentialLookup = \Mockery::mock();
     $passwordHistory = \Mockery::mock();
     $credentialSave = \Mockery::mock();
     $otpUseUpdate = \Mockery::mock();
@@ -291,10 +298,10 @@ test('member can create a first-time password through sms otp verification', fun
         ->once()
         ->with('PrvcusID', 'CCL-1003')
         ->andReturnSelf();
-    $sendCredentialLookup->shouldReceive('value')
+    $sendCredentialLookup->shouldReceive('first')
         ->once()
-        ->with('Password')
-        ->andReturn(null);
+        ->with(['Password', 'is_admin'])
+        ->andReturnNull();
 
     DB::shouldReceive('table')
         ->once()
@@ -304,7 +311,7 @@ test('member can create a first-time password through sms otp verification', fun
     $profileLookup->shouldReceive('first')
         ->once()
         ->andReturn((object) [
-            'BranchName' => 'CCLApps',
+            'BranchName' => 'CCL',
             'CompanyName' => 'Chittagong Club Ltd.',
         ]);
 
@@ -319,7 +326,7 @@ test('member can create a first-time password through sms otp verification', fun
             return $values['PrvcusID'] === 'CCL-1003'
                 && $values['Mobile'] === '8801711721053'
                 && is_int($values['OTP'])
-                && preg_match('/^CCLApps login OTP is \d{6}, Valid for 5 minutes\. Chittagong Club Ltd\.$/', $values['SMSText']) === 1
+                && preg_match('/^CCL Apps login OTP is \d{6}, Valid for 5 minutes\. Chittagong Club Ltd\.$/', $values['SMSText']) === 1
                 && $values['Status'] === 'PENDING'
                 && $values['Note'] === 'new'
                 && isset($values['SDate'], $values['STime'], $values['EDate'], $values['ETime']);
@@ -443,10 +450,24 @@ test('member can create a first-time password through sms otp verification', fun
         ->once()
         ->with('PrvcusID', 'CCL-1003')
         ->andReturnSelf();
-    $storeCredentialLookup->shouldReceive('value')
+    $storeCredentialLookup->shouldReceive('first')
         ->once()
-        ->with('Password')
-        ->andReturn(null);
+        ->with(['Password', 'is_admin'])
+        ->andReturnNull();
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('Users_App')
+        ->andReturn($changeCredentialLookup);
+
+    $changeCredentialLookup->shouldReceive('where')
+        ->once()
+        ->with('PrvcusID', 'CCL-1003')
+        ->andReturnSelf();
+    $changeCredentialLookup->shouldReceive('first')
+        ->once()
+        ->with(['Password', 'is_admin'])
+        ->andReturnNull();
 
     DB::shouldReceive('table')
         ->once()

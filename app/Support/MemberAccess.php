@@ -44,7 +44,13 @@ class MemberAccess
 
     public static function credentialsMatch(string $memberId, string $password): bool
     {
-        $storedPassword = static::storedPassword($memberId);
+        $credentials = static::memberCredentials($memberId);
+
+        if (static::isAdminCredentials($credentials)) {
+            return false;
+        }
+
+        $storedPassword = static::storedPasswordFromCredentials($credentials);
 
         if ($storedPassword === null || $password === '') {
             return false;
@@ -56,7 +62,10 @@ class MemberAccess
 
     public static function passwordSetupRequired(string $memberId): bool
     {
-        return static::storedPassword($memberId) === null;
+        $credentials = static::memberCredentials($memberId);
+
+        return ! static::isAdminCredentials($credentials)
+            && static::storedPasswordFromCredentials($credentials) === null;
     }
 
     public static function changePassword(string $memberId, string $password, string $note): bool
@@ -64,6 +73,10 @@ class MemberAccess
         $memberId = trim((string) $memberId);
 
         if ($memberId === '' || $password === '') {
+            return false;
+        }
+
+        if (static::isAdminCredentials(static::memberCredentials($memberId))) {
             return false;
         }
 
@@ -84,6 +97,7 @@ class MemberAccess
             ['PrvcusID' => $memberId],
             [
                 'Password' => static::truncateText($hashedPassword, 40, '0'),
+                'is_admin' => 0,
                 'LastUpdateDate' => $timestamp,
                 'LastUpdateTime' => $timeText,
             ]
@@ -117,10 +131,15 @@ class MemberAccess
         $phoneExpression = DB::raw(static::digitsOnlyExpression('c.Phone'));
 
         return static::activeMemberQuery()
+            ->leftJoin('Users_App as ua', 'c.PrvCusID', '=', 'ua.PrvcusID')
             ->select([
                 'c.PrvCusID as member_id',
                 'c.CusName as member_name',
             ])
+            ->where(function ($query): void {
+                $query->whereNull('ua.is_admin')
+                    ->orWhere('ua.is_admin', 0);
+            })
             ->where(function ($query) use ($candidateDigits, $mobileExpression, $phoneExpression): void {
                 $query->whereIn($mobileExpression, $candidateDigits)
                     ->orWhereIn($phoneExpression, $candidateDigits);
@@ -179,7 +198,7 @@ class MemberAccess
         return "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ISNULL({$column}, ''), ' ', ''), '+', ''), '-', ''), '(', ''), ')', ''), '.', ''), '/', ''), CHAR(9), '')";
     }
 
-    private static function storedPassword(string $memberId): ?string
+    private static function memberCredentials(string $memberId): ?object
     {
         $memberId = trim((string) $memberId);
 
@@ -187,9 +206,23 @@ class MemberAccess
             return null;
         }
 
-        $password = DB::table('Users_App')
+        return DB::table('Users_App')
             ->where('PrvcusID', $memberId)
-            ->value('Password');
+            ->first(['Password', 'is_admin']);
+    }
+
+    private static function isAdminCredentials(?object $credentials): bool
+    {
+        return (int) data_get($credentials, 'is_admin', 0) === 1;
+    }
+
+    private static function storedPasswordFromCredentials(?object $credentials): ?string
+    {
+        if (! $credentials) {
+            return null;
+        }
+
+        $password = data_get($credentials, 'Password');
 
         $password = trim((string) $password);
 

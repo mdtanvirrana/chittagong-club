@@ -95,7 +95,7 @@ class LegalPageController extends Controller
                         'title' => 'About the Club',
                         'icon' => 'apartment',
                         'body' => array_values(array_filter([
-                            $profile['companyName'] . ' (' . $profile['shortName'] . ') is a non-profit organization which is run by, and for, its members.',
+                            $profile['companyName'] . ' (' . $profile['shortName'] . ') is a non-profit organization which is run and managed by the elected General Committee Members',
                             $profile['contactSummary'] !== '' ? $profile['contactSummary'] : null,
                             $profile['companyAddressText'] !== '' ? 'Address: ' . $profile['companyAddressText'] : null,
                         ])),
@@ -118,7 +118,7 @@ class LegalPageController extends Controller
                         'title' => 'Information Security',
                         'icon' => 'shield_lock',
                         'body' => [
-                            'To protect your personal information, reasonable measures and industry-standard practices are used so it is not inappropriately misused, accessed, disclosed, altered, or destroyed.',
+                            'To protect your personal information, reasonable measures and industry-standard practices are adopted to ensure information is not misused, accessed, disclosed, altered, or destroyed.',
                             'If you provide credit card information, it is encrypted using secure socket layer technology (SSL) by SSLCOMMERZ.',
                         ],
                     ],

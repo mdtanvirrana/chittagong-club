@@ -12,10 +12,15 @@
     x-data="{
         currentLogoUrl: @js($profile['logoUrl']),
         previewLogoUrl: @js($profile['logoUrl']),
+        currentClubPhotoUrl: @js($profile['clubPhotoUrl'] ?? ''),
+        previewClubPhotoUrl: @js($profile['clubPhotoUrl'] ?? ''),
         logoPreviewName: '',
+        clubPhotoPreviewName: '',
         removeLogo: @js((bool) old('remove_logo', false)),
+        removeClubPhoto: @js((bool) old('remove_club_photo', false)),
         logoObjectUrl: null,
-        updatePreview(event) {
+        clubPhotoObjectUrl: null,
+        updateLogoPreview(event) {
             const file = event.target.files && event.target.files[0] ? event.target.files[0] : null;
 
             if (this.logoObjectUrl) {
@@ -34,7 +39,7 @@
             this.logoPreviewName = file.name;
             this.removeLogo = false;
         },
-        syncRemoval() {
+        syncLogoRemoval() {
             if (this.removeLogo) {
                 this.previewLogoUrl = '';
                 this.logoPreviewName = '';
@@ -47,6 +52,39 @@
             }
 
             this.previewLogoUrl = this.currentLogoUrl;
+        },
+        updateClubPhotoPreview(event) {
+            const file = event.target.files && event.target.files[0] ? event.target.files[0] : null;
+
+            if (this.clubPhotoObjectUrl) {
+                URL.revokeObjectURL(this.clubPhotoObjectUrl);
+                this.clubPhotoObjectUrl = null;
+            }
+
+            if (! file) {
+                this.previewClubPhotoUrl = this.removeClubPhoto ? '' : this.currentClubPhotoUrl;
+                this.clubPhotoPreviewName = '';
+                return;
+            }
+
+            this.clubPhotoObjectUrl = URL.createObjectURL(file);
+            this.previewClubPhotoUrl = this.clubPhotoObjectUrl;
+            this.clubPhotoPreviewName = file.name;
+            this.removeClubPhoto = false;
+        },
+        syncClubPhotoRemoval() {
+            if (this.removeClubPhoto) {
+                this.previewClubPhotoUrl = '';
+                this.clubPhotoPreviewName = '';
+
+                if (this.$refs.clubPhoto) {
+                    this.$refs.clubPhoto.value = '';
+                }
+
+                return;
+            }
+
+            this.previewClubPhotoUrl = this.currentClubPhotoUrl;
         }
     }"
 >
@@ -76,11 +114,11 @@
 
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
                 @foreach ($fields as $field)
-                    @continue($field['column'] === 'LogoPath')
+                    @continue(in_array($field['column'], ['LogoPath', 'ClubPhotoPath'], true))
 
                     @php
                         $inputValue = old($field['input'], $values[$field['input']] ?? '');
-                        $wide = in_array($field['type'], ['textarea'], true) || in_array($field['column'], ['COMPANY', 'BranchName', 'ClubPhotoPath'], true);
+                        $wide = in_array($field['type'], ['textarea'], true) || in_array($field['column'], ['COMPANY', 'BranchName'], true);
                     @endphp
 
                     <div class="{{ $wide ? 'sm:col-span-2' : '' }}">
@@ -90,11 +128,11 @@
                         @else
                             <input id="{{ $field['input'] }}" name="{{ $field['input'] }}" type="text" value="{{ $inputValue }}" class="w-full border border-[#30384a] bg-slate-950/20 px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:border-[#3b4557] focus:ring-0">
                         @endif
-                        <p class="mt-2 text-[11px] text-white/35">{{ $field['column'] }}</p>
                     </div>
                 @endforeach
 
                 <input type="hidden" name="logo_path" value="{{ old('logo_path', $values['logo_path'] ?? '') }}">
+                <input type="hidden" name="club_photo_path" value="{{ old('club_photo_path', $values['club_photo_path'] ?? '') }}">
             </div>
         </section>
 
@@ -119,7 +157,7 @@
                         name="logo"
                         type="file"
                         accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif"
-                        @change="updatePreview($event)"
+                        @change="updateLogoPreview($event)"
                         class="block w-full border border-[#30384a] bg-slate-950/20 px-3 py-2.5 text-sm text-white file:mr-3 file:border-0 file:bg-admin-gold file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-admin-ink focus:border-[#3b4557] focus:ring-0"
                     >
                     <p x-show="logoPreviewName" x-text="logoPreviewName" class="mt-2 text-xs font-medium text-admin-gold"></p>
@@ -128,13 +166,41 @@
                 <input type="hidden" name="remove_logo" value="0">
                 <label class="mt-4 flex items-center justify-between rounded-lg border border-admin-line/10 bg-slate-950/20 px-3 py-3">
                     <span class="text-sm text-white/78">Remove current logo</span>
-                    <input type="checkbox" name="remove_logo" value="1" x-model="removeLogo" @change="syncRemoval()" class="rounded-none border-[#30384a] bg-transparent text-admin-gold focus:ring-0">
+                    <input type="checkbox" name="remove_logo" value="1" x-model="removeLogo" @change="syncLogoRemoval()" class="rounded-none border-[#30384a] bg-transparent text-admin-gold focus:ring-0">
                 </label>
             </div>
 
             <div class="rounded-lg border border-admin-line/10 bg-white/[0.03] p-4 shadow-panel">
-                <h2 class="font-display text-lg font-bold text-white">Logo Path</h2>
-                <p class="mt-3 break-words text-sm text-white/65">{{ $values['logo_path'] ?? 'Default public/logo.png' }}</p>
+                <h2 class="font-display text-lg font-bold text-white">Club Photo</h2>
+
+                <div class="mt-4 overflow-hidden rounded-lg border border-admin-line/10 bg-slate-950/20">
+                    <template x-if="previewClubPhotoUrl">
+                        <img :src="previewClubPhotoUrl" alt="Club photo" class="h-48 w-full object-cover">
+                    </template>
+                    <template x-if="!previewClubPhotoUrl">
+                        <div class="flex h-48 items-center justify-center text-sm text-white/35">No club photo selected</div>
+                    </template>
+                </div>
+
+                <div class="mt-4">
+                    <label for="club_photo" class="mb-1.5 block text-xs font-medium uppercase tracking-[0.16em] text-white/65">Upload Club Photo</label>
+                    <input
+                        x-ref="clubPhoto"
+                        id="club_photo"
+                        name="club_photo"
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif"
+                        @change="updateClubPhotoPreview($event)"
+                        class="block w-full border border-[#30384a] bg-slate-950/20 px-3 py-2.5 text-sm text-white file:mr-3 file:border-0 file:bg-admin-gold file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-admin-ink focus:border-[#3b4557] focus:ring-0"
+                    >
+                    <p x-show="clubPhotoPreviewName" x-text="clubPhotoPreviewName" class="mt-2 text-xs font-medium text-admin-gold"></p>
+                </div>
+
+                <input type="hidden" name="remove_club_photo" value="0">
+                <label class="mt-4 flex items-center justify-between rounded-lg border border-admin-line/10 bg-slate-950/20 px-3 py-3">
+                    <span class="text-sm text-white/78">Remove current club photo</span>
+                    <input type="checkbox" name="remove_club_photo" value="1" x-model="removeClubPhoto" @change="syncClubPhotoRemoval()" class="rounded-none border-[#30384a] bg-transparent text-admin-gold focus:ring-0">
+                </label>
             </div>
         </section>
     </div>

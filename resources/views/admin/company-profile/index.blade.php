@@ -25,7 +25,7 @@
 
     <section class="overflow-hidden rounded-lg border border-admin-line/10 bg-white/[0.03] shadow-panel">
         <div class="flex items-center justify-between border-b border-admin-line/10 px-4 py-3">
-            <p class="text-[10px] uppercase tracking-[0.2em] text-white/35">CPROFILE Fields</p>
+            <p class="text-[10px] uppercase tracking-[0.2em] text-white/35">Profile Details</p>
             <p class="text-xs text-white/45">{{ count($fields) }} fields</p>
         </div>
 
@@ -34,7 +34,6 @@
                 <div class="grid gap-2 px-4 py-3.5 sm:grid-cols-[13rem_minmax(0,1fr)]">
                     <dt>
                         <p class="text-xs font-semibold uppercase tracking-[0.14em] text-white/55">{{ $field['label'] }}</p>
-                        <p class="mt-1 text-[11px] text-white/35">{{ $field['column'] }}</p>
                     </dt>
                     <dd class="whitespace-pre-line break-words text-sm text-white/72">{{ filled($field['value']) ? $field['value'] : 'N/A' }}</dd>
                 </div>

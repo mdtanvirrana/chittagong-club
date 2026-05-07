@@ -4,10 +4,13 @@
 @section('userpanel_content')
 
     <div class="flex flex-col min-h-screen pb-24">
+        @php
+            $aboutHeroUrl = $clubPhotoUrl ?? asset('about.png');
+        @endphp
 
         {{-- Hero Image --}}
         <div class="relative w-full h-56 overflow-hidden">
-            <img src="{{ asset('about.png') }}"
+            <img src="{{ $aboutHeroUrl }}"
                  alt="Chittagong Club"
                  class="w-full h-full object-cover"
                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
@@ -133,7 +136,7 @@
                         <span class="material-symbols-outlined text-white/50 text-xl">code</span>
                     </div>
                     <div>
-                        <p class="text-white font-bold text-sm">De Soft Technology Ltd</p>
+                        <p class="text-white font-bold text-sm">De Soft</p>
                         <a href="https://www.de-softbd.com" target="_blank"
                            class="text-primary/70 text-xs">www.de-softbd.com</a>
                     </div>

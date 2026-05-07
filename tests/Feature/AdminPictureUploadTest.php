@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\AdminUser;
+use App\Support\MemberSession;
+use App\Support\PortalCache;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 
@@ -11,6 +13,7 @@ function fakeAdminUser(): AdminUser
         'userid' => 'admin',
         'username' => 'Admin Test',
         'Password' => 'secret',
+        'is_admin' => 1,
     ]);
 }
 
@@ -34,6 +37,73 @@ test('admin picture upload stores files in the selected folder', function () {
     expect(is_file($targetFile))->toBeTrue();
 
     File::delete($targetFile);
+});
+
+test('admin picture upload does not expose gallery as a generic photo type', function () {
+    $response = $this
+        ->actingAs(fakeAdminUser(), 'admin')
+        ->get(route('admin.pictures.create'));
+
+    $response
+        ->assertOk()
+        ->assertDontSee('Gallery');
+});
+
+test('admin can upload a named gallery album and members see that album', function () {
+    $baseDirectory = public_path('images/gallery-test');
+    $targetDirectory = $baseDirectory.'/spring-gala-test';
+
+    config([
+        'gallery.albums_directory' => $baseDirectory,
+        'gallery.relative_albums_directory' => 'images/gallery-test',
+    ]);
+
+    File::deleteDirectory($baseDirectory);
+    PortalCache::clearPhotoRelatedCaches();
+
+    $response = $this
+        ->actingAs(fakeAdminUser(), 'admin')
+        ->post(route('admin.gallery.store'), [
+            'album_name' => 'Spring Gala Test',
+            'images' => [
+                UploadedFile::fake()->image('first-photo.jpg'),
+                UploadedFile::fake()->image('second-photo.png'),
+            ],
+        ]);
+
+    $response
+        ->assertRedirect(route('admin.gallery.create'))
+        ->assertSessionHas('status');
+
+    $imageCount = collect(File::files($targetDirectory))
+        ->filter(fn ($file) => in_array(strtolower($file->getExtension()), ['jpg', 'png'], true))
+        ->count();
+
+    expect(is_file($targetDirectory.'/'.\App\Support\GalleryAlbums::METADATA_FILENAME))->toBeTrue();
+    expect($imageCount)->toBe(2);
+
+    $adminPageResponse = $this
+        ->actingAs(fakeAdminUser(), 'admin')
+        ->get(route('admin.gallery.create'));
+
+    $adminPageResponse
+        ->assertOk()
+        ->assertSee('Upload Gallary')
+        ->assertSee('Spring Gala Test');
+
+    $galleryResponse = $this
+        ->withSession([
+            MemberSession::KEY => MemberSession::build('CCL-1001', 'Test Member'),
+        ])
+        ->get(route('gallery'));
+
+    $galleryResponse
+        ->assertOk()
+        ->assertSee('Spring Gala Test')
+        ->assertSee('spring-gala-test');
+
+    File::deleteDirectory($baseDirectory);
+    PortalCache::clearPhotoRelatedCaches();
 });
 
 test('admin picture delete removes files from nested image folders', function () {

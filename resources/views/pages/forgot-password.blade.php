@@ -68,7 +68,6 @@
                         x-model="phone"
                         inputmode="numeric"
                         autocomplete="tel"
-                        placeholder="1712345678"
                         class="login-input block w-full rounded-xl py-4 pl-[5.5rem] pr-4 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all {{ $errors->has('phone') ? 'border-red-500/50' : 'border-primary/10' }}"
                     />
                 </div>
@@ -92,7 +91,7 @@
 
             <a
                 href="{{ route('login') }}"
-                class="flex items-center justify-center gap-2 rounded-xl border border-primary/15 bg-white/65 px-4 py-3 text-sm font-semibold tracking-wide text-slate-700 shadow-[0_14px_32px_-28px_rgba(185,28,28,0.35)] transition hover:bg-white/85"
+                class="flex items-center justify-center gap-2 rounded-xl border border-primary/15 bg-white/65 px-4 py-3 text-sm font-semibold tracking-wide text-black shadow-[0_14px_32px_-28px_rgba(185,28,28,0.35)] transition hover:bg-white/85"
             >
                 <span class="material-symbols-outlined text-base">arrow_back</span>
                 Back to Sign In

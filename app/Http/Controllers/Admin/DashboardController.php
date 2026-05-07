@@ -13,7 +13,7 @@ class DashboardController extends Controller
     {
         $stats = [
             'admins' => AdminUser::query()
-                ->where('PrvcusID', AdminUser::LOGIN_ID)
+                ->where('is_admin', 1)
                 ->count(),
             'notices_total' => NoticeMessage::query()->count(),
             'notices_published' => NoticeMessage::query()->visible()->count(),

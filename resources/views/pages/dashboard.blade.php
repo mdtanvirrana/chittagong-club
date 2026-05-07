@@ -11,8 +11,8 @@
 
     $statusColor = match(strtolower($member->MemExpTypeName ?? '')) {
         'active'  => 'text-primary',
-        'expired' => 'text-slate-500',
-        default   => 'text-slate-600',
+        'expired' => 'text-black',
+        default   => 'text-black',
     };
 @endphp
 
@@ -161,7 +161,7 @@
             @php
             $services = [
 
-                ['route' => 'directory',    'icon' => 'group',                  'label' => 'Directory'],
+                ['route' => 'directory',    'icon' => 'group',                  'label' => 'Member Directory'],
                 ['route' => 'executive',    'icon' => 'gavel',                  'label' => 'General Committee'],
                 ['route' => 'ledger',       'icon' => 'account_balance_wallet', 'label' => 'Ledger'],
                 ['route' => 'circulars',    'icon' => 'article',                'label' => 'Circular'],

@@ -4,21 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Models\AffiliatedClub;
 use App\Support\PortalCache;
+use Illuminate\Support\Facades\DB;
 
 class AffiliatedClubsController extends Controller
 {
+    private const BANGLADESH_COUNTRY = 'Bangladesh';
+
+    private const UNSET_COUNTRY_LABEL = 'Country not set';
+
     public function index()
     {
-        $clubs = collect(PortalCache::remember('affiliated_clubs_v3', now()->addMinutes(30), function (): array {
+        $clubs = collect(PortalCache::remember('affiliated_clubs_v4', now()->addMinutes(30), function (): array {
+            $countryNames = $this->countryNamesByStoredValue();
+
             return AffiliatedClub::query()
                 ->where('is_active', 1)
-                ->orderByRaw('CASE WHEN id_serial IS NULL THEN 1 ELSE 0 END')
-                ->orderBy('id_serial')
-                ->orderBy('COMPANY')
                 ->select([
                     'id_affiliated_club_key',
                     'id_serial',
                     'COMPANY',
+                    'Country',
                     'BranchName',
                     'BranchAddress',
                     'HOAddress',
@@ -33,8 +38,9 @@ class AffiliatedClubsController extends Controller
                     'image_path',
                 ])
                 ->get()
-                ->map(function (AffiliatedClub $c) {
+                ->map(function (AffiliatedClub $c) use ($countryNames) {
                     $address = $c->display_address ?? '';
+                    $country = $this->resolveCountryName($c->getAttribute('Country'), $countryNames);
                     $firstPhone = null;
 
                     if ($c->BranchTel) {
@@ -66,6 +72,7 @@ class AffiliatedClubsController extends Controller
                         'id' => $c->id_affiliated_club_key,
                         'serial' => $c->id_serial,
                         'name' => $c->display_name,
+                        'country' => $country,
                         'branch' => $c->BranchName ?? '',
                         'address' => $address,
                         'initials' => $initials,
@@ -79,10 +86,104 @@ class AffiliatedClubsController extends Controller
                         'image_url' => $c->display_image_url,
                     ];
                 })
+                ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+//                ->sort(fn (array $a, array $b) => $this->compareClubOrder($a, $b))
                 ->values()
                 ->all();
         }));
 
         return view('pages.affiliated-clubs', compact('clubs'));
+    }
+
+    private function countryNamesByStoredValue(): array
+    {
+        try {
+            return DB::table('ACountry')
+                ->select(['CID', 'CName'])
+                ->get()
+                ->reduce(function (array $names, object $country): array {
+                    $name = $this->normalizeCountryValue($country->CName ?? null);
+
+                    if ($name === '') {
+                        return $names;
+                    }
+
+                    foreach ([$country->CID ?? null, $name] as $value) {
+                        $key = $this->countryLookupKey($value);
+
+                        if ($key !== '') {
+                            $names[$key] = $name;
+                        }
+                    }
+
+                    return $names;
+                }, []);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    private function resolveCountryName(mixed $country, array $countryNames): string
+    {
+        $value = $this->normalizeCountryValue($country);
+
+        if ($value === '' || $value === '0' || $value === '?') {
+            return self::UNSET_COUNTRY_LABEL;
+        }
+
+        return $countryNames[$this->countryLookupKey($value)] ?? $value;
+    }
+
+    private function normalizeCountryValue(mixed $country): string
+    {
+        return preg_replace('/\s+/', ' ', trim((string) $country)) ?? '';
+    }
+
+    private function countryLookupKey(mixed $country): string
+    {
+        return strtolower($this->normalizeCountryValue($country));
+    }
+
+    private function compareClubOrder(array $a, array $b): int
+    {
+        $aKey = $this->clubOrderKey($a);
+        $bKey = $this->clubOrderKey($b);
+
+        foreach ($aKey as $index => $value) {
+            $comparison = $value <=> $bKey[$index];
+
+            if ($comparison !== 0) {
+                return $comparison;
+            }
+        }
+
+        return 0;
+    }
+
+    private function clubOrderKey(array $club): array
+    {
+        $country = $this->normalizeCountryValue($club['country'] ?? '');
+        $serial = $club['serial'] ?? null;
+
+        return [
+            $this->countrySortRank($country),
+            strtolower($country),
+            $serial === null ? 1 : 0,
+            (int) ($serial ?? 0),
+            strtolower($this->normalizeCountryValue($club['name'] ?? '')),
+        ];
+    }
+
+    private function countrySortRank(string $country): int
+    {
+        if (strcasecmp($country, self::BANGLADESH_COUNTRY) === 0) {
+            return 0;
+        }
+
+        if (strcasecmp($country, self::UNSET_COUNTRY_LABEL) === 0) {
+            return 2;
+        }
+
+        return 1;
     }
 }

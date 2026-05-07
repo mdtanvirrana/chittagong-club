@@ -1,13 +1,16 @@
 <?php
 
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\AdminUserController as AdminAdminUserController;
 use App\Http\Controllers\Admin\AffiliatedClubController as AdminAffiliatedClubController;
 use App\Http\Controllers\Admin\CompanyProfileController as AdminCompanyProfileController;
 use App\Http\Controllers\Admin\ContactController as AdminContactController;
 use App\Http\Controllers\Admin\CircularController as AdminCircularController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\GalleryAlbumController as AdminGalleryAlbumController;
 use App\Http\Controllers\Admin\NoticeController as AdminNoticeController;
 use App\Http\Controllers\Admin\PictureUploadController as AdminPictureUploadController;
+use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\AffiliatedClubsController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -66,10 +69,20 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', fn () => redirect()->route('admin.dashboard'));
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
         Route::post('/logout', [AdminAuthController::class, 'destroy'])->name('logout');
+        Route::get('/profile', [AdminProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/profile/password', [AdminProfileController::class, 'updatePassword'])->name('profile.password.update');
+        Route::get('/admin-users', [AdminAdminUserController::class, 'index'])->name('admin-users.index');
+        Route::get('/admin-users/create', [AdminAdminUserController::class, 'create'])->name('admin-users.create');
+        Route::post('/admin-users', [AdminAdminUserController::class, 'store'])->name('admin-users.store');
+        Route::get('/admin-users/{adminUser}/edit', [AdminAdminUserController::class, 'edit'])->name('admin-users.edit');
+        Route::put('/admin-users/{adminUser}', [AdminAdminUserController::class, 'update'])->name('admin-users.update');
+        Route::delete('/admin-users/{adminUser}', [AdminAdminUserController::class, 'destroy'])->name('admin-users.destroy');
         Route::get('/pictures/upload', [AdminPictureUploadController::class, 'create'])->name('pictures.create');
         Route::get('/pictures', [AdminPictureUploadController::class, 'index'])->name('pictures.index');
         Route::post('/pictures', [AdminPictureUploadController::class, 'store'])->name('pictures.store');
         Route::delete('/pictures', [AdminPictureUploadController::class, 'destroy'])->name('pictures.destroy');
+        Route::get('/gallery/upload', [AdminGalleryAlbumController::class, 'create'])->name('gallery.create');
+        Route::post('/gallery/upload', [AdminGalleryAlbumController::class, 'store'])->name('gallery.store');
         Route::get('/company-profile', [AdminCompanyProfileController::class, 'index'])->name('company-profile.index');
         Route::get('/company-profile/edit', [AdminCompanyProfileController::class, 'edit'])->name('company-profile.edit');
         Route::put('/company-profile', [AdminCompanyProfileController::class, 'update'])->name('company-profile.update');

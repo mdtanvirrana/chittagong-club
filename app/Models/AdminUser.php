@@ -6,8 +6,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class AdminUser extends Authenticatable
 {
-    public const LOGIN_ID = 'admin';
-
     protected $table = 'Users_App';
 
     protected $primaryKey = 'PrvcusID';
@@ -26,9 +24,33 @@ class AdminUser extends Authenticatable
 
     protected $rememberTokenName = null;
 
+    protected function casts(): array
+    {
+        return [
+            'is_admin' => 'boolean',
+        ];
+    }
+
+    public static function hashPassword(string $password): string
+    {
+        return md5($password);
+    }
+
     public function getAuthPassword(): string
     {
         return (string) $this->Password;
+    }
+
+    public function passwordMatches(string $password): bool
+    {
+        $storedPassword = strtolower(trim((string) $this->Password));
+
+        return $storedPassword !== '' && hash_equals(static::hashPassword($password), $storedPassword);
+    }
+
+    public function hasAdminAccess(): bool
+    {
+        return (bool) $this->is_admin;
     }
 
     public function getUseridAttribute(): string

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 test('member can change password from profile', function () {
     $memberLookup = \Mockery::mock();
     $credentialLookup = \Mockery::mock();
+    $changeCredentialLookup = \Mockery::mock();
     $passwordHistory = \Mockery::mock();
     $credentialSave = \Mockery::mock();
 
@@ -35,18 +36,33 @@ test('member can change password from profile', function () {
         ->andReturnTrue();
 
     DB::shouldReceive('table')
-        ->twice()
+        ->times(3)
         ->with('Users_App')
-        ->andReturn($credentialLookup, $credentialSave);
+        ->andReturn($credentialLookup, $changeCredentialLookup, $credentialSave);
 
     $credentialLookup->shouldReceive('where')
         ->once()
         ->with('PrvcusID', 'CCL-1001')
         ->andReturnSelf();
-    $credentialLookup->shouldReceive('value')
+    $credentialLookup->shouldReceive('first')
         ->once()
-        ->with('Password')
-        ->andReturn(md5('old-pass'));
+        ->with(['Password', 'is_admin'])
+        ->andReturn((object) [
+            'Password' => md5('old-pass'),
+            'is_admin' => 0,
+        ]);
+
+    $changeCredentialLookup->shouldReceive('where')
+        ->once()
+        ->with('PrvcusID', 'CCL-1001')
+        ->andReturnSelf();
+    $changeCredentialLookup->shouldReceive('first')
+        ->once()
+        ->with(['Password', 'is_admin'])
+        ->andReturn((object) [
+            'Password' => md5('old-pass'),
+            'is_admin' => 0,
+        ]);
 
     DB::shouldReceive('table')
         ->once()
@@ -129,10 +145,13 @@ test('member cannot change password with incorrect current password', function (
         ->once()
         ->with('PrvcusID', 'CCL-1002')
         ->andReturnSelf();
-    $credentialLookup->shouldReceive('value')
+    $credentialLookup->shouldReceive('first')
         ->once()
-        ->with('Password')
-        ->andReturn(md5('real-pass'));
+        ->with(['Password', 'is_admin'])
+        ->andReturn((object) [
+            'Password' => md5('real-pass'),
+            'is_admin' => 0,
+        ]);
 
     $response = $this
         ->withSession([

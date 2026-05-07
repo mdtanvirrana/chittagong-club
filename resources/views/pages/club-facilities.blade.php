@@ -41,8 +41,7 @@
 @endphp
 
 @section('userpanel_content')
-<div class"flex flex-col min-h-screen pb-24">
-
+<div class="flex flex-col min-h-screen pb-24">
     <main class="flex-1 p-4 mb-4">
         @if ($facilities->isEmpty())
             <div class="rounded-2xl border border-primary/20 bg-primary/5 px-5 py-10 text-center">

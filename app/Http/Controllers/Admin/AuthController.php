@@ -25,20 +25,12 @@ class AuthController extends Controller
         $login = trim((string) $request->input('login'));
         $password = (string) $request->input('password');
 
-        if (strtolower($login) !== AdminUser::LOGIN_ID) {
-            return back()
-                ->withInput(['login' => $login])
-                ->withErrors(['login' => 'Invalid credentials']);
-        }
-
         $adminRecord = DB::table('Users_App')
-            ->where('PrvcusID', AdminUser::LOGIN_ID)
+            ->where('PrvcusID', $login)
+            ->where('is_admin', 1)
             ->first();
 
-        $storedPassword = strtolower(trim((string) data_get($adminRecord, 'Password')));
-        $matches = $storedPassword !== '' && hash_equals(md5($password), $storedPassword);
-
-        if (! $adminRecord || ! $matches) {
+        if (! $adminRecord) {
             return back()
                 ->withInput(['login' => $login])
                 ->withErrors(['login' => 'Invalid credentials']);
@@ -46,6 +38,12 @@ class AuthController extends Controller
 
         $admin = new AdminUser((array) $adminRecord);
         $admin->exists = true;
+
+        if (! $admin->passwordMatches($password)) {
+            return back()
+                ->withInput(['login' => $login])
+                ->withErrors(['login' => 'Invalid credentials']);
+        }
 
         Auth::guard('admin')->login($admin);
         $request->session()->regenerate();

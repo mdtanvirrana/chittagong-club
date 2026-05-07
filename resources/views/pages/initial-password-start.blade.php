@@ -13,23 +13,15 @@
     <div class="h-12 w-full"></div>
 
     @include('partials.member-auth-hero', [
-        'eyebrow' => 'Member First Login',
+        'eyebrow' => 'Registration',
         'stepLabel' => 'Step 1 of 3',
         'sectionTitle' => 'Send OTP',
-        'sectionDescription' => 'Enter your member ID to receive a one-time code on your registered mobile number.',
+        'sectionDescription' => 'Enter your Member ID to receive a one-time code on your registered mobile number.',
     ])
 
     <div class="flex flex-1 flex-col justify-start px-8 pb-12">
         <form action="{{ route('password.initial.send') }}" method="POST" class="space-y-6" @submit="loading = true">
             @csrf
-
-            @if (session('password_setup_status'))
-                <div class="flex items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-500/15 px-4 py-3">
-                    <span class="material-symbols-outlined shrink-0 text-amber-300">lock_reset</span>
-                    <p class="text-sm text-amber-700">{{ session('password_setup_status') }}</p>
-                </div>
-            @endif
-
             @if ($errors->any())
                 <div class="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/15 px-4 py-3">
                     <span class="material-symbols-outlined shrink-0 text-red-400">error</span>
@@ -74,7 +66,7 @@
 
             <a
                 href="{{ route('login') }}"
-                class="flex items-center justify-center gap-2 rounded-xl border border-primary/15 bg-white/65 px-4 py-3 text-sm font-semibold tracking-wide text-slate-700 shadow-[0_14px_32px_-28px_rgba(185,28,28,0.35)] transition hover:bg-white/85"
+                class="flex items-center justify-center gap-2 rounded-xl border border-primary/15 bg-white/65 px-4 py-3 text-sm font-semibold tracking-wide text-black shadow-[0_14px_32px_-28px_rgba(185,28,28,0.35)] transition hover:bg-white/85"
             >
                 <span class="material-symbols-outlined text-base">arrow_back</span>
                 Back to Sign In

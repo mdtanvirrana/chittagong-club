@@ -422,7 +422,7 @@
                             id="member-profile-qr-code"
                             class="mx-auto flex size-56 items-center justify-center overflow-hidden rounded-[1.5rem] bg-white p-4"
                         >
-                            <span class="text-xs font-medium text-slate-400">Generating QR...</span>
+                            <span class="text-xs font-medium text-black">Generating QR...</span>
                         </div>
                     </div>
                 </div>
@@ -449,7 +449,7 @@
                 }
 
                 if (!qrValue || typeof window.QRCode === 'undefined') {
-                    container.innerHTML = '<span class="text-xs font-medium text-slate-400">QR unavailable</span>';
+                    container.innerHTML = '<span class="text-xs font-medium text-black">QR unavailable</span>';
                     return;
                 }
 

@@ -30,7 +30,6 @@
                         type="text"
                         name="q"
                         value="{{ $search }}"
-                        placeholder="Search notices"
                         @input="queueSearch()"
                         class="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-white placeholder:text-white/25 focus:ring-0"
                     >

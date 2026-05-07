@@ -35,10 +35,6 @@ class PortalImageDirectory
             'label' => 'Facilities',
             'folder' => self::FACILITIES_DIRECTORY,
         ],
-        'gallery_photo' => [
-            'label' => 'Gallery',
-            'folder' => self::GALLERY_DIRECTORY,
-        ],
         'dress_code_photo' => [
             'label' => 'Dress Code',
             'folder' => self::DRESS_CODE_DIRECTORY,
