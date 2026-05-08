@@ -15,7 +15,8 @@
             return this.clubs.filter(c =>
                 c.name.toLowerCase().includes(q) ||
                 (c.country && c.country.toLowerCase().includes(q)) ||
-                (c.address && c.address.toLowerCase().includes(q))
+                (c.address && c.address.toLowerCase().includes(q)) ||
+                (c.ho_address && c.ho_address.toLowerCase().includes(q))
             );
         },
         get filteredGroups() {
@@ -98,7 +99,7 @@
                         {{-- Info --}}
                         <div class="flex-1 min-w-0">
                             <p class="text-white font-bold text-sm leading-tight line-clamp-1" x-text="club.name"></p>
-                            <p class="text-white/40 text-xs mt-0.5 line-clamp-2 leading-relaxed" x-text="club.address || 'Address not available'"></p>
+                            <p class="text-white/40 text-xs mt-0.5 line-clamp-2 leading-relaxed" x-text="club.ho_address || club.address || 'Address not available'"></p>
                         </div>
 
                         {{-- Call icon --}}

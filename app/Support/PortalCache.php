@@ -142,6 +142,7 @@ class PortalCache
             'affiliated_clubs_v2',
             'affiliated_clubs_v3',
             'affiliated_clubs_v4',
+            'affiliated_clubs_v5',
         ] as $key) {
             $cache->forget($key);
         }

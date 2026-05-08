@@ -10,7 +10,6 @@
             <div>
                 <p class="text-[10px] uppercase tracking-[0.24em] text-white/35">Account Manager</p>
                 <h2 class="mt-1 font-display text-xl font-bold text-white">Manage Admin Access</h2>
-                <p class="mt-1 text-xs text-white/45">Only `Users_App` rows with `is_admin = 1` can enter the admin panel.</p>
             </div>
 
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center">

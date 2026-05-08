@@ -53,11 +53,9 @@ class CircularController extends Controller
     {
         DB::transaction(function () use ($request) {
             $now = now();
-            $nextId = ((int) (CircularItem::query()->lockForUpdate()->max('id_career_key') ?? 10000)) + 1;
             $userId = $this->resolveAuditUserId();
 
-            CircularItem::query()->create([
-                'id_career_key' => $nextId,
+            $circular = CircularItem::query()->create([
                 'id_career_ver' => 1,
                 'is_active' => $request->boolean('is_active'),
                 'dtt_mod' => $now,
@@ -89,8 +87,15 @@ class CircularController extends Controller
                 'flt_max_salary' => 0,
                 'ct_seen' => 0,
                 'ct_interval' => 0,
-                'image_path' => $this->storeImage($request, $nextId),
             ]);
+
+            $imagePath = $this->storeImage($request, (int) $circular->id_career_key);
+
+            if ($imagePath !== null) {
+                $circular->forceFill([
+                    'image_path' => $imagePath,
+                ])->save();
+            }
         });
 
         PortalContent::clearCircularCaches();
@@ -219,7 +224,7 @@ class CircularController extends Controller
     {
         $path = parse_url((string) $url, PHP_URL_PATH);
 
-        if (! is_string($path) || ! str_starts_with($path, '/circlular/')) {
+        if (! is_string($path) || ! str_starts_with($path, '/circular/')) {
             return;
         }
 
@@ -229,7 +234,7 @@ class CircularController extends Controller
             return;
         }
 
-        $fullPath = public_path('circlular/'.$filename);
+        $fullPath = public_path('circular/'.$filename);
 
         if (is_file($fullPath)) {
             File::delete($fullPath);

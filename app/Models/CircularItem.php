@@ -13,7 +13,9 @@ class CircularItem extends Model
 
     protected $primaryKey = 'id_career_key';
 
-    public $incrementing = false;
+    public $incrementing = true;
+
+    protected $keyType = 'int';
 
     public $timestamps = false;
 

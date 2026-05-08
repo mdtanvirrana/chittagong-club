@@ -27,7 +27,7 @@
         </button>
     </div>
 
-    <div class="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(300px,0.9fr)]">
+    <div class="grid gap-4">
         <section class="rounded-lg border border-admin-line/10 bg-white/[0.03] p-4 shadow-panel">
             <h2 class="font-display text-lg font-bold text-white">Account Details</h2>
 
@@ -67,48 +67,33 @@
                         placeholder="Confirm password"
                     >
                 </div>
-
-                <label class="sm:col-span-2 flex items-start gap-3 rounded-lg border border-admin-line/20 bg-slate-950/20 px-3 py-3">
+            <label for="is_admin" class="sm:col-span-2 flex items-center justify-between rounded-lg border border-admin-line/20 bg-slate-950/20 px-4 py-3 cursor-pointer">
+                
+                <div>
+                    <p class="text-sm font-semibold text-white">Allow Admin Panel Login</p>
+                    <p class="text-xs text-black">Enable access to the admin dashboard</p>
+                </div>
+            
+                <div class="relative">
+                    <input type="hidden" name="is_admin" value="false">
+            
                     <input
                         type="checkbox"
+                        id="is_admin"
                         name="is_admin"
-                        value="1"
-                        @checked((bool) old('is_admin', $admin->is_admin))
-                        class="mt-0.5 rounded border-[#30384a] bg-white/[0.04] text-admin-gold focus:ring-admin-gold/30"
+                        value="true"
+                        @checked(old('is_admin', $admin->is_admin ?? false))
+                        class="peer sr-only"
                     >
-                    <span>
-                        <span class="block text-sm font-semibold text-white">Allow Admin Panel Login</span>
-                        <span class="mt-1 block text-xs leading-5 text-white/45">If unchecked, this account cannot sign in to the admin panel.</span>
-                    </span>
-                </label>
-            </div>
-        </section>
-
-        <section class="space-y-4">
-            <div class="rounded-lg border border-admin-line/10 bg-white/[0.03] p-4 shadow-panel">
-                <h2 class="font-display text-lg font-bold text-white">Rules</h2>
-                <div class="mt-4 space-y-3 text-sm leading-6 text-white/65">
-                    <p>Admin login checks the `Users_App` row by user ID and requires `is_admin = 1`.</p>
-                    <p>Admin passwords are saved with the same MD5 format used by the current `Users_App` credentials.</p>
-                    <p>Admin accounts are blocked from member-panel sign-in while `is_admin = 1`.</p>
+            
+                    <!-- Switch Background -->
+                    <div class="h-6 w-11 rounded-full bg-[#30384a] transition peer-checked:bg-admin-gold"></div>
+            
+                    <!-- Switch Knob -->
+                    <div class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-transform duration-200 peer-checked:translate-x-5"></div>
                 </div>
+            </label>
             </div>
-
-            @if ($isEditing)
-                <div class="rounded-lg border border-admin-line/10 bg-white/[0.03] p-4 shadow-panel">
-                    <h2 class="font-display text-lg font-bold text-white">Current Record</h2>
-                    <dl class="mt-4 space-y-3 text-sm text-white/70">
-                        <div class="flex items-center justify-between gap-3 border-b border-admin-line/10 pb-3">
-                            <dt class="text-white/45">User ID</dt>
-                            <dd>{{ $admin->userid }}</dd>
-                        </div>
-                        <div class="flex items-center justify-between gap-3">
-                            <dt class="text-white/45">Admin Access</dt>
-                            <dd>{{ $admin->is_admin ? 'Enabled' : 'Disabled' }}</dd>
-                        </div>
-                    </dl>
-                </div>
-            @endif
         </section>
     </div>
 </form>

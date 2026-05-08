@@ -8,13 +8,11 @@ use Illuminate\Support\Facades\DB;
 
 class AffiliatedClubsController extends Controller
 {
-    private const BANGLADESH_COUNTRY = 'Bangladesh';
-
     private const UNSET_COUNTRY_LABEL = 'Country not set';
 
     public function index()
     {
-        $clubs = collect(PortalCache::remember('affiliated_clubs_v4', now()->addMinutes(30), function (): array {
+        $clubs = collect(PortalCache::remember('affiliated_clubs_v5', now()->addMinutes(30), function (): array {
             $countryNames = $this->countryNamesByStoredValue();
 
             return AffiliatedClub::query()
@@ -41,6 +39,7 @@ class AffiliatedClubsController extends Controller
                 ->map(function (AffiliatedClub $c) use ($countryNames) {
                     $address = $c->display_address ?? '';
                     $country = $this->resolveCountryName($c->getAttribute('Country'), $countryNames);
+                    $hoAddress = trim((string) $c->getAttribute('HOAddress'));
                     $firstPhone = null;
 
                     if ($c->BranchTel) {
@@ -75,6 +74,7 @@ class AffiliatedClubsController extends Controller
                         'country' => $country,
                         'branch' => $c->BranchName ?? '',
                         'address' => $address,
+                        'ho_address' => $hoAddress,
                         'initials' => $initials,
                         'first_phone' => $firstPhone,
                         'all_phones' => $allPhones->unique()->values()->all(),
@@ -86,8 +86,7 @@ class AffiliatedClubsController extends Controller
                         'image_url' => $c->display_image_url,
                     ];
                 })
-                ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
-//                ->sort(fn (array $a, array $b) => $this->compareClubOrder($a, $b))
+                ->sort(fn (array $a, array $b) => $this->compareClubOrder($a, $b))
                 ->values()
                 ->all();
         }));
@@ -163,27 +162,17 @@ class AffiliatedClubsController extends Controller
     private function clubOrderKey(array $club): array
     {
         $country = $this->normalizeCountryValue($club['country'] ?? '');
-        $serial = $club['serial'] ?? null;
 
         return [
             $this->countrySortRank($country),
             strtolower($country),
-            $serial === null ? 1 : 0,
-            (int) ($serial ?? 0),
             strtolower($this->normalizeCountryValue($club['name'] ?? '')),
+            (int) ($club['id'] ?? 0),
         ];
     }
 
     private function countrySortRank(string $country): int
     {
-        if (strcasecmp($country, self::BANGLADESH_COUNTRY) === 0) {
-            return 0;
-        }
-
-        if (strcasecmp($country, self::UNSET_COUNTRY_LABEL) === 0) {
-            return 2;
-        }
-
-        return 1;
+        return strcasecmp($country, self::UNSET_COUNTRY_LABEL) === 0 ? 1 : 0;
     }
 }

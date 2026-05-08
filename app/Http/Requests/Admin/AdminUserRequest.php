@@ -11,6 +11,13 @@ class AdminUserRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'is_admin' => $this->boolean('is_admin'),
+        ]);
+    }
+
     public function rules(): array
     {
         $passwordRule = $this->isMethod('post') ? 'required' : 'nullable';
@@ -18,7 +25,7 @@ class AdminUserRequest extends FormRequest
         return [
             'user_id' => ['required', 'string', 'max:40'],
             'password' => [$passwordRule, 'string', 'min:6', 'max:40', 'confirmed'],
-            'is_admin' => ['nullable', 'boolean'],
+            'is_admin' => ['required', 'boolean'],
         ];
     }
 
