@@ -24,6 +24,7 @@
         initiatePaymentUrl: @js(route('ledger.payments.sslcommerz.initiate')),
         csrfToken: @js(csrf_token()),
         paymentNotice: @js($paymentNotice),
+        memberId: @js((string) data_get(session('member'), 'id')),
     })"
         x-init="init()"
         @keydown.escape.window="handleEscape()"
@@ -477,7 +478,6 @@
                                 type="number"
                                 min="10"
                                 step="0.01"
-                                placeholder="Enter amount"
                                 class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/50"
                             />
                         </div>
@@ -487,7 +487,6 @@
                             <input
                                 x-model="paymentForm.note"
                                 type="text"
-                                placeholder="Payment note"
                                 class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/50"
                             />
                         </div>
@@ -628,7 +627,29 @@
                 },
 
                 init() {
+                    this.restoreLedgerCache();
                     this.fetchLedgerData();
+                },
+
+                ledgerCacheKey() {
+                    return 'ccl-ledger:' + (config.memberId || 'member');
+                },
+
+                restoreLedgerCache() {
+                    if (this.paymentNotice) {
+                        return;
+                    }
+
+                    try {
+                        const cached = JSON.parse(sessionStorage.getItem(this.ledgerCacheKey()) || 'null');
+
+                        if (cached && cached.savedAt && Date.now() - cached.savedAt < 60000 && cached.state) {
+                            this.state = cached.state;
+                            this.loading = false;
+                        }
+                    } catch (error) {
+                        sessionStorage.removeItem(this.ledgerCacheKey());
+                    }
                 },
 
                 handleEscape() {
@@ -649,7 +670,7 @@
                         const response = await fetch(config.dataUrl, {
                             headers: { 'X-Requested-With': 'XMLHttpRequest' },
                             credentials: 'same-origin',
-                            cache: 'no-store',
+                            cache: this.paymentNotice ? 'reload' : 'default',
                         });
 
                         if (!response.ok) {
@@ -657,6 +678,10 @@
                         }
 
                         this.state = await response.json();
+                        sessionStorage.setItem(this.ledgerCacheKey(), JSON.stringify({
+                            savedAt: Date.now(),
+                            state: this.state,
+                        }));
                     } catch (error) {
                         console.error(error);
                     } finally {
@@ -676,7 +701,7 @@
                         const response = await fetch(url.toString(), {
                             headers: { 'X-Requested-With': 'XMLHttpRequest' },
                             credentials: 'same-origin',
-                            cache: 'no-store',
+                            cache: 'default',
                         });
 
                         if (!response.ok) {
@@ -765,6 +790,7 @@
                             throw new Error('SSLCommerz gateway URL is missing.');
                         }
 
+                        sessionStorage.removeItem(this.ledgerCacheKey());
                         window.location.href = data.gateway_url;
                     } catch (error) {
                         this.paymentSubmitting = false;

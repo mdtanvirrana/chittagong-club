@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CircularRequest;
 use App\Models\CircularItem;
+use App\Support\NotifyOutbox;
 use App\Support\PortalContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -96,6 +97,8 @@ class CircularController extends Controller
                     'image_path' => $imagePath,
                 ])->save();
             }
+
+            NotifyOutbox::circularPosted($circular->fresh(), $userId);
         });
 
         PortalContent::clearCircularCaches();
@@ -117,11 +120,13 @@ class CircularController extends Controller
     {
         $circularRow = $this->findCircular($circular);
 
+        $userId = $this->resolveAuditUserId();
+
         $circularRow->fill([
             'id_career_ver' => max(1, (int) $circularRow->id_career_ver) + 1,
             'is_active' => $request->boolean('is_active'),
             'dtt_mod' => now(),
-            'id_user_mod' => $this->resolveAuditUserId(),
+            'id_user_mod' => $userId,
             'is_online' => $request->boolean('is_online'),
             'tx_title' => trim((string) $request->input('title')),
             'tx_url' => $this->resolveMetadataField($request, 'external_url', $circularRow->tx_url),
@@ -137,6 +142,8 @@ class CircularController extends Controller
             'image_path' => $this->storeImage($request, (int) $circularRow->id_career_key, $circularRow->image_url),
         ])->save();
 
+        NotifyOutbox::circularPosted($circularRow->fresh(), $userId);
+
         PortalContent::clearCircularCaches();
 
         return redirect()
@@ -147,12 +154,14 @@ class CircularController extends Controller
     public function toggleOnline(int $circular)
     {
         $circularRow = $this->findCircular($circular);
+        $userId = $this->resolveAuditUserId();
         $circularRow->fill([
             'is_online' => ! (bool) $circularRow->is_online,
             'id_career_ver' => max(1, (int) $circularRow->id_career_ver) + 1,
             'dtt_mod' => now(),
-            'id_user_mod' => $this->resolveAuditUserId(),
+            'id_user_mod' => $userId,
         ])->save();
+        NotifyOutbox::circularPosted($circularRow->fresh(), $userId);
 
         PortalContent::clearCircularCaches();
 
@@ -162,12 +171,14 @@ class CircularController extends Controller
     public function toggleActive(int $circular)
     {
         $circularRow = $this->findCircular($circular);
+        $userId = $this->resolveAuditUserId();
         $circularRow->fill([
             'is_active' => ! (bool) $circularRow->is_active,
             'id_career_ver' => max(1, (int) $circularRow->id_career_ver) + 1,
             'dtt_mod' => now(),
-            'id_user_mod' => $this->resolveAuditUserId(),
+            'id_user_mod' => $userId,
         ])->save();
+        NotifyOutbox::circularPosted($circularRow->fresh(), $userId);
 
         PortalContent::clearCircularCaches();
 

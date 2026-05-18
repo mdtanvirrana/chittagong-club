@@ -1,5 +1,23 @@
 <style>
     .blue-depth-gradient { background: #ffffff; }
+
+    .member-shell .blue-depth-gradient,
+    .member-shell .blue-depth-gradient :where(p, span, h1, h2, h3, h4, h5, h6, small, label, li, dd, dt, strong, a) {
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
+    }
+
+    .member-shell .blue-depth-gradient :where([class~="text-primary"], [class~="text-primary/90"], [class~="text-primary/80"], [class~="text-primary/70"], [class~="text-primary/60"]) {
+        color: var(--member-primary) !important;
+        -webkit-text-fill-color: var(--member-primary) !important;
+    }
+
+    .member-shell .blue-depth-gradient :where(.gold-btn-gradient, [class~="bg-primary"]),
+    .member-shell .blue-depth-gradient :where(.gold-btn-gradient, [class~="bg-primary"]) :where(p, span, h1, h2, h3, h4, h5, h6, small, strong) {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
     .gold-text-gradient {
         background: var(--member-accent-gradient);
         -webkit-background-clip: text;

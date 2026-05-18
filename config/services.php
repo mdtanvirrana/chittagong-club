@@ -48,6 +48,14 @@ return [
         'ipn_url' => env('SSLCOMMERZ_IPN_URL', env('SSLCZ_IPN_URL')),
     ],
 
+    'mobile_app' => [
+        'payment_return_url' => env('CCL_APP_PAYMENT_RETURN_URL', 'cclapps://payment-result'),
+    ],
+
+    'expo' => [
+        'access_token' => env('EXPO_ACCESS_TOKEN'),
+    ],
+
     'robi_sms' => [
         'url' => env('ROBI_SMS_URL', 'https://msg.mram.com.bd/smsapi'),
         'api_key' => env('ROBI_SMS_API_KEY'),

@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('page_title', 'Upload Gallary')
+@section('page_title', 'Upload Gallery')
 @section('page_eyebrow', 'Media')
 
 @section('content')
@@ -13,12 +13,10 @@
             </div>
 
             <a
-                href="{{ route('gallery') }}"
-                target="_blank"
-                rel="noreferrer"
+                href="{{ route('admin.gallery.index') }}"
                 class="inline-flex h-10 items-center justify-center rounded-xl border border-[#30384a] px-4 text-sm font-medium text-white/72 transition hover:border-[#3b4557] hover:bg-white/[0.04]"
             >
-                View Member Gallery
+                Browse Folders
             </a>
         </div>
 
@@ -199,7 +197,13 @@
                 @foreach ($albums as $album)
                     <article class="overflow-hidden rounded-lg border border-admin-line/10 bg-slate-950/20">
                         <div class="aspect-[16/9] overflow-hidden bg-slate-950/40">
-                            <img src="{{ $album['cover'] }}" alt="{{ $album['title'] }}" class="h-full w-full object-cover">
+                            @if ($album['cover'])
+                                <img src="{{ $album['cover'] }}" alt="{{ $album['title'] }}" class="h-full w-full object-cover">
+                            @else
+                                <div class="flex h-full w-full items-center justify-center">
+                                    <span class="material-symbols-outlined text-4xl text-white/35">photo_library</span>
+                                </div>
+                            @endif
                         </div>
                         <div class="space-y-3 p-3">
                             <div class="min-w-0">
@@ -207,13 +211,21 @@
                                 <p class="mt-1 text-xs text-white/45">{{ $album['photo_count'] }} photo(s) - {{ $album['date'] }}</p>
                             </div>
 
-                            <button
-                                type="button"
-                                onclick="const input = document.getElementById('album_name'); input.value = @js($album['title']); input.dispatchEvent(new Event('input', { bubbles: true })); input.focus();"
-                                class="inline-flex h-9 w-full items-center justify-center rounded-xl border border-[#30384a] px-3 text-xs font-medium text-white/72 transition hover:border-[#3b4557] hover:bg-white/[0.04]"
-                            >
-                                Add More Images
-                            </button>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    onclick="const input = document.getElementById('album_name'); input.value = @js($album['title']); input.dispatchEvent(new Event('input', { bubbles: true })); input.focus();"
+                                    class="inline-flex h-9 items-center justify-center rounded-xl border border-[#30384a] px-3 text-xs font-medium text-white/72 transition hover:border-[#3b4557] hover:bg-white/[0.04]"
+                                >
+                                    Add Images
+                                </button>
+                                <a
+                                    href="{{ route('admin.gallery.index', ['album' => $album['id']]) }}"
+                                    class="inline-flex h-9 items-center justify-center rounded-xl border border-[#30384a] px-3 text-xs font-medium text-white/72 transition hover:border-[#3b4557] hover:bg-white/[0.04]"
+                                >
+                                    Manage
+                                </a>
+                            </div>
                         </div>
                     </article>
                 @endforeach

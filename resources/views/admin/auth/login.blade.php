@@ -144,7 +144,7 @@
                     value="{{ old('login') }}"
                     autocomplete="username"
                     class="w-full rounded-2xl border border-black/10 bg-white/[0.04] px-4 py-3 text-black placeholder:text-black/25 focus:border-admin-gold/40 focus:ring-admin-gold/25"
-                    placeholder="e.g. 10001 or system.user"
+                    placeholder=""
                 >
             </div>
 
@@ -157,7 +157,7 @@
                         :type="showPassword ? 'text' : 'password'"
                         autocomplete="current-password"
                         class="w-full rounded-2xl border border-black/10 bg-white/[0.04] px-4 py-3 pr-14 text-black placeholder:text-black/25 focus:border-admin-gold/40 focus:ring-admin-gold/25"
-                        placeholder="Enter password"
+                        placeholder=""
                     >
                     <button
                         type="button"

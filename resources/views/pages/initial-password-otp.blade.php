@@ -45,7 +45,7 @@
                         inputmode="numeric"
                         maxlength="6"
                         autocomplete="one-time-code"
-                        placeholder="123456"
+                        placeholder=""
                         class="login-input block w-full rounded-xl py-4 pl-12 pr-4 text-center text-2xl font-bold tracking-[0.45em] focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all {{ $errors->has('code') ? 'border-red-500/50' : 'border-primary/10' }}"
                     />
                 </div>

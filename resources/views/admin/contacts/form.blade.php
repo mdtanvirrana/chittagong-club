@@ -82,12 +82,12 @@
 
                 <div>
                     <label for="phone" class="mb-1.5 block text-xs font-medium uppercase tracking-[0.16em] text-white/65">Phone</label>
-                    <input id="phone" name="phone" type="text" value="{{ old('phone', $contact->phone_number) }}" class="w-full border border-[#30384a] bg-slate-950/20 px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:border-[#3b4557] focus:ring-0" placeholder="+88 02333388078">
+                    <input id="phone" name="phone" type="text" value="{{ old('phone', $contact->phone_number) }}" class="w-full border border-[#30384a] bg-slate-950/20 px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:border-[#3b4557] focus:ring-0" >
                 </div>
 
                 <div>
                     <label for="email" class="mb-1.5 block text-xs font-medium uppercase tracking-[0.16em] text-white/65">Email</label>
-                    <input id="email" name="email" type="email" value="{{ old('email', $contact->email_address) }}" class="w-full border border-[#30384a] bg-slate-950/20 px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:border-[#3b4557] focus:ring-0" placeholder="contact@example.com">
+                    <input id="email" name="email" type="email" value="{{ old('email', $contact->email_address) }}" class="w-full border border-[#30384a] bg-slate-950/20 px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:border-[#3b4557] focus:ring-0" >
                 </div>
             </div>
         </section>

@@ -6,6 +6,12 @@
     <title>@hasSection('page_title')@yield('page_title') — {{ $companyName }}@else{{ $companyName }}@endif</title>
     <link rel="icon" type="image/x-icon" href="{{ $companyFaviconUrl }}" />
     <link rel="apple-touch-icon" href="{{ $companyLogoUrl }}" />
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="//cdn.tailwindcss.com" />
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net" />
     @php
         $memberTheme = config('theme.member', []);
         $memberDisplayFont = data_get($memberTheme, 'fonts.display.family', 'Manrope');
@@ -131,6 +137,10 @@
         .member-shell {
             color: #000000;
             --userpanel-header-offset: 4.5rem;
+        }
+
+        [x-cloak] {
+            display: none !important;
         }
 
         .member-shell .userpanel-subheader {
@@ -759,12 +769,64 @@
         ) textarea::placeholder {
             color: rgba(var(--member-contrast-soft-rgb), 0.68) !important;
         }
+
+        .member-notify-stack {
+            position: fixed;
+            left: 1rem;
+            right: 1rem;
+            top: max(1rem, env(safe-area-inset-top));
+            z-index: 1000;
+            display: grid;
+            gap: 0.75rem;
+            pointer-events: none;
+        }
+
+        .member-notify-toast {
+            pointer-events: auto;
+            overflow: hidden;
+            border-radius: 1rem;
+            border: 1px solid rgba(var(--member-primary-rgb), 0.18);
+            background: #ffffff;
+            box-shadow: 0 22px 54px -34px rgba(var(--member-primary-rgb), 0.55);
+            color: #000000;
+        }
+
+        .member-notify-toast button,
+        .member-notify-toast a {
+            touch-action: manipulation;
+        }
+
+        .member-route-progress {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            z-index: 1200;
+            height: 3px;
+            width: min(100vw, 425px);
+            max-width: 425px;
+            background: var(--member-primary);
+            opacity: 0;
+            transform: translateX(-50%) scaleX(0);
+            transform-origin: left top;
+            transition: transform 220ms ease, opacity 160ms ease;
+        }
+
+        body.ccl-route-loading .member-route-progress {
+            transform: translateX(-50%) scaleX(0.78);
+            opacity: 1;
+        }
+
+        body.ccl-route-loaded .member-route-progress {
+            transform: translateX(-50%) scaleX(1);
+            opacity: 0;
+        }
     </style>
 
     @include('partials.canterbury-font')
     @stack('styles')
 </head>
 <body class="antialiased font-display text-black">
+<div class="member-route-progress" aria-hidden="true"></div>
 
 <div class="mobile-container">
     <div class="member-shell">
@@ -783,6 +845,459 @@
     </div>
 
 </div>
+
+<script>
+    (() => {
+        const sameOriginUrl = (value) => {
+            try {
+                return new URL(value, window.location.origin);
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const linkForEvent = (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+
+            return target?.closest?.('a[href]');
+        };
+
+        const isNavigable = (anchor) => {
+            if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download')) {
+                return false;
+            }
+
+            const url = sameOriginUrl(anchor.href);
+
+            if (!url || url.origin !== window.location.origin) {
+                return false;
+            }
+
+            return url.href.split('#')[0] !== window.location.href.split('#')[0];
+        };
+
+        const showLoading = () => {
+            document.body.classList.remove('ccl-route-loaded');
+            document.body.classList.add('ccl-route-loading');
+        };
+
+        const hideLoading = () => {
+            document.body.classList.remove('ccl-route-loading');
+            document.body.classList.add('ccl-route-loaded');
+            window.setTimeout(() => document.body.classList.remove('ccl-route-loaded'), 180);
+        };
+
+        const startLoading = (event) => {
+            const anchor = linkForEvent(event);
+
+            if (!isNavigable(anchor)) {
+                return;
+            }
+
+            showLoading();
+        };
+
+        const startSubmitLoading = (event) => {
+            const form = event.target;
+
+            if (!(form instanceof HTMLFormElement)) {
+                return;
+            }
+
+            showLoading();
+        };
+
+        const prefetch = (event) => {
+            if (window.ReactNativeWebView) {
+                return;
+            }
+
+            const anchor = linkForEvent(event);
+
+            if (!isNavigable(anchor)) {
+                return;
+            }
+
+            const url = sameOriginUrl(anchor.href);
+            const href = url?.href;
+
+            const alreadyPrefetched = Array.from(document.querySelectorAll('link[rel="prefetch"]'))
+                .some((link) => link.href === href);
+
+            if (!href || alreadyPrefetched) {
+                return;
+            }
+
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.href = href;
+            link.as = 'document';
+            document.head.appendChild(link);
+        };
+
+        window.addEventListener('pageshow', hideLoading);
+        window.addEventListener('beforeunload', () => {
+            if (!document.body.classList.contains('ccl-route-loading')) {
+                showLoading();
+            }
+        });
+
+        document.addEventListener('click', startLoading, true);
+        document.addEventListener('submit', startSubmitLoading, true);
+        document.addEventListener('touchstart', prefetch, { passive: true, capture: true });
+        document.addEventListener('mouseover', prefetch, true);
+    })();
+</script>
+
+@if (data_get(session('member'), 'id') && Route::has('notifications.stream'))
+    <script>
+        (() => {
+            if (!('EventSource' in window)) {
+                return;
+            }
+
+            const streamUrl = @js(route('notifications.stream'));
+            const deviceStoreUrl = @js(route('notifications.devices.store'));
+            const csrfToken = @js(csrf_token());
+            const lastIdKey = 'ccl-notify-last-id';
+            const shownKeyPrefix = 'ccl-notify-shown:';
+            let source = null;
+            let reconnectTimer = null;
+
+            window.memberNotificationBell = (config) => ({
+                unreadCount: 0,
+
+                init() {
+                    this.fetchUnreadCount();
+                },
+
+                badgeText() {
+                    return this.unreadCount > 99 ? '99+' : String(this.unreadCount);
+                },
+
+                receive(notification) {
+                    if (notification && notification.id) {
+                        this.unreadCount += 1;
+                    }
+                },
+
+                async fetchUnreadCount() {
+                    try {
+                        const response = await fetch(config.indexUrl, {
+                            headers: {
+                                Accept: 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            credentials: 'same-origin',
+                        });
+
+                        if (!response.ok) {
+                            return;
+                        }
+
+                        const payload = await response.json();
+                        this.unreadCount = Number(payload.unread_count || 0);
+                    } catch (error) {
+                        console.error(error);
+                    }
+                },
+            });
+
+            window.memberNotificationMenu = (config) => ({
+                open: false,
+                loading: true,
+                unreadCount: 0,
+                notifications: [],
+
+                init() {
+                    this.fetchNotifications();
+                },
+
+                badgeText() {
+                    return this.unreadCount > 99 ? '99+' : String(this.unreadCount);
+                },
+
+                toggle() {
+                    this.open = !this.open;
+
+                    if (this.open) {
+                        this.fetchNotifications(false);
+                    }
+                },
+
+                receive(notification) {
+                    if (!notification || !notification.id) {
+                        return;
+                    }
+
+                    const existing = this.notifications.find((item) => Number(item.id) === Number(notification.id));
+
+                    if (existing) {
+                        Object.assign(existing, notification, { read: existing.read ?? false });
+                        return;
+                    }
+
+                    this.notifications.unshift(Object.assign({ read: false }, notification));
+                    this.notifications = this.notifications.slice(0, 20);
+                    this.unreadCount += 1;
+                },
+
+                async fetchNotifications(showLoading = true) {
+                    if (showLoading) {
+                        this.loading = true;
+                    }
+
+                    try {
+                        const response = await fetch(config.indexUrl, {
+                            headers: {
+                                Accept: 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            credentials: 'same-origin',
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Unable to load notifications.');
+                        }
+
+                        const payload = await response.json();
+                        this.unreadCount = Number(payload.unread_count || 0);
+                        this.notifications = Array.isArray(payload.notifications) ? payload.notifications : [];
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async markRead(notification) {
+                    if (!notification || notification.read) {
+                        return;
+                    }
+
+                    notification.read = true;
+                    this.unreadCount = Math.max(0, this.unreadCount - 1);
+
+                    try {
+                        await fetch(config.readUrlTemplate.replace('__ID__', encodeURIComponent(notification.id)), {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                Accept: 'application/json',
+                                'X-CSRF-TOKEN': config.csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                        });
+                    } catch (error) {
+                        console.error(error);
+                    }
+                },
+
+                async markAllRead() {
+                    const previousUnread = this.unreadCount;
+                    this.unreadCount = 0;
+                    this.notifications = this.notifications.map((notification) => Object.assign({}, notification, { read: true }));
+
+                    try {
+                        const response = await fetch(config.readAllUrl, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                Accept: 'application/json',
+                                'X-CSRF-TOKEN': config.csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                        });
+
+                        if (response.ok) {
+                            const payload = await response.json();
+                            this.unreadCount = Number(payload.unread_count || 0);
+                        }
+                    } catch (error) {
+                        this.unreadCount = previousUnread;
+                        console.error(error);
+                    }
+                },
+
+                async openNotification(notification) {
+                    await this.markRead(notification);
+                    this.open = false;
+
+                    if (notification.action_url) {
+                        window.location.href = notification.action_url;
+                    }
+                },
+            });
+
+            const closeSource = () => {
+                if (source) {
+                    source.close();
+                    source = null;
+                }
+            };
+
+            const stack = () => {
+                let element = document.getElementById('member-notify-stack');
+
+                if (!element) {
+                    element = document.createElement('div');
+                    element.id = 'member-notify-stack';
+                    element.className = 'member-notify-stack';
+                    document.body.appendChild(element);
+                }
+
+                return element;
+            };
+
+            const notifyNativeApp = (notification) => {
+                if (!window.ReactNativeWebView || typeof window.ReactNativeWebView.postMessage !== 'function') {
+                    return;
+                }
+
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                    type: 'ccl.notification',
+                    notification,
+                }));
+            };
+
+            const registerNativePushToken = async (detail) => {
+                const token = String(detail?.expo_push_token || '').trim();
+
+                if (!token) {
+                    return;
+                }
+
+                try {
+                    await fetch(deviceStoreUrl, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            Accept: 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({
+                            expo_push_token: token,
+                            platform: detail?.platform || null,
+                            device_id: detail?.device_id || null,
+                            device_name: detail?.device_name || null,
+                            app_version: detail?.app_version || null,
+                        }),
+                    });
+                } catch (error) {
+                    console.error(error);
+                }
+            };
+
+            const showToast = (notification) => {
+                const id = String(notification.id || '');
+
+                if (id && sessionStorage.getItem(shownKeyPrefix + id)) {
+                    return;
+                }
+
+                if (id) {
+                    sessionStorage.setItem(shownKeyPrefix + id, '1');
+                }
+
+                notifyNativeApp(notification);
+
+                if (window.ReactNativeWebView) {
+                    return;
+                }
+
+                const toast = document.createElement('div');
+                toast.className = 'member-notify-toast';
+                toast.innerHTML = `
+                    <div class="flex items-start gap-3 px-4 py-3">
+                        <div class="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <span class="material-symbols-outlined text-xl">notifications</span>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-extrabold text-black"></p>
+                            <p class="mt-1 text-xs leading-5 text-black/70"></p>
+                        </div>
+                        <button type="button" class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary" aria-label="Dismiss notification">
+                            <span class="material-symbols-outlined text-base">close</span>
+                        </button>
+                    </div>
+                `;
+
+                toast.querySelector('p:first-child').textContent = notification.title || 'New notification';
+                toast.querySelector('p:nth-child(2)').textContent = notification.body || '';
+                toast.querySelector('button').addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    toast.remove();
+                });
+
+                if (notification.action_url) {
+                    toast.addEventListener('click', () => {
+                        window.location.href = notification.action_url;
+                    });
+                }
+
+                stack().prepend(toast);
+                window.setTimeout(() => toast.remove(), 9000);
+            };
+
+            const openSource = () => {
+                if (source || document.hidden) {
+                    return;
+                }
+
+                const url = new URL(streamUrl, window.location.origin);
+                const lastId = Number(localStorage.getItem(lastIdKey) || 0);
+
+                if (lastId > 0) {
+                    url.searchParams.set('last_id', String(lastId));
+                }
+
+                source = new EventSource(url.toString(), { withCredentials: true });
+
+                source.addEventListener('notification', (event) => {
+                    let notification = null;
+
+                    try {
+                        notification = JSON.parse(event.data || '{}');
+                    } catch (error) {
+                        notification = null;
+                    }
+
+                    const eventId = Number(event.lastEventId || notification?.id || 0);
+
+                    if (eventId > 0) {
+                        localStorage.setItem(lastIdKey, String(eventId));
+                    }
+
+                    if (notification) {
+                        window.dispatchEvent(new CustomEvent('ccl:notification', { detail: notification }));
+                        showToast(notification);
+                    }
+                });
+
+                source.onerror = () => {
+                    closeSource();
+                    window.clearTimeout(reconnectTimer);
+                    reconnectTimer = window.setTimeout(openSource, 3500);
+                };
+            };
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    closeSource();
+                    return;
+                }
+
+                openSource();
+            });
+
+            window.addEventListener('ccl:native-push-token', (event) => registerNativePushToken(event.detail));
+            window.addEventListener('beforeunload', closeSource);
+            openSource();
+        })();
+    </script>
+@endif
 
 </body>
 </html>

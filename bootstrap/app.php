@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckAdminAuth;
 use App\Http\Middleware\CheckMemberAuth;
+use App\Http\Middleware\ApplyApiCacheHeaders;
 use App\Http\Middleware\RedirectIfAdminAuthenticated;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use Illuminate\Foundation\Application;
@@ -13,6 +14,7 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -22,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'guest.member' => RedirectIfAuthenticated::class,
             'auth.admin' => CheckAdminAuth::class,
             'guest.admin' => RedirectIfAdminAuthenticated::class,
+            'api.cache' => ApplyApiCacheHeaders::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

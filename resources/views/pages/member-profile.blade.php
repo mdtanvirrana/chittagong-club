@@ -281,7 +281,7 @@
                             type="password"
                             autocomplete="current-password"
                             class="w-full rounded-2xl border px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary/30 {{ $errors->has('current_password') ? 'border-red-400/50 bg-red-500/10' : 'border-white/10 bg-white/[0.04]' }}"
-                            placeholder="Enter current password"
+                            placeholder=""
                             required
                         >
                     </div>
@@ -294,7 +294,6 @@
                             type="password"
                             autocomplete="new-password"
                             class="w-full rounded-2xl border px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary/30 {{ $errors->has('new_password') ? 'border-red-400/50 bg-red-500/10' : 'border-white/10 bg-white/[0.04]' }}"
-                            placeholder="At least 6 characters"
                             required
                         >
                     </div>
@@ -307,7 +306,6 @@
                             type="password"
                             autocomplete="new-password"
                             class="w-full rounded-2xl border px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary/30 {{ $errors->has('new_password') ? 'border-red-400/50 bg-red-500/10' : 'border-white/10 bg-white/[0.04]' }}"
-                            placeholder="Re-enter new password"
                             required
                         >
                     </div>

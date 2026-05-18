@@ -205,7 +205,7 @@
         ['label' => 'Affiliated Clubs', 'route' => 'admin.affiliated-clubs.index', 'match' => 'admin.affiliated-clubs.*', 'icon' => 'handshake'],
         ['label' => 'Circulars', 'route' => 'admin.circulars.index', 'match' => 'admin.circulars.*', 'icon' => 'article'],
         ['label' => 'Upload Pictures', 'route' => 'admin.pictures.create', 'match' => 'admin.pictures.*', 'icon' => 'upload_file'],
-        ['label' => 'Upload Gallary', 'route' => 'admin.gallery.create', 'match' => 'admin.gallery.*', 'icon' => 'photo_library'],
+        ['label' => 'Gallery', 'route' => 'admin.gallery.index', 'match' => 'admin.gallery.*', 'icon' => 'photo_library'],
     ];
 @endphp
 

@@ -10,6 +10,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -24,8 +25,9 @@ class PictureUploadController extends Controller
         PortalImageDirectory::ensurePhotoDirectories();
 
         $uploadTargets = PortalImageDirectory::uploadTargets();
+        $departments = $this->departmentOptions();
 
-        return view('admin.pictures.create', compact('uploadTargets'));
+        return view('admin.pictures.create', compact('uploadTargets', 'departments'));
     }
 
     public function index(Request $request): View
@@ -90,6 +92,24 @@ class PictureUploadController extends Controller
     {
         $validated = $request->validate([
             'image_type' => ['required', 'string', 'in:'.implode(',', PortalImageDirectory::uploadTargetKeys())],
+            'department_id' => [
+                'nullable',
+                'string',
+                'required_if:image_type,facilities_photo',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if ($value === null || trim((string) $value) === '') {
+                        return;
+                    }
+
+                    $exists = DB::table('List_Department')
+                        ->where('Departmentid', trim((string) $value))
+                        ->exists();
+
+                    if (! $exists) {
+                        $fail('Select a valid department.');
+                    }
+                },
+            ],
             'images' => ['required', 'array', 'min:1'],
             'images.*' => ['required', 'image', 'mimes:'.implode(',', self::IMAGE_EXTENSIONS), 'max:10240'],
         ]);
@@ -99,6 +119,11 @@ class PictureUploadController extends Controller
         abort_if($folder === null, 422, 'Invalid upload target.');
 
         $directory = PortalImageDirectory::absoluteDirectory($folder);
+
+        if ($folder === PortalImageDirectory::FACILITIES_DIRECTORY) {
+            $directory .= DIRECTORY_SEPARATOR.trim((string) $validated['department_id']);
+        }
+
         File::ensureDirectoryExists($directory);
 
         $storedNames = [];
@@ -125,7 +150,7 @@ class PictureUploadController extends Controller
             ->route('admin.pictures.index', ['folder' => $folder])
             ->with(
                 'status',
-                count($storedNames).' picture(s) uploaded to public/'.PortalImageDirectory::relativeDirectory($folder).': '.implode(', ', $storedNames)
+                count($storedNames).' picture(s) uploaded to public/'.$this->storedRelativeDirectory($folder, $validated['department_id'] ?? null).': '.implode(', ', $storedNames)
             );
     }
 
@@ -182,7 +207,11 @@ class PictureUploadController extends Controller
     {
         $directory = PortalImageDirectory::absoluteDirectory($folder);
 
-        return collect(File::files($directory))
+        $files = $folder === PortalImageDirectory::FACILITIES_DIRECTORY
+            ? File::allFiles($directory)
+            : File::files($directory);
+
+        return collect($files)
             ->filter(fn ($file) => in_array(strtolower($file->getExtension()), self::IMAGE_EXTENSIONS, true))
             ->filter(function ($file) use ($search) {
                 if ($search === '') {
@@ -197,6 +226,7 @@ class PictureUploadController extends Controller
             ->map(fn ($file) => [
                 'file' => $file,
                 'folder' => $folder,
+                'relative_path' => $this->relativePublicPath($file->getPathname()),
             ])
             ->sortByDesc(fn (array $item) => $item['file']->getMTime())
             ->values();
@@ -206,7 +236,7 @@ class PictureUploadController extends Controller
     {
         $file = $item['file'];
         $folder = $item['folder'];
-        $relativePath = PortalImageDirectory::relativePath($folder, $file->getFilename());
+        $relativePath = $item['relative_path'] ?? PortalImageDirectory::relativePath($folder, $file->getFilename());
 
         return [
             'name' => $file->getFilename(),
@@ -230,5 +260,40 @@ class PictureUploadController extends Controller
         }
 
         return $basename.'.'.$extension;
+    }
+
+    private function departmentOptions(): array
+    {
+        return DB::table('List_Department')
+            ->select('Departmentid', 'Departmentname')
+            ->whereNotNull('Departmentname')
+            ->whereRaw("LTRIM(RTRIM(Departmentname)) <> ''")
+            ->orderBy('Departmentname')
+            ->get()
+            ->map(fn (object $department): array => [
+                'id' => trim((string) $department->Departmentid),
+                'name' => trim((string) $department->Departmentname),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function storedRelativeDirectory(string $folder, mixed $departmentId = null): string
+    {
+        $relativeDirectory = PortalImageDirectory::relativeDirectory($folder);
+
+        if ($folder === PortalImageDirectory::FACILITIES_DIRECTORY && filled($departmentId)) {
+            return $relativeDirectory.'/'.trim((string) $departmentId);
+        }
+
+        return $relativeDirectory;
+    }
+
+    private function relativePublicPath(string $path): string
+    {
+        $publicPath = str_replace('\\', '/', public_path());
+        $path = str_replace('\\', '/', $path);
+
+        return ltrim(Str::after($path, $publicPath), '/');
     }
 }

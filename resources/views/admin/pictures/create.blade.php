@@ -28,8 +28,14 @@
             x-data="{
                 isDragging: false,
                 selectedTarget: @js(old('image_type', '')),
+                selectedDepartment: @js(old('department_id', '')),
                 uploadTargets: @js($uploadTargets),
+                departments: @js($departments),
                 previews: [],
+                facilitiesTarget: 'facilities_photo',
+                needsDepartment() {
+                    return this.selectedTarget === this.facilitiesTarget;
+                },
                 targetLabel(value) {
                     return this.uploadTargets[value]?.label || '';
                 },
@@ -94,6 +100,7 @@
 
             <div class="flex items-center justify-between gap-3">
                 <input type="hidden" name="image_type" :value="selectedTarget">
+                <input type="hidden" name="department_id" :value="needsDepartment() ? selectedDepartment : ''">
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-[0.16em] text-white/55">Photo Type</label>
                     <p x-cloak x-show="selectedTarget" class="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-admin-gold" x-text="targetLabel(selectedTarget)"></p>
@@ -101,7 +108,7 @@
 
                 <button
                     type="submit"
-                    :disabled="!selectedTarget || previews.length === 0"
+                    :disabled="!selectedTarget || previews.length === 0 || (needsDepartment() && !selectedDepartment)"
                     class="inline-flex h-9 items-center justify-center rounded-xl border border-admin-gold/20 bg-admin-gold px-4 text-sm font-medium text-admin-ink transition disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     Upload Pictures
@@ -131,6 +138,31 @@
             @error('image_type')
                 <p class="text-xs text-red-300">{{ $message }}</p>
             @enderror
+            @error('department_id')
+                <p class="text-xs text-red-300">{{ $message }}</p>
+            @enderror
+
+            <div
+                x-cloak
+                x-show="needsDepartment()"
+                class="rounded-xl border border-admin-line/10 bg-slate-950/20 p-3"
+            >
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-white/55">Facility Department</p>
+                        <p class="mt-1 text-xs text-white/40">Facilities images are stored under their department folder.</p>
+                    </div>
+                    <select
+                        x-model="selectedDepartment"
+                        class="h-10 w-full rounded-xl border border-[#30384a] bg-slate-950 px-3 text-sm text-white focus:border-admin-gold focus:outline-none focus:ring-2 focus:ring-admin-gold/20 sm:max-w-xs"
+                    >
+                        <option value="">Select department</option>
+                        <template x-for="department in departments" :key="department.id">
+                            <option :value="department.id" x-text="`${department.name} (#${department.id})`"></option>
+                        </template>
+                    </select>
+                </div>
+            </div>
 
             <div>
                 <input

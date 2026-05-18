@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\NoticeRequest;
 use App\Models\NoticeMessage;
+use App\Support\NotifyOutbox;
 use App\Support\PortalContent;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -51,11 +52,9 @@ class NoticeController extends Controller
     {
         DB::transaction(function () use ($request) {
             $now = now();
-            $nextId = ((int) (NoticeMessage::query()->lockForUpdate()->max('id_message_key') ?? 100000)) + 1;
             $userId = $this->resolveAuditUserId();
 
-            NoticeMessage::query()->create([
-                'id_message_key' => $nextId,
+            $notice = NoticeMessage::query()->create([
                 'id_message_ver' => 1,
                 'is_active' => $request->boolean('is_active'),
                 'id_ds_env' => 100000,
@@ -79,6 +78,8 @@ class NoticeController extends Controller
                 'id_user_key' => $userId,
                 'tx_comment' => $this->resolveMetadataField($request, 'comment'),
             ]);
+
+            NotifyOutbox::noticePosted($notice->fresh(), $userId);
         });
 
         PortalContent::clearNoticeCaches();
@@ -100,11 +101,13 @@ class NoticeController extends Controller
     {
         $noticeRow = $this->findNotice($notice);
 
+        $userId = $this->resolveAuditUserId();
+
         $noticeRow->fill([
             'id_message_ver' => max(1, (int) $noticeRow->id_message_ver) + 1,
             'is_active' => $request->boolean('is_active'),
             'dtt_mod' => now(),
-            'id_user_mod' => $this->resolveAuditUserId(),
+            'id_user_mod' => $userId,
             'Edate' => Carbon::parse($request->input('publish_date'))->toDateString(),
             'Etime' => $request->input('publish_time').':00',
             'is_online' => $request->boolean('is_online'),
@@ -113,8 +116,10 @@ class NoticeController extends Controller
             'tx_title' => trim((string) $request->input('title')),
             'tx_post_mgs' => PortalContent::plainTextToDelta($request->input('body')),
             'tx_comment' => $this->resolveMetadataField($request, 'comment', $noticeRow->tx_comment),
-            'id_user_key' => $this->resolveAuditUserId(),
+            'id_user_key' => $userId,
         ])->save();
+
+        NotifyOutbox::noticePosted($noticeRow->fresh(), $userId);
 
         PortalContent::clearNoticeCaches();
 
@@ -126,12 +131,15 @@ class NoticeController extends Controller
     public function toggleOnline(int $notice)
     {
         $noticeRow = $this->findNotice($notice);
+        $userId = $this->resolveAuditUserId();
         $noticeRow->fill([
             'is_online' => ! (bool) $noticeRow->is_online,
             'id_message_ver' => max(1, (int) $noticeRow->id_message_ver) + 1,
             'dtt_mod' => now(),
-            'id_user_mod' => $this->resolveAuditUserId(),
+            'id_user_mod' => $userId,
         ])->save();
+
+        NotifyOutbox::noticePosted($noticeRow->fresh(), $userId);
 
         PortalContent::clearNoticeCaches();
 
@@ -141,12 +149,15 @@ class NoticeController extends Controller
     public function toggleActive(int $notice)
     {
         $noticeRow = $this->findNotice($notice);
+        $userId = $this->resolveAuditUserId();
         $noticeRow->fill([
             'is_active' => ! (bool) $noticeRow->is_active,
             'id_message_ver' => max(1, (int) $noticeRow->id_message_ver) + 1,
             'dtt_mod' => now(),
-            'id_user_mod' => $this->resolveAuditUserId(),
+            'id_user_mod' => $userId,
         ])->save();
+
+        NotifyOutbox::noticePosted($noticeRow->fresh(), $userId);
 
         PortalContent::clearNoticeCaches();
 

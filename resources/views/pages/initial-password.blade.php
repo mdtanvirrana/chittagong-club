@@ -52,7 +52,6 @@
                     <input
                         name="password"
                         :type="showPassword ? 'text' : 'password'"
-                        placeholder="••••••••"
                         autocomplete="new-password"
                         class="login-input block w-full rounded-xl border border-primary/10 py-4 pl-12 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all {{ $errors->has('password') ? 'border-red-500/50' : 'border-primary/10' }}"
                     />
@@ -78,7 +77,7 @@
                     <input
                         name="password_confirmation"
                         :type="showConfirmPassword ? 'text' : 'password'"
-                        placeholder="••••••••"
+                        placeholder=""
                         autocomplete="new-password"
                         class="login-input block w-full rounded-xl border border-primary/10 py-4 pl-12 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
                     />

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\PaymentTransaction;
 use App\Models\SuccessfulPaymentTransaction;
 use App\Support\MemberAccess;
+use App\Support\NotifyOutbox;
+use App\Support\PortalCache;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,14 +22,20 @@ class LedgerController extends Controller
         return view('pages.ledger');
     }
 
-    public function data(): JsonResponse
+    public function data(Request $request): JsonResponse
     {
-        $memberId = data_get(session('member'), 'id');
+        $memberId = $this->memberId($request);
 
         if (! $memberId) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
+        $payload = PortalCache::rememberResilient(
+            "member_ledger_data_{$memberId}_v1",
+            "member_ledger_data_{$memberId}_stale_v1",
+            now()->addSeconds(20),
+            now()->addMinutes(5),
+            function () use ($memberId): array {
         $customerInfo = MemberAccess::activeMemberQuery('c', 'cc')
             ->where('c.PrvCusID', $memberId)
             ->select('c.CreditAmt')
@@ -126,7 +134,7 @@ class LedgerController extends Controller
         $paymentTransactions = $this->paymentTransactions($memberId);
         $successfulTransactions = $this->successfulTransactions($memberId);
 
-        return response()->json([
+        return [
             'creditLimit' => $creditLimit,
             'totalDue' => $totalDue,
             'remaining' => $remaining,
@@ -138,12 +146,147 @@ class LedgerController extends Controller
             'monthlyHistory' => $monthlyHistory,
             'paymentTransactions' => $paymentTransactions,
             'successfulTransactions' => $successfulTransactions,
-        ]);
+        ];
+            },
+            [
+                'creditLimit' => 0,
+                'totalDue' => 0,
+                'remaining' => 0,
+                'thisMonthDebit' => 0,
+                'thisMonthCredit' => 0,
+                'usagePercent' => 0,
+                'currentMonthLabel' => now()->format('F Y'),
+                'deptBreakdown' => [],
+                'monthlyHistory' => [],
+                'paymentTransactions' => [],
+                'successfulTransactions' => [],
+            ],
+        );
+
+        NotifyOutbox::dueReminder(
+            $memberId,
+            (float) ($payload['totalDue'] ?? 0),
+            (float) ($payload['creditLimit'] ?? 0)
+        );
+
+        return response()
+            ->json($payload)
+            ->header('Cache-Control', 'private, max-age=20, stale-while-revalidate=120');
+    }
+
+    public function summary(Request $request): JsonResponse
+    {
+        $memberId = $this->memberId($request);
+
+        if (! $memberId) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $payload = PortalCache::rememberResilient(
+            "member_ledger_summary_{$memberId}_v1",
+            "member_ledger_summary_{$memberId}_stale_v1",
+            now()->addSeconds(20),
+            now()->addMinutes(5),
+            fn (): array => $this->ledgerSummaryPayload($memberId),
+            [
+                'creditLimit' => 0,
+                'totalDue' => 0,
+                'remaining' => 0,
+                'usagePercent' => 0,
+            ],
+        );
+
+        NotifyOutbox::dueReminder(
+            $memberId,
+            (float) ($payload['totalDue'] ?? 0),
+            (float) ($payload['creditLimit'] ?? 0)
+        );
+
+        return response()
+            ->json($payload)
+            ->header('Cache-Control', 'private, max-age=20, stale-while-revalidate=120');
+    }
+
+    public function insights(Request $request): JsonResponse
+    {
+        $memberId = $this->memberId($request);
+
+        if (! $memberId) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $payload = PortalCache::rememberResilient(
+            "member_ledger_insights_{$memberId}_v1",
+            "member_ledger_insights_{$memberId}_stale_v1",
+            now()->addSeconds(20),
+            now()->addMinutes(5),
+            fn (): array => $this->ledgerInsightsPayload($memberId),
+            [
+                'thisMonthDebit' => 0,
+                'thisMonthCredit' => 0,
+                'currentMonthLabel' => now()->format('F Y'),
+                'deptBreakdown' => [],
+            ],
+        );
+
+        return response()
+            ->json($payload)
+            ->header('Cache-Control', 'private, max-age=20, stale-while-revalidate=120');
+    }
+
+    public function history(Request $request): JsonResponse
+    {
+        $memberId = $this->memberId($request);
+
+        if (! $memberId) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $payload = PortalCache::rememberResilient(
+            "member_ledger_history_{$memberId}_v1",
+            "member_ledger_history_{$memberId}_stale_v1",
+            now()->addSeconds(20),
+            now()->addMinutes(5),
+            fn (): array => ['monthlyHistory' => $this->ledgerHistoryPayload($memberId)],
+            ['monthlyHistory' => []],
+        );
+
+        return response()
+            ->json($payload)
+            ->header('Cache-Control', 'private, max-age=20, stale-while-revalidate=120');
+    }
+
+    public function payments(Request $request): JsonResponse
+    {
+        $memberId = $this->memberId($request);
+
+        if (! $memberId) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $payload = PortalCache::rememberResilient(
+            "member_ledger_payments_{$memberId}_v1",
+            "member_ledger_payments_{$memberId}_stale_v1",
+            now()->addSeconds(20),
+            now()->addMinutes(5),
+            fn (): array => [
+                'paymentTransactions' => $this->paymentTransactions($memberId),
+                'successfulTransactions' => $this->successfulTransactions($memberId),
+            ],
+            [
+                'paymentTransactions' => [],
+                'successfulTransactions' => [],
+            ],
+        );
+
+        return response()
+            ->json($payload)
+            ->header('Cache-Control', 'private, max-age=20, stale-while-revalidate=120');
     }
 
     public function monthDetails(Request $request): JsonResponse
     {
-        $memberId = data_get(session('member'), 'id');
+        $memberId = $this->memberId($request);
 
         if (! $memberId) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
@@ -299,11 +442,211 @@ class LedgerController extends Controller
         }
     }
 
+    private function ledgerSummaryPayload(string $memberId): array
+    {
+        $customerInfo = MemberAccess::activeMemberQuery('c', 'cc')
+            ->where('c.PrvCusID', $memberId)
+            ->select('c.CreditAmt')
+            ->first();
+
+        $ledgerDue = DB::table('Customer_ledger')
+            ->where('PrvCusId', $memberId)
+            ->where('InvMRN', '<>', '0')
+            ->selectRaw('COALESCE(SUM(COALESCE(DrAmt, 0) - COALESCE(CrAmt, 0)), 0) as Due')
+            ->first();
+
+        $creditLimit = (float) ($customerInfo->CreditAmt ?? 0);
+        $totalDue = max(0, (float) ($ledgerDue->Due ?? 0));
+        $remaining = $creditLimit - $totalDue;
+        $usagePercent = $creditLimit > 0
+            ? min(100, (int) round(($totalDue / $creditLimit) * 100))
+            : 0;
+
+        return [
+            'creditLimit' => $creditLimit,
+            'totalDue' => $totalDue,
+            'remaining' => $remaining,
+            'usagePercent' => $usagePercent,
+        ];
+    }
+
+    private function ledgerInsightsPayload(string $memberId): array
+    {
+        $now = Carbon::now();
+        [$currentMonthStart, $currentMonthEnd] = $this->monthDateRange($now->format('Y-m'));
+
+        $deptBreakdown = DB::table('Customer_Ledger as a')
+            ->join('List_Department as b', 'a.DepartmentID', '=', 'b.Departmentid')
+            ->where('a.PrvCusID', $memberId)
+            ->where('a.InvMRN', '<>', '0')
+            ->whereBetween('a.EDate', [$currentMonthStart, $currentMonthEnd])
+            ->selectRaw('b.Departmentname as dept')
+            ->selectRaw('SUM(COALESCE(a.DrAmt, 0)) as debit_amount')
+            ->selectRaw('SUM(COALESCE(a.CrAmt, 0)) as credit_amount')
+            ->selectRaw('COUNT(*) as count')
+            ->groupBy('b.Departmentname')
+            ->get()
+            ->map(fn ($row) => [
+                'dept' => $row->dept ?: 'General',
+                'debit_amount' => (float) ($row->debit_amount ?? 0),
+                'credit_amount' => (float) ($row->credit_amount ?? 0),
+                'count' => (int) ($row->count ?? 0),
+            ])
+            ->filter(fn (array $row) => $row['debit_amount'] > 0 || $row['credit_amount'] > 0)
+            ->sortByDesc(fn (array $row) => max($row['debit_amount'], $row['credit_amount']))
+            ->values();
+
+        $thisMonthDebit = (float) DB::table('Customer_Ledger as a')
+            ->where('a.PrvCusID', $memberId)
+            ->where('a.InvMRN', '<>', '0')
+            ->whereBetween('a.EDate', [$currentMonthStart, $currentMonthEnd])
+            ->sum('a.DrAmt');
+
+        $thisMonthCredit = (float) DB::table('Customer_Ledger as a')
+            ->where('a.PrvCusID', $memberId)
+            ->where('a.InvMRN', '<>', '0')
+            ->whereBetween('a.EDate', [$currentMonthStart, $currentMonthEnd])
+            ->sum('a.CrAmt');
+
+        if ($thisMonthDebit <= 0 && $deptBreakdown->isEmpty()) {
+            $monthData = $this->monthlyBillForRange($memberId, $currentMonthStart, $currentMonthEnd);
+
+            if ($monthData) {
+                $thisMonthDebit = (float) ($monthData->MBill ?? 0);
+                $deptBreakdown = collect([[
+                    'dept' => 'Monthly Bill',
+                    'debit_amount' => $thisMonthDebit,
+                    'credit_amount' => 0.0,
+                    'count' => 1,
+                ]])->filter(fn (array $row) => $row['debit_amount'] > 0)->values();
+            }
+        }
+
+        return [
+            'thisMonthDebit' => $thisMonthDebit,
+            'thisMonthCredit' => $thisMonthCredit,
+            'currentMonthLabel' => $now->format('F Y'),
+            'deptBreakdown' => $deptBreakdown,
+        ];
+    }
+
+    private function ledgerHistoryPayload(string $memberId)
+    {
+        $ledgerRows = DB::table('Customer_Ledger as cl')
+            ->join('List_Department as ld', 'cl.DepartmentID', '=', 'ld.Departmentid')
+            ->where('cl.PrvCusID', $memberId)
+            ->where('cl.InvMRN', '<>', '0')
+            ->where('cl.ACode', '<>', 'Opening')
+            ->select([
+                'cl.InvMRN',
+                'cl.DrAmt',
+                'cl.CrAmt',
+                'cl.EDate',
+                'cl.Remarks',
+                'cl.Note',
+                'ld.Departmentname as DeptName',
+            ])
+            ->get();
+
+        if ($ledgerRows->isEmpty()) {
+            return $this->monthlyBillHistory($memberId);
+        }
+
+        return $ledgerRows
+            ->groupBy(fn ($row) => Carbon::parse($row->EDate)->format('Y-m'))
+            ->map(function ($rows, $monthKey) {
+                $dt = Carbon::createFromFormat('Y-m', $monthKey);
+                $totalDebit = (float) $rows->sum(fn ($row) => (float) ($row->DrAmt ?? 0));
+                $totalCredit = (float) $rows->sum(fn ($row) => (float) ($row->CrAmt ?? 0));
+
+                return [
+                    'month_key' => $monthKey,
+                    'month_label' => $dt->format('F Y'),
+                    'month_short' => $dt->format('M'),
+                    'month_year' => $dt->format('Y'),
+                    'total_debit' => $totalDebit,
+                    'total_credit' => $totalCredit,
+                    'net' => $totalDebit - $totalCredit,
+                    'row_count' => $rows->count(),
+                ];
+            })
+            ->sortByDesc('month_key')
+            ->values();
+    }
+
+    private function monthlyBillHistory(string $memberId)
+    {
+        try {
+            return DB::table('SMS_MonthlyBill')
+                ->where('Prvcusid', $memberId)
+                ->whereNotNull('sMonth')
+                ->select('MBill', 'Bal', 'sMonth')
+                ->orderByDesc('sMonth')
+                ->limit(24)
+                ->get()
+                ->map(function ($row) {
+                    $dt = Carbon::parse($row->sMonth);
+                    $totalDebit = (float) ($row->MBill ?? 0);
+
+                    return [
+                        'month_key' => $dt->format('Y-m'),
+                        'month_label' => $dt->format('F Y'),
+                        'month_short' => $dt->format('M'),
+                        'month_year' => $dt->format('Y'),
+                        'total_debit' => $totalDebit,
+                        'total_credit' => 0.0,
+                        'net' => $totalDebit,
+                        'row_count' => 1,
+                    ];
+                })
+                ->filter(fn (array $row) => $row['total_debit'] > 0)
+                ->values();
+        } catch (\Throwable $e) {
+            Log::warning('Unable to load monthly bill fallback history for ledger.', [
+                'member_id' => $memberId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return collect();
+        }
+    }
+
+    private function monthlyBillForRange(string $memberId, Carbon $monthStart, Carbon $monthEnd): ?object
+    {
+        try {
+            return DB::table('SMS_MonthlyBill')
+                ->where('Prvcusid', $memberId)
+                ->whereBetween('sMonth', [$monthStart, $monthEnd])
+                ->select('MBill', 'Bal', 'sMonth')
+                ->first();
+        } catch (\Throwable $e) {
+            Log::warning('Unable to load monthly bill fallback insight for ledger.', [
+                'member_id' => $memberId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
     private function monthDateRange(string $monthKey): array
     {
         $monthStart = Carbon::createFromFormat('Y-m', $monthKey)->startOfMonth()->startOfDay();
         $monthEnd = $monthStart->copy()->endOfMonth()->endOfDay();
 
         return [$monthStart, $monthEnd];
+    }
+
+    private function memberId(Request $request): ?string
+    {
+        $apiMemberId = trim((string) data_get($request->user(), 'member_id'));
+
+        if ($apiMemberId !== '') {
+            return $apiMemberId;
+        }
+
+        $sessionMemberId = trim((string) data_get(session('member'), 'id'));
+
+        return $sessionMemberId !== '' ? $sessionMemberId : null;
     }
 }

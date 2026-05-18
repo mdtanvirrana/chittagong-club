@@ -13,7 +13,9 @@ class NoticeMessage extends Model
 
     protected $primaryKey = 'id_message_key';
 
-    public $incrementing = false;
+    public $incrementing = true;
+
+    protected $keyType = 'int';
 
     public $timestamps = false;
 

@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Illuminate\Contracts\Cache\Repository;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -13,12 +14,27 @@ class PortalCache
 
     public static function store(): Repository
     {
-        return Cache::store('file');
+        return Cache::store();
     }
 
     public static function remember(string $key, mixed $ttl, callable $callback): mixed
     {
         return static::store()->remember($key, $ttl, $callback);
+    }
+
+    public static function rememberGlobal(string $name, mixed $ttl, callable $callback, ?string $version = null): mixed
+    {
+        return static::remember(static::globalKey($name, $version), $ttl, $callback);
+    }
+
+    public static function rememberUser(
+        string|int|null $memberId,
+        string $name,
+        mixed $ttl,
+        callable $callback,
+        ?string $version = null
+    ): mixed {
+        return static::remember(static::userKey($memberId, $name, $version), $ttl, $callback);
     }
 
     public static function rememberResilient(
@@ -48,6 +64,105 @@ class PortalCache
 
             return $default;
         }
+    }
+
+    public static function rememberGlobalResilient(
+        string $name,
+        mixed $freshTtl,
+        mixed $staleTtl,
+        callable $callback,
+        mixed $default = null,
+        ?string $version = null
+    ): mixed {
+        $freshKey = static::globalKey($name, $version);
+
+        return static::rememberResilient(
+            $freshKey,
+            static::staleKey($freshKey),
+            $freshTtl,
+            $staleTtl,
+            $callback,
+            $default
+        );
+    }
+
+    public static function rememberUserResilient(
+        string|int|null $memberId,
+        string $name,
+        mixed $freshTtl,
+        mixed $staleTtl,
+        callable $callback,
+        mixed $default = null,
+        ?string $version = null
+    ): mixed {
+        $freshKey = static::userKey($memberId, $name, $version);
+
+        return static::rememberResilient(
+            $freshKey,
+            static::staleKey($freshKey),
+            $freshTtl,
+            $staleTtl,
+            $callback,
+            $default
+        );
+    }
+
+    public static function globalKey(string $name, ?string $version = null): string
+    {
+        return 'global:'.static::version($version).':'.static::normalizeKeySegment($name);
+    }
+
+    public static function userKey(string|int|null $memberId, string $name, ?string $version = null): string
+    {
+        return 'user:'.static::normalizeKeySegment($memberId).':'.static::version($version).':'.static::normalizeKeySegment($name);
+    }
+
+    public static function staleKey(string $key): string
+    {
+        return $key.':stale';
+    }
+
+    public static function ttl(string $type): int
+    {
+        return max(1, (int) config("portal_cache.ttl.{$type}", 300));
+    }
+
+    public static function publicJson(array $payload, int $status = 200, ?int $maxAge = null): JsonResponse
+    {
+        return static::json($payload, $status, 'public', $maxAge);
+    }
+
+    public static function privateJson(array $payload, int $status = 200, ?int $maxAge = null): JsonResponse
+    {
+        return static::json($payload, $status, 'private', $maxAge);
+    }
+
+    public static function noStoreJson(array $payload, int $status = 200): JsonResponse
+    {
+        return response()
+            ->json($payload, $status)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache');
+    }
+
+    public static function cacheControlHeader(string $visibility = 'private', ?int $maxAge = null, ?int $stale = null): string
+    {
+        $visibility = $visibility === 'public' ? 'public' : 'private';
+        $defaultMaxAge = $visibility === 'public'
+            ? (int) config('portal_cache.http.public_max_age', 300)
+            : (int) config('portal_cache.http.private_max_age', 60);
+        $maxAge = max(0, $maxAge ?? $defaultMaxAge);
+        $stale = max(0, $stale ?? (int) config('portal_cache.http.stale_while_revalidate', 300));
+
+        return "{$visibility}, max-age={$maxAge}, stale-while-revalidate={$stale}";
+    }
+
+    private static function json(array $payload, int $status, string $visibility, ?int $maxAge = null): JsonResponse
+    {
+        return response()
+            ->json($payload, $status)
+            ->header('Cache-Control', static::cacheControlHeader($visibility, $maxAge))
+            ->header('Vary', 'Accept, Authorization');
     }
 
     public static function memberPhotoIndex(): array
@@ -91,19 +206,29 @@ class PortalCache
         $cache = static::store();
         $currentYear = (int) now()->format('Y');
         $previousYear = $currentYear - 1;
+        $apiCommitteeKey = "api_committee_members_{$currentYear}_{$previousYear}_v1";
 
         foreach ([
             'public_image_index_v1',
             'public_image_index_member_directory_v2',
             'public_image_index_employee_directory_v2',
             'member_directory_v4',
+            'api_member_directory_v1',
             'employee_directory_v2',
+            'api_employee_directory_v1',
             'former_chairman_v2',
+            'api_former_chairmen_v1',
             'club_facilities_v1',
             'club_facilities_v2',
+            'club_facilities_v3',
+            'api_club_facilities_v1',
             'gallery_albums_v1',
             'gallery_albums_v2',
+            'gallery_albums_v3',
+            'api_gallery_albums_v1',
             "committee_members_{$currentYear}_{$previousYear}_v2",
+            $apiCommitteeKey,
+            static::globalKey('api_member_directory'),
         ] as $key) {
             $cache->forget($key);
         }
@@ -126,11 +251,22 @@ class PortalCache
             "dashboard_ledger_totals_{$memberId}_stale_v2",
             "dashboard_member_credit_{$memberId}_v1",
             "dashboard_member_credit_{$memberId}_stale_v1",
+            "member_ledger_data_{$memberId}_v1",
+            "member_ledger_data_{$memberId}_stale_v1",
             "member_profile_view_{$memberId}_v1",
             "member_profile_view_{$memberId}_v2",
+            static::userKey($memberId, 'api_dashboard_member'),
+            static::staleKey(static::userKey($memberId, 'api_dashboard_member')),
+            static::userKey($memberId, 'api_dashboard_ledger_totals'),
+            static::staleKey(static::userKey($memberId, 'api_dashboard_ledger_totals')),
         ] as $key) {
             $cache->forget($key);
         }
+    }
+
+    public static function clearCompanyProfileCaches(): void
+    {
+        static::store()->forget(static::globalKey('app_config'));
     }
 
     public static function clearAffiliatedClubCaches(): void
@@ -143,6 +279,7 @@ class PortalCache
             'affiliated_clubs_v3',
             'affiliated_clubs_v4',
             'affiliated_clubs_v5',
+            'api_affiliated_clubs_v1',
         ] as $key) {
             $cache->forget($key);
         }
@@ -150,7 +287,7 @@ class PortalCache
 
     private static function photoIndex(string $cacheKey, array $folders): array
     {
-        return static::remember($cacheKey, now()->addMinutes(30), function () use ($folders): array {
+        return static::remember($cacheKey, now()->addSeconds(static::ttl('photo_index')), function () use ($folders): array {
             $index = [];
 
             foreach ($folders as $folder) {
@@ -233,5 +370,17 @@ class PortalCache
     private static function normalizeImageIdentifier(string|int|null $identifier): string
     {
         return Str::lower(trim((string) $identifier));
+    }
+
+    private static function version(?string $version = null): string
+    {
+        return static::normalizeKeySegment($version ?: config('portal_cache.version', 'v1'));
+    }
+
+    private static function normalizeKeySegment(string|int|null $value): string
+    {
+        $value = Str::lower(trim((string) $value));
+
+        return $value === '' ? 'unknown' : (string) preg_replace('/[^a-z0-9_.:-]+/', '-', $value);
     }
 }

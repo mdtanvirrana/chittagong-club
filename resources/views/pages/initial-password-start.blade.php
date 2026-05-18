@@ -41,7 +41,7 @@
                         name="member_id"
                         type="text"
                         value="{{ old('member_id', data_get($setupState, 'member_id')) }}"
-                        placeholder="e.g. CCL-88291"
+                        placeholder=""
                         autocomplete="username"
                         class="login-input block w-full rounded-xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all {{ $errors->has('member_id') ? 'border-red-500/50' : 'border-primary/10' }}"
                     />

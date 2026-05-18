@@ -29,6 +29,9 @@ use App\Http\Controllers\Member\MemberDetailController;
 use App\Http\Controllers\Member\MemberDirectoryController;
 use App\Http\Controllers\Member\MemberProfileController;
 use App\Http\Controllers\NoticeController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\NotificationDeviceController;
+use App\Http\Controllers\NotificationStreamController;
 use App\Http\Controllers\Payments\SSLCommerzPaymentController;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Session\Middleware\StartSession;
@@ -81,8 +84,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/pictures', [AdminPictureUploadController::class, 'index'])->name('pictures.index');
         Route::post('/pictures', [AdminPictureUploadController::class, 'store'])->name('pictures.store');
         Route::delete('/pictures', [AdminPictureUploadController::class, 'destroy'])->name('pictures.destroy');
+        Route::get('/gallery', [AdminGalleryAlbumController::class, 'index'])->name('gallery.index');
         Route::get('/gallery/upload', [AdminGalleryAlbumController::class, 'create'])->name('gallery.create');
         Route::post('/gallery/upload', [AdminGalleryAlbumController::class, 'store'])->name('gallery.store');
+        Route::patch('/gallery/{album}', [AdminGalleryAlbumController::class, 'update'])->name('gallery.update');
+        Route::delete('/gallery/{album}', [AdminGalleryAlbumController::class, 'destroy'])->name('gallery.destroy');
+        Route::patch('/gallery/{album}/images/{image}', [AdminGalleryAlbumController::class, 'updateImage'])
+            ->where('image', '[^/]+')
+            ->name('gallery.images.update');
+        Route::delete('/gallery/{album}/images/{image}', [AdminGalleryAlbumController::class, 'destroyImage'])
+            ->where('image', '[^/]+')
+            ->name('gallery.images.destroy');
         Route::get('/company-profile', [AdminCompanyProfileController::class, 'index'])->name('company-profile.index');
         Route::get('/company-profile/edit', [AdminCompanyProfileController::class, 'edit'])->name('company-profile.edit');
         Route::put('/company-profile', [AdminCompanyProfileController::class, 'update'])->name('company-profile.update');
@@ -125,6 +137,12 @@ Route::middleware('auth.member')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/summary', [DashboardController::class, 'summary'])->name('dashboard.summary');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/stream', [NotificationStreamController::class, 'stream'])->name('notifications.stream');
+    Route::post('/notifications/devices', [NotificationDeviceController::class, 'store'])->name('notifications.devices.store');
+    Route::delete('/notifications/devices', [NotificationDeviceController::class, 'destroy'])->name('notifications.devices.destroy');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::get('/circulars', [CircularController::class, 'index'])->name('circulars');
     Route::get('/profile', [MemberProfileController::class, 'index'])->name('profile');
     Route::post('/profile/password', [MemberProfileController::class, 'updatePassword'])->name('profile.password.update');
@@ -153,6 +171,7 @@ Route::middleware('auth.member')->group(function () {
     Route::get('/dress-code', [ClubInfoPageController::class, 'dressCode'])->name('dress-code');
     Route::get('/general-rules', [ClubInfoPageController::class, 'generalRules'])->name('general-rules');
     Route::get('/gallery', [GalleryController::class, 'index'])->name('gallery');
+    Route::get('/gallery/{album}/photos', [GalleryController::class, 'photos'])->name('gallery.photos');
 });
 
 Route::controller(SSLCommerzPaymentController::class)

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Member;
 use App\Http\Controllers\Controller;
 use App\Models\CircularItem;
 use App\Support\MemberAccess;
+use App\Support\NotifyOutbox;
 use App\Support\PortalCache;
 use App\Support\PortalContent;
 use Illuminate\Support\Facades\Log;
@@ -149,6 +150,7 @@ class DashboardController extends Controller
 
         $creditLimit = (float) ($member->CreditAmt ?? 0);
         $creditBal = $creditLimit - $totalDue;
+        NotifyOutbox::dueReminder((string) $memberId, $totalDue, $creditLimit);
 
         return response()->json([
             'creditBal' => $creditBal,

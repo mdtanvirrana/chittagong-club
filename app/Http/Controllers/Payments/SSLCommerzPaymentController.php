@@ -4,10 +4,14 @@ namespace App\Http\Controllers\Payments;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Payments\InitiateSslCommerzPaymentRequest;
+use App\Models\MemberApiUser;
 use App\Models\PaymentTransaction;
 use App\Models\SuccessfulPaymentTransaction;
 use App\Services\Payments\SSLCommerzService;
 use App\Support\MemberAccess;
+use App\Support\MemberSession;
+use App\Support\NotifyOutbox;
+use App\Support\PortalCache;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
@@ -24,7 +28,8 @@ class SSLCommerzPaymentController extends Controller
 
     public function initiate(InitiateSslCommerzPaymentRequest $request): JsonResponse
     {
-        $memberId = (string) data_get(session('member'), 'id');
+        $memberContext = $this->currentMemberContext($request);
+        $memberId = (string) data_get($memberContext, 'id');
 
         if ($memberId === '') {
             return response()->json(['message' => 'Unauthenticated.'], 401);
@@ -36,13 +41,14 @@ class SSLCommerzPaymentController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
-        $member = $this->getMemberContact($memberId);
-        $transactionId = $this->makeTransactionId($memberId);
+        $member = $this->getMemberContact($memberId, (string) data_get($memberContext, 'name', 'Member'));
+        $channel = (string) data_get($memberContext, 'channel', 'web');
+        $transactionId = $this->makeTransactionId($memberId, $channel);
 
         $transaction = PaymentTransaction::create([
             'transaction_id' => $transactionId,
             'member_id' => $memberId,
-            'member_name' => data_get(session('member'), 'name'),
+            'member_name' => data_get($memberContext, 'name'),
             'amount' => round((float) $request->input('amount'), 2),
             'currency' => $this->sslCommerz->currency(),
             'status' => 'initiated',
@@ -85,6 +91,7 @@ class SSLCommerzPaymentController extends Controller
                 'init_response' => json_encode($response),
                 'last_status_at' => now(),
             ]);
+            PortalCache::clearMemberRelatedCaches($memberId);
 
             if (($response['status'] ?? null) !== 'SUCCESS' || empty($response['GatewayPageURL'])) {
                 return response()->json([
@@ -96,6 +103,7 @@ class SSLCommerzPaymentController extends Controller
                 'message' => 'Payment initiated.',
                 'transaction_id' => $transaction->transaction_id,
                 'gateway_url' => $response['GatewayPageURL'],
+                'return_url' => $channel === 'mobile' ? $this->mobileReturnUrl() : null,
             ]);
         } catch (Throwable $e) {
             $transaction->update([
@@ -103,6 +111,7 @@ class SSLCommerzPaymentController extends Controller
                 'ssl_status' => 'FAILED',
                 'last_status_at' => now(),
             ]);
+            PortalCache::clearMemberRelatedCaches($memberId);
 
             report($e);
 
@@ -122,30 +131,25 @@ class SSLCommerzPaymentController extends Controller
 
         $result = $this->finalizeSuccessfulPayment($transaction, $request->all());
 
-        return redirect()->route('ledger', [
-            'payment' => $result['state'],
-            'tran_id' => $transaction->transaction_id,
-        ]);
+        return $this->paymentRedirect($transaction, $result['state']);
     }
 
     public function fail(Request $request): RedirectResponse
     {
-        $this->markAsUnsuccessful($request->all(), 'failed');
+        $transaction = $this->markAsUnsuccessful($request->all(), 'failed');
 
-        return redirect()->route('ledger', [
-            'payment' => 'failed',
-            'tran_id' => $request->input('tran_id'),
-        ]);
+        return $transaction
+            ? $this->paymentRedirect($transaction, 'failed')
+            : redirect()->route('ledger', ['payment' => 'failed', 'tran_id' => $request->input('tran_id')]);
     }
 
     public function cancel(Request $request): RedirectResponse
     {
-        $this->markAsUnsuccessful($request->all(), 'cancelled');
+        $transaction = $this->markAsUnsuccessful($request->all(), 'cancelled');
 
-        return redirect()->route('ledger', [
-            'payment' => 'cancelled',
-            'tran_id' => $request->input('tran_id'),
-        ]);
+        return $transaction
+            ? $this->paymentRedirect($transaction, 'cancelled')
+            : redirect()->route('ledger', ['payment' => 'cancelled', 'tran_id' => $request->input('tran_id')]);
     }
 
     public function ipn(Request $request): JsonResponse
@@ -173,6 +177,20 @@ class SSLCommerzPaymentController extends Controller
         return response()->json(['message' => 'Payment state recorded.']);
     }
 
+    public function show(Request $request, string $transactionId): JsonResponse
+    {
+        $memberId = (string) data_get($this->currentMemberContext($request), 'id');
+        $transaction = $this->findTransaction($transactionId);
+
+        if (! $transaction || $transaction->member_id !== $memberId) {
+            return response()->json(['message' => 'Transaction not found.'], 404);
+        }
+
+        return response()->json([
+            'transaction' => $this->transactionPayload($transaction),
+        ]);
+    }
+
     private function finalizeSuccessfulPayment(PaymentTransaction $transaction, array $payload): array
     {
         $transaction->update([
@@ -192,6 +210,7 @@ class SSLCommerzPaymentController extends Controller
                 'validation_response' => json_encode(['reason' => 'Validation ID is missing from the SSLCommerz callback.']),
                 'last_status_at' => now(),
             ]);
+            PortalCache::clearMemberRelatedCaches($transaction->member_id);
 
             return ['ok' => false, 'state' => 'verification_failed'];
         }
@@ -204,6 +223,7 @@ class SSLCommerzPaymentController extends Controller
                 'validation_response' => json_encode(['reason' => 'Invalid SSLCommerz signature.']),
                 'last_status_at' => now(),
             ]);
+            PortalCache::clearMemberRelatedCaches($transaction->member_id);
 
             return ['ok' => false, 'state' => 'verification_failed'];
         }
@@ -218,6 +238,7 @@ class SSLCommerzPaymentController extends Controller
                 'validation_response' => json_encode(['reason' => 'Validation API request failed.']),
                 'last_status_at' => now(),
             ]);
+            PortalCache::clearMemberRelatedCaches($transaction->member_id);
 
             return ['ok' => false, 'state' => 'verification_failed'];
         }
@@ -234,6 +255,7 @@ class SSLCommerzPaymentController extends Controller
                 'validation_response' => json_encode($validation),
                 'last_status_at' => now(),
             ]);
+            PortalCache::clearMemberRelatedCaches($transaction->member_id);
 
             return ['ok' => false, 'state' => 'verification_failed'];
         }
@@ -259,6 +281,7 @@ class SSLCommerzPaymentController extends Controller
                 'risk_level' => $validation['risk_level'] ?? null,
                 'risk_title' => $validation['risk_title'] ?? null,
             ]);
+            PortalCache::clearMemberRelatedCaches($transaction->member_id);
 
             return ['ok' => false, 'state' => 'held'];
         }
@@ -294,16 +317,21 @@ class SSLCommerzPaymentController extends Controller
                 ]
             );
         });
+        PortalCache::clearMemberRelatedCaches($transaction->member_id);
+
+        if ($freshTransaction = $transaction->fresh()) {
+            NotifyOutbox::paymentSucceeded($freshTransaction);
+        }
 
         return ['ok' => true, 'state' => 'success'];
     }
 
-    private function markAsUnsuccessful(array $payload, string $status): void
+    private function markAsUnsuccessful(array $payload, string $status): ?PaymentTransaction
     {
         $transaction = $this->findTransaction($payload['tran_id'] ?? null);
 
         if (! $transaction) {
-            return;
+            return null;
         }
 
         $transaction->update([
@@ -315,6 +343,9 @@ class SSLCommerzPaymentController extends Controller
             'card_type' => $payload['card_type'] ?? $transaction->card_type,
             'last_status_at' => now(),
         ]);
+        PortalCache::clearMemberRelatedCaches($transaction->member_id);
+
+        return $transaction->fresh();
     }
 
     private function findTransaction(?string $transactionId): ?PaymentTransaction
@@ -328,9 +359,11 @@ class SSLCommerzPaymentController extends Controller
         return PaymentTransaction::query()->where('transaction_id', $transactionId)->first();
     }
 
-    private function makeTransactionId(string $memberId): string
+    private function makeTransactionId(string $memberId, string $channel = 'web'): string
     {
-        return Str::upper('CCL-'.$memberId.'-'.now()->format('YmdHis').'-'.Str::random(6));
+        $prefix = $channel === 'mobile' ? 'CCL-M-' : 'CCL-';
+
+        return Str::upper($prefix.$memberId.'-'.now()->format('YmdHis').'-'.Str::random(6));
     }
 
     private function parsePaidAt(?string $value): CarbonInterface
@@ -367,7 +400,7 @@ class SSLCommerzPaymentController extends Controller
         return (string) ($validation['risk_level'] ?? '') === '1';
     }
 
-    private function getMemberContact(string $memberId): array
+    private function getMemberContact(string $memberId, ?string $fallbackName = null): array
     {
         try {
             $member = MemberAccess::activeMemberQuery('c', 'cc')
@@ -383,7 +416,7 @@ class SSLCommerzPaymentController extends Controller
             $member = null;
         }
 
-        $name = trim((string) ($member->CusName ?? data_get(session('member'), 'name', 'Member')));
+        $name = trim((string) ($member->CusName ?? $fallbackName ?? 'Member'));
         $phone = preg_replace('/\D+/', '', (string) ($member->Mobile ?? $member->Phone ?? '')) ?: '01700000000';
         $email = filter_var((string) ($member->Email ?? ''), FILTER_VALIDATE_EMAIL)
             ? (string) $member->Email
@@ -397,6 +430,74 @@ class SSLCommerzPaymentController extends Controller
             'city' => trim((string) ($member->City ?? 'Chattogram')),
             'postcode' => '4000',
             'country' => 'Bangladesh',
+        ];
+    }
+
+    private function currentMemberContext(Request $request): array
+    {
+        $user = $request->user();
+
+        if ($user instanceof MemberApiUser) {
+            return [
+                'id' => $user->member_id,
+                'name' => $user->display_name,
+                'channel' => 'mobile',
+            ];
+        }
+
+        $member = $request->session()->get(MemberSession::KEY, []);
+
+        return [
+            'id' => trim((string) data_get($member, 'id')),
+            'name' => trim((string) data_get($member, 'name', 'Member')),
+            'channel' => 'web',
+        ];
+    }
+
+    private function mobileReturnUrl(): string
+    {
+        return trim((string) config('services.mobile_app.payment_return_url', 'cclapps://payment-result'));
+    }
+
+    private function paymentRedirect(PaymentTransaction $transaction, string $state): RedirectResponse
+    {
+        if ($this->isMobileTransaction($transaction)) {
+            return redirect()->away($this->appendReturnQuery($this->mobileReturnUrl(), [
+                'payment' => $state,
+                'tran_id' => $transaction->transaction_id,
+            ]));
+        }
+
+        return redirect()->route('ledger', [
+            'payment' => $state,
+            'tran_id' => $transaction->transaction_id,
+        ]);
+    }
+
+    private function appendReturnQuery(string $url, array $query): string
+    {
+        $separator = str_contains($url, '?') ? '&' : '?';
+
+        return $url . $separator . http_build_query($query);
+    }
+
+    private function isMobileTransaction(PaymentTransaction $transaction): bool
+    {
+        return Str::startsWith((string) $transaction->transaction_id, 'CCL-M-');
+    }
+
+    private function transactionPayload(PaymentTransaction $transaction): array
+    {
+        return [
+            'transaction_id' => $transaction->transaction_id,
+            'amount' => (float) $transaction->amount,
+            'currency' => $transaction->currency,
+            'status' => $transaction->status,
+            'ssl_status' => $transaction->ssl_status,
+            'card_type' => $transaction->card_type,
+            'bank_transaction_id' => $transaction->bank_transaction_id,
+            'paid_at' => optional($transaction->paid_at)->toIso8601String(),
+            'updated_at' => optional($transaction->updated_at)->toIso8601String(),
         ];
     }
 }

@@ -147,6 +147,16 @@ class PortalImageDirectory
     {
         $segments = array_values(array_filter(explode('/', str_replace('\\', '/', trim($relativePath, '/')))));
 
+        if (
+            count($segments) === 4
+            && $segments[0] === self::BASE_DIRECTORY
+            && $segments[1] === self::FACILITIES_DIRECTORY
+            && basename($segments[2]) === $segments[2]
+            && basename($segments[3]) === $segments[3]
+        ) {
+            return true;
+        }
+
         return count($segments) === 3
             && $segments[0] === self::BASE_DIRECTORY
             && in_array($segments[1], static::photoFolders(), true)

@@ -19,13 +19,15 @@
                 <div>
                     {{-- Album card - cover + title --}}
                     <button
-                        @click="toggleAlbum(album.id)"
+                        @click="toggleAlbum(album)"
                         class="w-full text-left group active:scale-[0.98] transition-transform"
                     >
                         <div class="relative rounded-2xl overflow-hidden border border-white/10">
                             {{-- Cover image --}}
                             <img :src="album.cover" :alt="album.title"
                                  class="w-full h-44 object-cover"
+                                 loading="lazy"
+                                 decoding="async"
                                  style="filter: brightness(0.82) contrast(1.08);">
                             {{-- Overlay --}}
                             <div class="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/45 to-transparent"></div>
@@ -37,7 +39,7 @@
                                         <p class="text-black font-extrabold text-base leading-tight"
                                            x-text="album.title"></p>
                                         <p class="text-black text-xs mt-1 font-semibold"
-                                           x-text="album.photos.length + ' photos • ' + album.date"></p>
+                                           x-text="album.photo_count + ' photos • ' + album.date"></p>
                                     </div>
                                     <div class="size-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 transition-transform duration-300 shadow-sm"
                                          :class="openId === album.id ? 'rotate-180' : ''">
@@ -54,10 +56,23 @@
                          x-transition:enter-start="opacity-0 -translate-y-2"
                          x-transition:enter-end="opacity-100 translate-y-0"
                          class="mt-2 grid grid-cols-3 gap-1.5">
-                        <template x-for="(photo, idx) in album.photos" :key="idx">
+                        <template x-if="album.loading">
+                            <div class="col-span-3 rounded-xl border border-primary/15 bg-primary/5 px-4 py-5 text-center">
+                                <span class="material-symbols-outlined animate-pulse text-3xl text-primary">hourglass_empty</span>
+                                <p class="mt-2 text-sm font-bold text-black">Loading photos...</p>
+                            </div>
+                        </template>
+
+                        <template x-if="album.error">
+                            <div class="col-span-3 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-5 text-center">
+                                <p class="text-sm font-bold text-red-700" x-text="album.error"></p>
+                            </div>
+                        </template>
+
+                        <template x-for="(photo, idx) in (album.photos || [])" :key="photo">
                             <button @click="openLightbox(album.photos, idx)"
                                     class="aspect-square rounded-xl overflow-hidden active:scale-95 transition-transform">
-                                <img :src="photo" class="w-full h-full object-cover" loading="lazy">
+                                <img :src="photo" class="w-full h-full object-cover" loading="lazy" decoding="async">
                             </button>
                         </template>
                     </div>
@@ -108,7 +123,7 @@
                         <button @click="lightboxIndex = idx"
                                 class="shrink-0 size-14 rounded-lg overflow-hidden border-2 transition-all"
                                 :class="lightboxIndex === idx ? 'border-primary' : 'border-transparent opacity-50'">
-                            <img :src="photo" class="w-full h-full object-cover">
+                            <img :src="photo" class="w-full h-full object-cover" loading="lazy" decoding="async">
                         </button>
                     </template>
                 </div>
@@ -121,14 +136,62 @@
         (function() {
             window.gallery = function(uploadedAlbums) {
                 return {
-                    openId: uploadedAlbums && uploadedAlbums.length > 0 ? uploadedAlbums[0].id : null,
+                    openId: null,
                     lightbox: null,
                     lightboxPhotos: [],
                     lightboxIndex: 0,
-                    albums: uploadedAlbums || [],
+                    albums: (uploadedAlbums || []).map(function(album) {
+                        return Object.assign({ photos: null, loading: false, error: '' }, album);
+                    }),
 
-                    toggleAlbum: function(id) {
-                        this.openId = this.openId === id ? null : id;
+                    storageKey: function(album) {
+                        return 'ccl-gallery:' + album.id + ':' + album.cache_key;
+                    },
+
+                    toggleAlbum: function(album) {
+                        this.openId = this.openId === album.id ? null : album.id;
+
+                        if (this.openId === album.id && !album.photos && !album.loading) {
+                            this.loadAlbumPhotos(album);
+                        }
+                    },
+
+                    loadAlbumPhotos: async function(album) {
+                        var cached = null;
+
+                        try {
+                            cached = JSON.parse(sessionStorage.getItem(this.storageKey(album)) || 'null');
+                        } catch (error) {
+                            cached = null;
+                        }
+
+                        if (cached && Array.isArray(cached.photos)) {
+                            album.photos = cached.photos;
+                            return;
+                        }
+
+                        album.loading = true;
+                        album.error = '';
+
+                        try {
+                            var response = await fetch(album.photos_url, {
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                                credentials: 'same-origin',
+                            });
+
+                            if (!response.ok) {
+                                throw new Error('Unable to load this album.');
+                            }
+
+                            var payload = await response.json();
+                            album.photos = Array.isArray(payload.photos) ? payload.photos : [];
+                            sessionStorage.setItem(this.storageKey(album), JSON.stringify({ photos: album.photos }));
+                        } catch (error) {
+                            album.error = error.message || 'Unable to load this album.';
+                            album.photos = [];
+                        } finally {
+                            album.loading = false;
+                        }
                     },
 
                     openLightbox: function(photos, idx) {
