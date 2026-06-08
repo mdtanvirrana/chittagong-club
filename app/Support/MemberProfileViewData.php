@@ -122,6 +122,8 @@ class MemberProfileViewData
             'emailHref' => static::buildEmailHref($member->Email ?? null),
             'hasProfilePhoto' => PortalCache::hasMemberPhoto($member->PrvCusID),
             'profilePhotoUrl' => PortalCache::memberPhotoUrl($member->PrvCusID),
+            'profilePhotoThumbUrl' => PortalCache::memberPhotoThumbUrl($member->PrvCusID),
+            'profilePhotoPreviewUrl' => PortalCache::memberPhotoPreviewUrl($member->PrvCusID),
             'memberQrValue' => static::formatMemberQrValue($fullName, $member->PrvCusID),
             'children' => static::buildChildren($member),
             'childrenCount' => (int) (static::normalizeZeroValue($member->NoChild ?? null) ?? 0),

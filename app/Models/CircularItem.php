@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ImageVariants;
 use App\Support\PortalContent;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -95,5 +96,10 @@ class CircularItem extends Model
     public function getDisplayImageUrlAttribute(): ?string
     {
         return $this->image_url;
+    }
+
+    public function getDisplayImageThumbUrlAttribute(): ?string
+    {
+        return ImageVariants::urlForPath($this->getAttribute('image_path'), 640, 900) ?: $this->display_image_url;
     }
 }

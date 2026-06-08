@@ -118,6 +118,11 @@ class NotifyOutbox
         }
 
         $monthKey = now()->format('Y-m');
+        $cacheKey = PortalCache::userKey($memberId, "due_reminder_{$threshold}_{$monthKey}");
+
+        if (! PortalCache::store()->add($cacheKey, true, now()->addHours(12))) {
+            return;
+        }
 
         static::upsertNotification(
             sourceType: 'ledger',

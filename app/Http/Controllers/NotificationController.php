@@ -25,11 +25,14 @@ class NotificationController extends Controller
             return view('pages.notifications');
         }
 
-        $limit = min(50, max(1, (int) $request->query('limit', 20)));
-        $notifications = $this->notificationQuery($memberId)
+        $page = max(1, (int) $request->integer('page', 1));
+        $perPage = min(20, max(1, (int) $request->integer('per_page', $request->integer('limit', 20))));
+        $baseQuery = $this->notificationQuery($memberId);
+        $total = (clone $baseQuery)->count();
+        $notifications = $baseQuery
             ->withReadState($memberId)
             ->orderByDesc('id_notify_key')
-            ->limit($limit)
+            ->forPage($page, $perPage)
             ->get()
             ->map(fn (NotifyMessage $notification): array => NotifyOutbox::payload($notification) + [
                 'read' => (bool) $notification->read_at,
@@ -40,6 +43,8 @@ class NotificationController extends Controller
         return response()->json([
             'unread_count' => $this->unreadCount($memberId),
             'notifications' => $notifications,
+            'total' => $total,
+            'pagination' => $this->paginationPayload($page, $perPage, $total, $notifications->count()),
         ]);
     }
 
@@ -158,5 +163,21 @@ class NotificationController extends Controller
         return $request->expectsJson()
             || $request->ajax()
             || str_contains((string) $request->header('Accept'), 'application/json');
+    }
+
+    private function paginationPayload(int $page, int $perPage, int $total, int $pageCount): array
+    {
+        $lastPage = max(1, (int) ceil($total / max(1, $perPage)));
+        $from = $total === 0 ? 0 : (($page - 1) * $perPage) + 1;
+
+        return [
+            'current_page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'last_page' => $lastPage,
+            'has_more' => $page < $lastPage,
+            'from' => $from,
+            'to' => $from === 0 ? 0 : min($from + $pageCount - 1, $total),
+        ];
     }
 }

@@ -25,7 +25,9 @@ class AppConfigController extends Controller
                 ],
                 'assets' => [
                     'logo_url' => $profile['logoUrl'],
+                    'logo_thumb_url' => $profile['logoThumbUrl'],
                     'club_photo_url' => $profile['clubPhotoUrl'],
+                    'club_photo_thumb_url' => $profile['clubPhotoThumbUrl'],
                     'canterbury_font_url' => asset('assets/canterbury/Canterbury.ttf'),
                 ],
                 'theme' => config('theme.member'),

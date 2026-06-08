@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AffiliatedClubRequest;
 use App\Models\AffiliatedClub;
+use App\Support\ImageVariants;
 use App\Support\PortalCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -267,5 +268,7 @@ class AffiliatedClubController extends Controller
         if (is_file($fullPath)) {
             File::delete($fullPath);
         }
+
+        ImageVariants::pruneForPath($path);
     }
 }

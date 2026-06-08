@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
 class PortalCache
 {
     private const PUBLIC_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    private static array $contentVersions = [];
+    private static array $photoIndexes = [];
 
     public static function store(): Repository
     {
@@ -127,6 +129,34 @@ class PortalCache
         return max(1, (int) config("portal_cache.ttl.{$type}", 300));
     }
 
+    public static function contentVersion(string $scope): int
+    {
+        $scope = static::normalizeKeySegment($scope);
+
+        if (isset(static::$contentVersions[$scope])) {
+            return static::$contentVersions[$scope];
+        }
+
+        $value = (int) static::store()->get(static::contentVersionKey($scope), 1);
+
+        return static::$contentVersions[$scope] = max(1, $value);
+    }
+
+    public static function bumpContentVersion(string $scope): int
+    {
+        $key = static::contentVersionKey($scope);
+        $value = static::store()->increment($key);
+
+        if (! is_int($value) || $value < 1) {
+            $value = 2;
+            static::store()->forever($key, $value);
+        }
+
+        static::$contentVersions[static::normalizeKeySegment($scope)] = $value;
+
+        return $value;
+    }
+
     public static function publicJson(array $payload, int $status = 200, ?int $maxAge = null): JsonResponse
     {
         return static::json($payload, $status, 'public', $maxAge);
@@ -191,6 +221,18 @@ class PortalCache
         return static::photoUrlFromIndex(static::memberPhotoIndex(), $memberId);
     }
 
+    public static function memberPhotoThumbUrl(string|int|null $memberId): ?string
+    {
+        return static::photoUrlFromIndex(static::memberPhotoIndex(), $memberId, 160, 200, 64)
+            ?? static::memberPhotoUrl($memberId);
+    }
+
+    public static function memberPhotoPreviewUrl(string|int|null $memberId): ?string
+    {
+        return static::photoUrlFromIndex(static::memberPhotoIndex(), $memberId, 720, 900, 74)
+            ?? static::memberPhotoUrl($memberId);
+    }
+
     public static function hasEmployeePhoto(string|int|null $employeeId): bool
     {
         return static::photoExists(static::employeePhotoIndex(), $employeeId);
@@ -199,6 +241,18 @@ class PortalCache
     public static function employeePhotoUrl(string|int|null $employeeId): ?string
     {
         return static::photoUrlFromIndex(static::employeePhotoIndex(), $employeeId);
+    }
+
+    public static function employeePhotoThumbUrl(string|int|null $employeeId): ?string
+    {
+        return static::photoUrlFromIndex(static::employeePhotoIndex(), $employeeId, 160, 200, 64)
+            ?? static::employeePhotoUrl($employeeId);
+    }
+
+    public static function employeePhotoPreviewUrl(string|int|null $employeeId): ?string
+    {
+        return static::photoUrlFromIndex(static::employeePhotoIndex(), $employeeId, 720, 900, 74)
+            ?? static::employeePhotoUrl($employeeId);
     }
 
     public static function clearPhotoRelatedCaches(): void
@@ -216,6 +270,7 @@ class PortalCache
             'api_member_directory_v1',
             'employee_directory_v2',
             'api_employee_directory_v1',
+            'api_employee_directory_v2',
             'former_chairman_v2',
             'api_former_chairmen_v1',
             'club_facilities_v1',
@@ -226,11 +281,17 @@ class PortalCache
             'gallery_albums_v2',
             'gallery_albums_v3',
             'api_gallery_albums_v1',
+            'api_gallery_albums_v2',
             "committee_members_{$currentYear}_{$previousYear}_v2",
             $apiCommitteeKey,
             static::globalKey('api_member_directory'),
+            static::globalKey('api_member_directory_v2'),
         ] as $key) {
             $cache->forget($key);
+        }
+
+        foreach (['gallery', 'people-images', 'member-directory', 'employee-directory'] as $scope) {
+            static::bumpContentVersion($scope);
         }
     }
 
@@ -253,6 +314,14 @@ class PortalCache
             "dashboard_member_credit_{$memberId}_stale_v1",
             "member_ledger_data_{$memberId}_v1",
             "member_ledger_data_{$memberId}_stale_v1",
+            "member_ledger_summary_{$memberId}_v1",
+            "member_ledger_summary_{$memberId}_stale_v1",
+            "member_ledger_insights_{$memberId}_v1",
+            "member_ledger_insights_{$memberId}_stale_v1",
+            "member_ledger_history_{$memberId}_v1",
+            "member_ledger_history_{$memberId}_stale_v1",
+            "member_ledger_payments_{$memberId}_v1",
+            "member_ledger_payments_{$memberId}_stale_v1",
             "member_profile_view_{$memberId}_v1",
             "member_profile_view_{$memberId}_v2",
             static::userKey($memberId, 'api_dashboard_member'),
@@ -272,6 +341,7 @@ class PortalCache
     public static function clearAffiliatedClubCaches(): void
     {
         $cache = static::store();
+        $version = max(1, (int) $cache->get(static::contentVersionKey('affiliated-clubs'), 1));
 
         foreach ([
             'affiliated_clubs_v1',
@@ -279,15 +349,23 @@ class PortalCache
             'affiliated_clubs_v3',
             'affiliated_clubs_v4',
             'affiliated_clubs_v5',
+            "affiliated_clubs_v5_{$version}",
             'api_affiliated_clubs_v1',
+            "api_affiliated_clubs_v1_{$version}",
         ] as $key) {
             $cache->forget($key);
         }
+
+        static::bumpContentVersion('affiliated-clubs');
     }
 
     private static function photoIndex(string $cacheKey, array $folders): array
     {
-        return static::remember($cacheKey, now()->addSeconds(static::ttl('photo_index')), function () use ($folders): array {
+        if (isset(static::$photoIndexes[$cacheKey])) {
+            return static::$photoIndexes[$cacheKey];
+        }
+
+        return static::$photoIndexes[$cacheKey] = static::remember($cacheKey, now()->addSeconds(static::ttl('photo_index')), function () use ($folders): array {
             $index = [];
 
             foreach ($folders as $folder) {
@@ -335,7 +413,7 @@ class PortalCache
         return isset($index[$identifier]);
     }
 
-    private static function photoUrlFromIndex(array $index, string|int|null $identifier): ?string
+    private static function photoUrlFromIndex(array $index, string|int|null $identifier, ?int $width = null, ?int $height = null, int $quality = 72): ?string
     {
         $identifier = static::normalizeImageIdentifier($identifier);
 
@@ -360,6 +438,10 @@ class PortalCache
             return null;
         }
 
+        if ($width !== null && $height !== null) {
+            return ImageVariants::url($relativePath, $width, $height, $quality);
+        }
+
         $mtime = @filemtime($path) ?: 0;
         $ctime = @filectime($path) ?: 0;
         $version = max($mtime, $ctime);
@@ -370,6 +452,11 @@ class PortalCache
     private static function normalizeImageIdentifier(string|int|null $identifier): string
     {
         return Str::lower(trim((string) $identifier));
+    }
+
+    private static function contentVersionKey(string $scope): string
+    {
+        return 'content-version:'.static::normalizeKeySegment($scope);
     }
 
     private static function version(?string $version = null): string

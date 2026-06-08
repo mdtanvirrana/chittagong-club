@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ImageVariants;
 use App\Support\PortalContent;
 use Illuminate\Database\Eloquent\Model;
 
@@ -82,9 +83,19 @@ class AffiliatedClub extends Model
         return $this->image_url;
     }
 
+    public function getDisplayImageThumbUrlAttribute(): ?string
+    {
+        return ImageVariants::urlForPath($this->getAttribute('image_path'), 640, 360) ?: $this->display_image_url;
+    }
+
     public function getDisplayLogoUrlAttribute(): ?string
     {
         return $this->logo_url;
+    }
+
+    public function getDisplayLogoThumbUrlAttribute(): ?string
+    {
+        return ImageVariants::urlForPath($this->getAttribute('Logo_Path'), 160, 160) ?: $this->display_logo_url;
     }
 
     private function publicAssetUrl(mixed $path): ?string

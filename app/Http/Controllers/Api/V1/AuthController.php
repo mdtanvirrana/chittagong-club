@@ -407,6 +407,8 @@ class AuthController extends Controller
             'phone' => MemberAccess::registeredPhone($member),
             'has_photo' => PortalCache::hasMemberPhoto($memberId),
             'photo_url' => PortalCache::memberPhotoUrl($memberId),
+            'photo_thumb_url' => PortalCache::memberPhotoThumbUrl($memberId),
+            'photo_preview_url' => PortalCache::memberPhotoPreviewUrl($memberId),
         ];
     }
 

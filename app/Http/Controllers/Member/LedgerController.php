@@ -13,7 +13,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 
 class LedgerController extends Controller
 {
@@ -30,138 +29,12 @@ class LedgerController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $payload = PortalCache::rememberResilient(
-            "member_ledger_data_{$memberId}_v1",
-            "member_ledger_data_{$memberId}_stale_v1",
-            now()->addSeconds(20),
-            now()->addMinutes(5),
-            function () use ($memberId): array {
-        $customerInfo = MemberAccess::activeMemberQuery('c', 'cc')
-            ->where('c.PrvCusID', $memberId)
-            ->select('c.CreditAmt')
-            ->first();
-
-        $ledgerDue = DB::table('Customer_ledger')
-            ->where('PrvCusId', $memberId)
-            ->where('InvMRN', '<>', '0')
-            ->selectRaw('COALESCE(SUM(COALESCE(DrAmt, 0) - COALESCE(CrAmt, 0)), 0) as Due')
-            ->first();
-
-        $ledgerRows = DB::table('Customer_Ledger as cl')
-            ->join('List_Department as ld', 'cl.DepartmentID', '=', 'ld.Departmentid')
-            ->where('cl.PrvCusID', $memberId)
-            ->where('cl.InvMRN', '<>', '0')
-            ->whereNot('ACode','Opening')
-            ->select([
-                'cl.InvMRN',
-                'cl.DrAmt',
-                'cl.CrAmt',
-                'cl.EDate',
-                'cl.Remarks',
-                'cl.Note',
-                'ld.Departmentname as DeptName',
-            ])
-            ->get();
-
-        $monthlyHistory = $ledgerRows
-            ->groupBy(fn ($row) => Carbon::parse($row->EDate)->format('Y-m'))
-            ->map(function ($rows, $monthKey) {
-                $dt = Carbon::createFromFormat('Y-m', $monthKey);
-                $totalDebit = (float) $rows->sum(fn ($row) => (float) ($row->DrAmt ?? 0));
-                $totalCredit = (float) $rows->sum(fn ($row) => (float) ($row->CrAmt ?? 0));
-
-                return [
-                    'month_key' => $monthKey,
-                    'month_label' => $dt->format('F Y'),
-                    'month_short' => $dt->format('M'),
-                    'month_year' => $dt->format('Y'),
-                    'total_debit' => $totalDebit,
-                    'total_credit' => $totalCredit,
-                    'net' => $totalDebit - $totalCredit,
-                    'row_count' => $rows->count(),
-                ];
-            })
-            ->sortByDesc('month_key')
-            ->values();
-
-        $now = Carbon::now();
-        [$currentMonthStart, $currentMonthEnd] = $this->monthDateRange($now->format('Y-m'));
-        $currentMonth = $monthlyHistory->firstWhere('month_key', $now->format('Y-m'));
-        $deptBreakdown = DB::table('Customer_Ledger as a')
-            ->join('List_Department as b', 'a.DepartmentID', '=', 'b.Departmentid')
-            ->where('a.PrvCusID', $memberId)
-            ->where('a.InvMRN', '<>', '0')
-            ->whereBetween('a.EDate', [$currentMonthStart, $currentMonthEnd])
-            ->selectRaw('b.Departmentname as dept')
-            ->selectRaw('SUM(COALESCE(a.DrAmt, 0)) as debit_amount')
-            ->selectRaw('SUM(COALESCE(a.CrAmt, 0)) as credit_amount')
-            ->selectRaw('COUNT(*) as count')
-            ->groupBy('b.Departmentname')
-            ->get()
-            ->map(fn ($row) => [
-                'dept' => $row->dept ?: 'General',
-                'debit_amount' => (float) ($row->debit_amount ?? 0),
-                'credit_amount' => (float) ($row->credit_amount ?? 0),
-                'count' => (int) ($row->count ?? 0),
-            ])
-            ->filter(fn (array $row) => $row['debit_amount'] > 0 || $row['credit_amount'] > 0)
-            ->sortByDesc(fn (array $row) => max($row['debit_amount'], $row['credit_amount']))
-            ->values();
-
-        $thisMonthDebit = (float) DB::table('Customer_Ledger as a')
-            ->where('a.PrvCusID', $memberId)
-            ->where('a.InvMRN', '<>', '0')
-            ->whereBetween('a.EDate', [$currentMonthStart, $currentMonthEnd])
-            ->sum('a.DrAmt');
-
-        $thisMonthCredit = (float) DB::table('Customer_Ledger as a')
-            ->where('a.PrvCusID', $memberId)
-            ->where('a.InvMRN', '<>', '0')
-            ->whereBetween('a.EDate', [$currentMonthStart, $currentMonthEnd])
-            ->sum('a.CrAmt');
-
-        if ($thisMonthDebit <= 0 && $currentMonth) {
-            $thisMonthDebit = (float) ($currentMonth['total_debit'] ?? 0);
-        }
-
-        $creditLimit = (float) ($customerInfo->CreditAmt ?? 0);
-        $totalDue = max(0, (float) ($ledgerDue->Due ?? 0));
-        $remaining = $creditLimit - $totalDue;
-        $usagePercent = $creditLimit > 0
-            ? min(100, (int) round(($totalDue / $creditLimit) * 100))
-            : 0;
-
-        $paymentTransactions = $this->paymentTransactions($memberId);
-        $successfulTransactions = $this->successfulTransactions($memberId);
-
-        return [
-            'creditLimit' => $creditLimit,
-            'totalDue' => $totalDue,
-            'remaining' => $remaining,
-            'thisMonthDebit' => $thisMonthDebit,
-            'thisMonthCredit' => $thisMonthCredit,
-            'usagePercent' => $usagePercent,
-            'currentMonthLabel' => $now->format('F Y'),
-            'deptBreakdown' => $deptBreakdown,
-            'monthlyHistory' => $monthlyHistory,
-            'paymentTransactions' => $paymentTransactions,
-            'successfulTransactions' => $successfulTransactions,
+        $payload = [
+            ...$this->ledgerSummaryPayload($memberId),
+            ...$this->ledgerInsightsPayload($memberId),
+            ...$this->ledgerHistoryPayload($memberId, $request),
+            ...$this->ledgerPaymentsPayload($memberId, $request),
         ];
-            },
-            [
-                'creditLimit' => 0,
-                'totalDue' => 0,
-                'remaining' => 0,
-                'thisMonthDebit' => 0,
-                'thisMonthCredit' => 0,
-                'usagePercent' => 0,
-                'currentMonthLabel' => now()->format('F Y'),
-                'deptBreakdown' => [],
-                'monthlyHistory' => [],
-                'paymentTransactions' => [],
-                'successfulTransactions' => [],
-            ],
-        );
 
         NotifyOutbox::dueReminder(
             $memberId,
@@ -169,9 +42,7 @@ class LedgerController extends Controller
             (float) ($payload['creditLimit'] ?? 0)
         );
 
-        return response()
-            ->json($payload)
-            ->header('Cache-Control', 'private, max-age=20, stale-while-revalidate=120');
+        return PortalCache::noStoreJson($payload);
     }
 
     public function summary(Request $request): JsonResponse
@@ -182,19 +53,7 @@ class LedgerController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $payload = PortalCache::rememberResilient(
-            "member_ledger_summary_{$memberId}_v1",
-            "member_ledger_summary_{$memberId}_stale_v1",
-            now()->addSeconds(20),
-            now()->addMinutes(5),
-            fn (): array => $this->ledgerSummaryPayload($memberId),
-            [
-                'creditLimit' => 0,
-                'totalDue' => 0,
-                'remaining' => 0,
-                'usagePercent' => 0,
-            ],
-        );
+        $payload = $this->ledgerSummaryPayload($memberId);
 
         NotifyOutbox::dueReminder(
             $memberId,
@@ -202,9 +61,7 @@ class LedgerController extends Controller
             (float) ($payload['creditLimit'] ?? 0)
         );
 
-        return response()
-            ->json($payload)
-            ->header('Cache-Control', 'private, max-age=20, stale-while-revalidate=120');
+        return PortalCache::noStoreJson($payload);
     }
 
     public function insights(Request $request): JsonResponse
@@ -215,23 +72,9 @@ class LedgerController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $payload = PortalCache::rememberResilient(
-            "member_ledger_insights_{$memberId}_v1",
-            "member_ledger_insights_{$memberId}_stale_v1",
-            now()->addSeconds(20),
-            now()->addMinutes(5),
-            fn (): array => $this->ledgerInsightsPayload($memberId),
-            [
-                'thisMonthDebit' => 0,
-                'thisMonthCredit' => 0,
-                'currentMonthLabel' => now()->format('F Y'),
-                'deptBreakdown' => [],
-            ],
-        );
+        $payload = $this->ledgerInsightsPayload($memberId);
 
-        return response()
-            ->json($payload)
-            ->header('Cache-Control', 'private, max-age=20, stale-while-revalidate=120');
+        return PortalCache::noStoreJson($payload);
     }
 
     public function history(Request $request): JsonResponse
@@ -242,18 +85,9 @@ class LedgerController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $payload = PortalCache::rememberResilient(
-            "member_ledger_history_{$memberId}_v1",
-            "member_ledger_history_{$memberId}_stale_v1",
-            now()->addSeconds(20),
-            now()->addMinutes(5),
-            fn (): array => ['monthlyHistory' => $this->ledgerHistoryPayload($memberId)],
-            ['monthlyHistory' => []],
-        );
+        $payload = $this->ledgerHistoryPayload($memberId, $request);
 
-        return response()
-            ->json($payload)
-            ->header('Cache-Control', 'private, max-age=20, stale-while-revalidate=120');
+        return PortalCache::noStoreJson($payload);
     }
 
     public function payments(Request $request): JsonResponse
@@ -264,24 +98,9 @@ class LedgerController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $payload = PortalCache::rememberResilient(
-            "member_ledger_payments_{$memberId}_v1",
-            "member_ledger_payments_{$memberId}_stale_v1",
-            now()->addSeconds(20),
-            now()->addMinutes(5),
-            fn (): array => [
-                'paymentTransactions' => $this->paymentTransactions($memberId),
-                'successfulTransactions' => $this->successfulTransactions($memberId),
-            ],
-            [
-                'paymentTransactions' => [],
-                'successfulTransactions' => [],
-            ],
-        );
+        $payload = $this->ledgerPaymentsPayload($memberId, $request);
 
-        return response()
-            ->json($payload)
-            ->header('Cache-Control', 'private, max-age=20, stale-while-revalidate=120');
+        return PortalCache::noStoreJson($payload);
     }
 
     public function monthDetails(Request $request): JsonResponse
@@ -323,7 +142,7 @@ class LedgerController extends Controller
             ->whereBetween('sMonth', [$monthStart, $monthEnd])
             ->select('MBill', 'Bal', 'sMonth')
             ->first();
-            return response()->json([
+            return PortalCache::noStoreJson([
                 'month_key' => $monthKey,
                 'month_label' => Carbon::createFromFormat('Y-m', $monthKey)->format('F Y'),
                 'total_debit' => (float) ($monthData->MBill ?? 0),
@@ -369,7 +188,7 @@ class LedgerController extends Controller
             ->sortByDesc('total_debit')
             ->values();
 
-        return response()->json([
+        return PortalCache::noStoreJson([
             'month_key' => $monthKey,
             'month_label' => Carbon::createFromFormat('Y-m', $monthKey)->format('F Y'),
             'total_debit' => (float) $monthRows->sum(fn ($row) => (float) ($row->DrAmt ?? 0)),
@@ -378,16 +197,28 @@ class LedgerController extends Controller
         ]);
     }
 
-    private function paymentTransactions(string $memberId)
+    private function ledgerPaymentsPayload(string $memberId, Request $request): array
     {
-        if (! Schema::hasTable('payment_transactions')) {
-            return collect();
-        }
+        [$page, $perPage] = $this->paginationParams($request);
+        $paymentTransactions = $this->paymentTransactions($memberId, $page, $perPage);
+        $successfulTransactions = $this->successfulTransactions($memberId, $page, $perPage);
 
+        return [
+            'paymentTransactions' => $paymentTransactions['items'],
+            'successfulTransactions' => $successfulTransactions['items'],
+            'payment_transactions_pagination' => $this->paginationPayload($page, $perPage, $paymentTransactions['total'], $paymentTransactions['items']->count()),
+            'successful_transactions_pagination' => $this->paginationPayload($page, $perPage, $successfulTransactions['total'], $successfulTransactions['items']->count()),
+        ];
+    }
+
+    private function paymentTransactions(string $memberId, int $page, int $perPage): array
+    {
         try {
-            return PaymentTransaction::query()
-                ->where('member_id', $memberId)
+            $query = PaymentTransaction::query()->where('member_id', $memberId);
+            $total = (clone $query)->count();
+            $items = $query
                 ->latest('id')
+                ->forPage($page, $perPage)
                 ->get()
                 ->map(fn (PaymentTransaction $transaction) => [
                     'transaction_id' => $transaction->transaction_id,
@@ -401,26 +232,26 @@ class LedgerController extends Controller
                     'updated_at' => optional($transaction->updated_at)->format('d M Y h:i A'),
                 ])
                 ->values();
+
+            return ['items' => $items, 'total' => $total];
         } catch (\Throwable $e) {
             Log::warning('Unable to load payment transactions for ledger.', [
                 'member_id' => $memberId,
                 'error' => $e->getMessage(),
             ]);
 
-            return collect();
+            return ['items' => collect(), 'total' => 0];
         }
     }
 
-    private function successfulTransactions(string $memberId)
+    private function successfulTransactions(string $memberId, int $page, int $perPage): array
     {
-        if (! Schema::hasTable('successful_payment_transactions')) {
-            return collect();
-        }
-
         try {
-            return SuccessfulPaymentTransaction::query()
-                ->where('member_id', $memberId)
+            $query = SuccessfulPaymentTransaction::query()->where('member_id', $memberId);
+            $total = (clone $query)->count();
+            $items = $query
                 ->latest('id')
+                ->forPage($page, $perPage)
                 ->get()
                 ->map(fn (SuccessfulPaymentTransaction $transaction) => [
                     'transaction_id' => $transaction->transaction_id,
@@ -432,13 +263,15 @@ class LedgerController extends Controller
                     'paid_at' => optional($transaction->paid_at)->format('d M Y h:i A'),
                 ])
                 ->values();
+
+            return ['items' => $items, 'total' => $total];
         } catch (\Throwable $e) {
             Log::warning('Unable to load successful payment transactions for ledger.', [
                 'member_id' => $memberId,
                 'error' => $e->getMessage(),
             ]);
 
-            return collect();
+            return ['items' => collect(), 'total' => 0];
         }
     }
 
@@ -446,17 +279,14 @@ class LedgerController extends Controller
     {
         $customerInfo = MemberAccess::activeMemberQuery('c', 'cc')
             ->where('c.PrvCusID', $memberId)
-            ->select('c.CreditAmt')
-            ->first();
-
-        $ledgerDue = DB::table('Customer_ledger')
-            ->where('PrvCusId', $memberId)
-            ->where('InvMRN', '<>', '0')
-            ->selectRaw('COALESCE(SUM(COALESCE(DrAmt, 0) - COALESCE(CrAmt, 0)), 0) as Due')
+            ->select([
+                'c.CreditAmt',
+                DB::raw("(SELECT COALESCE(SUM(COALESCE(cl.DrAmt, 0) - COALESCE(cl.CrAmt, 0)), 0) FROM Customer_ledger cl WHERE cl.PrvCusId = c.PrvCusID AND cl.InvMRN <> '0') as LedgerDue"),
+            ])
             ->first();
 
         $creditLimit = (float) ($customerInfo->CreditAmt ?? 0);
-        $totalDue = max(0, (float) ($ledgerDue->Due ?? 0));
+        $totalDue = max(0, (float) ($customerInfo->LedgerDue ?? 0));
         $remaining = $creditLimit - $totalDue;
         $usagePercent = $creditLimit > 0
             ? min(100, (int) round(($totalDue / $creditLimit) * 100))
@@ -476,7 +306,7 @@ class LedgerController extends Controller
         [$currentMonthStart, $currentMonthEnd] = $this->monthDateRange($now->format('Y-m'));
 
         $deptBreakdown = DB::table('Customer_Ledger as a')
-            ->join('List_Department as b', 'a.DepartmentID', '=', 'b.Departmentid')
+            ->leftJoin('List_Department as b', 'a.DepartmentID', '=', 'b.Departmentid')
             ->where('a.PrvCusID', $memberId)
             ->where('a.InvMRN', '<>', '0')
             ->whereBetween('a.EDate', [$currentMonthStart, $currentMonthEnd])
@@ -496,17 +326,8 @@ class LedgerController extends Controller
             ->sortByDesc(fn (array $row) => max($row['debit_amount'], $row['credit_amount']))
             ->values();
 
-        $thisMonthDebit = (float) DB::table('Customer_Ledger as a')
-            ->where('a.PrvCusID', $memberId)
-            ->where('a.InvMRN', '<>', '0')
-            ->whereBetween('a.EDate', [$currentMonthStart, $currentMonthEnd])
-            ->sum('a.DrAmt');
-
-        $thisMonthCredit = (float) DB::table('Customer_Ledger as a')
-            ->where('a.PrvCusID', $memberId)
-            ->where('a.InvMRN', '<>', '0')
-            ->whereBetween('a.EDate', [$currentMonthStart, $currentMonthEnd])
-            ->sum('a.CrAmt');
+        $thisMonthDebit = (float) $deptBreakdown->sum('debit_amount');
+        $thisMonthCredit = (float) $deptBreakdown->sum('credit_amount');
 
         if ($thisMonthDebit <= 0 && $deptBreakdown->isEmpty()) {
             $monthData = $this->monthlyBillForRange($memberId, $currentMonthStart, $currentMonthEnd);
@@ -530,48 +351,58 @@ class LedgerController extends Controller
         ];
     }
 
-    private function ledgerHistoryPayload(string $memberId)
+    private function ledgerHistoryPayload(string $memberId, Request $request): array
     {
-        $ledgerRows = DB::table('Customer_Ledger as cl')
-            ->join('List_Department as ld', 'cl.DepartmentID', '=', 'ld.Departmentid')
+        [$page, $perPage] = $this->paginationParams($request);
+        $monthlyRows = DB::table('Customer_Ledger as cl')
             ->where('cl.PrvCusID', $memberId)
             ->where('cl.InvMRN', '<>', '0')
             ->where('cl.ACode', '<>', 'Opening')
-            ->select([
-                'cl.InvMRN',
-                'cl.DrAmt',
-                'cl.CrAmt',
-                'cl.EDate',
-                'cl.Remarks',
-                'cl.Note',
-                'ld.Departmentname as DeptName',
-            ])
+            ->whereNotNull('cl.EDate')
+            ->selectRaw('YEAR(cl.EDate) as ledger_year')
+            ->selectRaw('MONTH(cl.EDate) as ledger_month')
+            ->selectRaw('SUM(COALESCE(cl.DrAmt, 0)) as total_debit')
+            ->selectRaw('SUM(COALESCE(cl.CrAmt, 0)) as total_credit')
+            ->selectRaw('COUNT(*) as row_count')
+            ->groupByRaw('YEAR(cl.EDate), MONTH(cl.EDate)')
+            ->orderByRaw('YEAR(cl.EDate) DESC, MONTH(cl.EDate) DESC')
             ->get();
 
-        if ($ledgerRows->isEmpty()) {
-            return $this->monthlyBillHistory($memberId);
+        if ($monthlyRows->isEmpty()) {
+            $history = $this->monthlyBillHistory($memberId);
+            $pageHistory = $history->forPage($page, $perPage)->values();
+
+            return [
+                'monthlyHistory' => $pageHistory,
+                'pagination' => $this->paginationPayload($page, $perPage, $history->count(), $pageHistory->count()),
+            ];
         }
 
-        return $ledgerRows
-            ->groupBy(fn ($row) => Carbon::parse($row->EDate)->format('Y-m'))
-            ->map(function ($rows, $monthKey) {
-                $dt = Carbon::createFromFormat('Y-m', $monthKey);
-                $totalDebit = (float) $rows->sum(fn ($row) => (float) ($row->DrAmt ?? 0));
-                $totalCredit = (float) $rows->sum(fn ($row) => (float) ($row->CrAmt ?? 0));
+        $history = $monthlyRows
+            ->map(function (object $row): array {
+                $dt = Carbon::create((int) $row->ledger_year, (int) $row->ledger_month, 1);
+                $totalDebit = (float) ($row->total_debit ?? 0);
+                $totalCredit = (float) ($row->total_credit ?? 0);
 
                 return [
-                    'month_key' => $monthKey,
+                    'month_key' => $dt->format('Y-m'),
                     'month_label' => $dt->format('F Y'),
                     'month_short' => $dt->format('M'),
                     'month_year' => $dt->format('Y'),
                     'total_debit' => $totalDebit,
                     'total_credit' => $totalCredit,
                     'net' => $totalDebit - $totalCredit,
-                    'row_count' => $rows->count(),
+                    'row_count' => (int) ($row->row_count ?? 0),
                 ];
             })
-            ->sortByDesc('month_key')
             ->values();
+
+        $pageHistory = $history->forPage($page, $perPage)->values();
+
+        return [
+            'monthlyHistory' => $pageHistory,
+            'pagination' => $this->paginationPayload($page, $perPage, $history->count(), $pageHistory->count()),
+        ];
     }
 
     private function monthlyBillHistory(string $memberId)
@@ -635,6 +466,30 @@ class LedgerController extends Controller
         $monthEnd = $monthStart->copy()->endOfMonth()->endOfDay();
 
         return [$monthStart, $monthEnd];
+    }
+
+    private function paginationParams(Request $request): array
+    {
+        $page = max(1, (int) $request->integer('page', 1));
+        $perPage = min(max((int) $request->integer('per_page', $request->integer('limit', 20)), 1), 20);
+
+        return [$page, $perPage];
+    }
+
+    private function paginationPayload(int $page, int $perPage, int $total, int $pageCount): array
+    {
+        $lastPage = max(1, (int) ceil($total / max(1, $perPage)));
+        $from = $total === 0 ? 0 : (($page - 1) * $perPage) + 1;
+
+        return [
+            'current_page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'last_page' => $lastPage,
+            'has_more' => $page < $lastPage,
+            'from' => $from,
+            'to' => $from === 0 ? 0 : min($from + $pageCount - 1, $total),
+        ];
     }
 
     private function memberId(Request $request): ?string

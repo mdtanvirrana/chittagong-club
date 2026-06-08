@@ -30,8 +30,10 @@ class CompanyProfile
             'email' => null,
             'logoPath' => null,
             'logoUrl' => asset('logo.png'),
+            'logoThumbUrl' => ImageVariants::urlForPath('logo.png', 160, 160) ?: asset('logo.png'),
             'clubPhotoPath' => null,
             'clubPhotoUrl' => null,
+            'clubPhotoThumbUrl' => null,
         ];
 
         try {
@@ -75,8 +77,10 @@ class CompanyProfile
                 'email' => $email !== '' ? $email : null,
                 'logoPath' => $logoPath !== '' ? $logoPath : null,
                 'logoUrl' => static::publicAssetUrl($logoPath) ?: asset('logo.png'),
+                'logoThumbUrl' => ImageVariants::urlForPath($logoPath, 160, 160) ?: static::publicAssetUrl($logoPath) ?: asset('logo.png'),
                 'clubPhotoPath' => $clubPhotoPath !== '' ? $clubPhotoPath : null,
                 'clubPhotoUrl' => static::publicAssetUrl($clubPhotoPath),
+                'clubPhotoThumbUrl' => ImageVariants::urlForPath($clubPhotoPath, 640, 360) ?: static::publicAssetUrl($clubPhotoPath),
             ];
         } catch (Throwable) {
             //

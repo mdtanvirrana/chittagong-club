@@ -136,6 +136,26 @@ class GalleryAlbums
             ->all();
     }
 
+    public static function albumPhotoPayloads(string $slug): array
+    {
+        $slug = static::normalizeSlug($slug);
+
+        if ($slug === null) {
+            return [];
+        }
+
+        $directory = static::albumDirectory($slug);
+
+        if (! is_dir($directory)) {
+            return [];
+        }
+
+        return static::imageFiles($directory)
+            ->map(fn ($file) => static::mobilePhotoPayload($slug, $file))
+            ->values()
+            ->all();
+    }
+
     public static function updateTitle(string $slug, string $title): ?array
     {
         $slug = static::normalizeSlug($slug);
@@ -195,6 +215,7 @@ class GalleryAlbums
             return null;
         }
 
+        $oldRelativePath = static::relativePath($slug, $filename);
         $nameWithoutExtension = trim(pathinfo($newName, PATHINFO_FILENAME));
         $nameWithoutExtension = $nameWithoutExtension !== '' ? $nameWithoutExtension : trim($newName);
         $basename = Str::slug($nameWithoutExtension, '-');
@@ -227,6 +248,8 @@ class GalleryAlbums
             File::move($sourcePath, $targetPath);
         }
 
+        ImageVariants::pruneForPath($oldRelativePath);
+        static::warmPhotoVariants($slug, $newFilename);
         static::touchMetadata($directory, $slug);
 
         return $newFilename;
@@ -248,6 +271,7 @@ class GalleryAlbums
             return false;
         }
 
+        ImageVariants::pruneForPath(static::relativePath($slug, $filename));
         File::delete($targetPath);
         static::touchMetadata($directory, $slug);
 
@@ -272,6 +296,7 @@ class GalleryAlbums
 
             $filename = static::resolveFilename($directory, $image);
             GalleryImageOptimizer::store($image, $directory, $filename);
+            static::warmPhotoVariants($slug, $filename);
             $storedNames[] = $filename;
         }
 
@@ -314,6 +339,9 @@ class GalleryAlbums
         $cover = $photos->isNotEmpty()
             ? static::versionedAssetUrl(static::relativePath($slug, $photos->first()->getFilename()))
             : null;
+        $coverRelativePath = $photos->isNotEmpty()
+            ? static::relativePath($slug, $photos->first()->getFilename())
+            : null;
         $fileSignature = $photos
             ->map(fn ($file) => $file->getFilename().':'.$file->getSize().':'.$file->getMTime())
             ->implode('|');
@@ -322,6 +350,8 @@ class GalleryAlbums
             'title' => $metadata['title'],
             'date' => $latestPhotoTimestamp > 0 ? date('M Y', $latestPhotoTimestamp) : 'No photos',
             'cover' => $cover,
+            'cover_thumb' => $coverRelativePath ? (ImageVariants::galleryThumbUrl($coverRelativePath) ?? $cover) : null,
+            'cover_preview' => $coverRelativePath ? (ImageVariants::galleryPreviewUrl($coverRelativePath) ?? $cover) : null,
             'photo_count' => $photos->count(),
             'cache_key' => sha1($slug.'|'.$metadata['title'].'|'.$metadataTimestamp.'|'.$fileSignature),
             'latest_timestamp' => $latestTimestamp,
@@ -363,8 +393,25 @@ class GalleryAlbums
             'name' => pathinfo($file->getFilename(), PATHINFO_FILENAME),
             'relative_path' => $relativePath,
             'url' => static::versionedAssetUrl($relativePath),
+            'thumb_url' => ImageVariants::galleryThumbUrl($relativePath),
+            'preview_url' => ImageVariants::galleryPreviewUrl($relativePath),
             'size_kb' => number_format($file->getSize() / 1024, 1),
             'updated_at' => date('M d, Y g:i A', $file->getMTime()),
+        ];
+    }
+
+    private static function mobilePhotoPayload(string $slug, $file): array
+    {
+        $relativePath = static::relativePath($slug, $file->getFilename());
+        $url = static::versionedAssetUrl($relativePath);
+
+        return [
+            'id' => sha1($relativePath),
+            'filename' => $file->getFilename(),
+            'url' => $url,
+            'thumb_url' => ImageVariants::galleryThumbUrl($relativePath) ?? $url,
+            'preview_url' => ImageVariants::galleryPreviewUrl($relativePath) ?? $url,
+            'updated_at' => $file->getMTime(),
         ];
     }
 
@@ -502,5 +549,10 @@ class GalleryAlbums
         $metadata = static::metadata($directory, $slug);
 
         static::writeMetadata($directory, $slug, $metadata['title']);
+    }
+
+    private static function warmPhotoVariants(string $slug, string $filename): void
+    {
+        ImageVariants::warm(static::relativePath($slug, $filename), ImageVariants::galleryVariants());
     }
 }

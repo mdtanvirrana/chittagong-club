@@ -24,9 +24,9 @@ class DashboardController extends Controller
             return response()->json(['message' => 'Member not found.'], 404);
         }
 
-        return response()->json([
+        return PortalCache::noStoreJson([
             'member' => $this->memberPayload($member),
-            'summary' => $this->summaryPayload($memberId),
+            'summary' => $this->summaryPayload($memberId, $member),
             'services' => $this->services(),
             'circular_highlight' => $this->dashboardHighlight(),
         ]);
@@ -34,7 +34,7 @@ class DashboardController extends Controller
 
     public function summary(Request $request): JsonResponse
     {
-        return response()->json($this->summaryPayload($this->memberId($request)));
+        return PortalCache::noStoreJson($this->summaryPayload($this->memberId($request)));
     }
 
     private function memberId(Request $request): string
@@ -44,26 +44,20 @@ class DashboardController extends Controller
 
     private function member(string $memberId): ?object
     {
-        return PortalCache::rememberUserResilient(
-            $memberId,
-            'api_dashboard_member',
-            now()->addMinutes(10),
-            now()->addDay(),
-            fn () => MemberAccess::activeMemberQuery()
-                ->leftJoin('List_MemExpType as mt', 'c.MemExpTypeID', '=', 'mt.MemExpTypeID')
-                ->where('c.PrvCusID', $memberId)
-                ->select([
-                    'c.PrvCusID',
-                    'c.Title',
-                    'c.CusName',
-                    'c.CreditBal',
-                    'c.CreditAmt',
-                    'mt.MemExpTypeName',
-                    'cc.Remarks as MemberCategory',
-                ])
-                ->first(),
-            null
-        );
+        return MemberAccess::activeMemberQuery()
+            ->leftJoin('List_MemExpType as mt', 'c.MemExpTypeID', '=', 'mt.MemExpTypeID')
+            ->where('c.PrvCusID', $memberId)
+            ->select([
+                'c.PrvCusID',
+                'c.Title',
+                'c.CusName',
+                'c.CreditBal',
+                'c.CreditAmt',
+                'mt.MemExpTypeName',
+                'cc.Remarks as MemberCategory',
+                DB::raw("(SELECT COALESCE(SUM(COALESCE(cl.DrAmt, 0) - COALESCE(cl.CrAmt, 0)), 0) FROM Customer_ledger cl WHERE cl.PrvCusId = c.PrvCusID AND cl.InvMRN <> '0') as LedgerDue"),
+            ])
+            ->first();
     }
 
     private function memberPayload(object $member): array
@@ -84,35 +78,35 @@ class DashboardController extends Controller
             'credit_balance' => (float) ($member->CreditBal ?? 0),
             'has_photo' => PortalCache::hasMemberPhoto($memberId),
             'photo_url' => PortalCache::memberPhotoUrl($memberId),
+            'photo_thumb_url' => PortalCache::memberPhotoThumbUrl($memberId),
+            'photo_preview_url' => PortalCache::memberPhotoPreviewUrl($memberId),
         ];
     }
 
-    private function summaryPayload(string $memberId): array
+    private function summaryPayload(string $memberId, ?object $member = null): array
     {
-        try {
-            $ledger = PortalCache::rememberUserResilient(
-                $memberId,
-                'api_dashboard_ledger_totals',
-                now()->addMinutes(5),
-                now()->addDay(),
-                fn () => DB::table('Customer_ledger')
+        $member = $member ?: $this->member($memberId) ?: (object) ['CreditAmt' => 0];
+        $ledgerDue = property_exists($member, 'LedgerDue') ? $member->LedgerDue : null;
+
+        if ($ledgerDue === null) {
+            try {
+                $ledger = DB::table('Customer_ledger')
                     ->where('PrvCusId', $memberId)
                     ->where('InvMRN', '<>', '0')
                     ->selectRaw('COALESCE(SUM(COALESCE(DrAmt, 0) - COALESCE(CrAmt, 0)), 0) as Due')
-                    ->first(),
-                (object) ['Due' => 0]
-            );
-        } catch (\Throwable $e) {
-            Log::warning('Unable to load API dashboard ledger totals.', [
-                'member_id' => $memberId,
-                'error' => $e->getMessage(),
-            ]);
+                    ->first();
+                $ledgerDue = $ledger->Due ?? 0;
+            } catch (\Throwable $e) {
+                Log::warning('Unable to load API dashboard ledger totals.', [
+                    'member_id' => $memberId,
+                    'error' => $e->getMessage(),
+                ]);
 
-            $ledger = (object) ['Due' => 0];
+                $ledgerDue = 0;
+            }
         }
 
-        $member = $this->member($memberId) ?: (object) ['CreditAmt' => 0];
-        $totalDue = max(0, (float) ($ledger->Due ?? 0));
+        $totalDue = max(0, (float) $ledgerDue);
         $creditLimit = (float) ($member->CreditAmt ?? 0);
         NotifyOutbox::dueReminder($memberId, $totalDue, $creditLimit);
 
@@ -145,6 +139,7 @@ class DashboardController extends Controller
                     'title' => trim((string) ($circular->tx_title ?: 'Circular')),
                     'excerpt' => $circular->excerpt,
                     'image_url' => $circular->display_image_url,
+                    'image_thumb_url' => $circular->display_image_thumb_url,
                     'source_url' => $circular->action_url,
                     'start_date' => $circular->start_date_label,
                     'close_date' => $circular->has_distinct_close_date ? $circular->close_date_label : null,

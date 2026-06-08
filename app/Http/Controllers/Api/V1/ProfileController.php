@@ -48,6 +48,8 @@ class ProfileController extends Controller
                 'credit_balance' => (float) ($member->CreditBal ?? 0),
                 'has_photo' => $data['hasProfilePhoto'],
                 'photo_url' => $data['profilePhotoUrl'],
+                'photo_thumb_url' => $data['profilePhotoThumbUrl'],
+                'photo_preview_url' => $data['profilePhotoPreviewUrl'],
                 'qr_value' => $data['memberQrValue'],
                 'children' => $data['children'],
                 'children_count' => $data['childrenCount'],

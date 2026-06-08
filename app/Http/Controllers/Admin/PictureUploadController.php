@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\GalleryImageOptimizer;
+use App\Support\ImageVariants;
 use App\Support\PortalImageDirectory;
 use App\Support\PortalCache;
 use Illuminate\Support\Collection;
@@ -137,10 +139,12 @@ class PictureUploadController extends Controller
             $targetPath = $directory.DIRECTORY_SEPARATOR.$filename;
 
             if (is_file($targetPath)) {
+                ImageVariants::pruneForPath($this->storedRelativeDirectory($folder, $validated['department_id'] ?? null).'/'.$filename);
                 File::delete($targetPath);
             }
 
-            $image->move($directory, $filename);
+            GalleryImageOptimizer::store($image, $directory, $filename);
+            $this->warmImageVariants($folder, $filename, $validated['department_id'] ?? null);
             $storedNames[] = $filename;
         }
 
@@ -195,6 +199,7 @@ class PictureUploadController extends Controller
                 ->with('status', $relativePath.' was not found in public/.');
         }
 
+        ImageVariants::pruneForPath($relativePath);
         File::delete($targetPath);
         PortalCache::clearPhotoRelatedCaches();
 
@@ -295,5 +300,17 @@ class PictureUploadController extends Controller
         $path = str_replace('\\', '/', $path);
 
         return ltrim(Str::after($path, $publicPath), '/');
+    }
+
+    private function warmImageVariants(string $folder, string $filename, mixed $departmentId = null): void
+    {
+        if (! in_array($folder, [PortalImageDirectory::MEMBER_DIRECTORY, PortalImageDirectory::EMPLOYEE_DIRECTORY], true)) {
+            return;
+        }
+
+        ImageVariants::warm(
+            $this->storedRelativeDirectory($folder, $departmentId).'/'.$filename,
+            ImageVariants::memberVariants()
+        );
     }
 }

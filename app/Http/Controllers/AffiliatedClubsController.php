@@ -12,7 +12,9 @@ class AffiliatedClubsController extends Controller
 
     public function index()
     {
-        $clubs = collect(PortalCache::remember('affiliated_clubs_v5', now()->addMinutes(30), function (): array {
+        $version = PortalCache::contentVersion('affiliated-clubs');
+
+        $clubs = collect(PortalCache::remember("affiliated_clubs_v5_{$version}", now()->addMinutes(30), function (): array {
             $countryNames = $this->countryNamesByStoredValue();
 
             return AffiliatedClub::query()
@@ -91,7 +93,10 @@ class AffiliatedClubsController extends Controller
                 ->all();
         }));
 
-        return view('pages.affiliated-clubs', compact('clubs'));
+        return response()
+            ->view('pages.affiliated-clubs', compact('clubs'))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache');
     }
 
     private function countryNamesByStoredValue(): array

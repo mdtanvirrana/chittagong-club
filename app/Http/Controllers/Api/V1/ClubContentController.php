@@ -23,7 +23,8 @@ class ClubContentController extends Controller
 {
     public function gallery(): JsonResponse
     {
-        $albums = PortalCache::remember('api_gallery_albums_v1', now()->addMinutes(30), function (): array {
+        $version = PortalCache::contentVersion('gallery');
+        $albums = PortalCache::remember("api_gallery_albums_v2_{$version}", now()->addHours(6), function (): array {
             return GalleryAlbums::albums(false)->all();
         });
 
@@ -38,10 +39,11 @@ class ClubContentController extends Controller
             return response()->json(['message' => 'Album not found.'], 404);
         }
 
+        $version = PortalCache::contentVersion('gallery');
         $photos = PortalCache::remember(
-            'api_gallery_album_photos_'.$summary['id'].'_'.$summary['cache_key'].'_v1',
-            now()->addHours(6),
-            fn (): array => GalleryAlbums::albumPhotos($summary['id'])
+            'api_gallery_album_photos_'.$summary['id'].'_'.$summary['cache_key']."_v2_{$version}",
+            now()->addHours(12),
+            fn (): array => GalleryAlbums::albumPhotoPayloads($summary['id'])
         );
 
         return response()->json([
@@ -50,10 +52,11 @@ class ClubContentController extends Controller
         ]);
     }
 
-    public function committee(): JsonResponse
+    public function committee(Request $request): JsonResponse
     {
         $currentYear = (int) Carbon::now()->format('Y');
         $previousYear = $currentYear - 1;
+        [$page, $perPage] = $this->paginationParams($request);
 
         $members = collect(PortalCache::remember(
             "api_committee_members_{$currentYear}_{$previousYear}_v1",
@@ -104,6 +107,8 @@ class ClubContentController extends Controller
                             'year_to' => (int) $member->ct_to_year,
                             'has_photo' => PortalCache::hasMemberPhoto($memberId),
                             'photo_url' => PortalCache::memberPhotoUrl($memberId),
+                            'photo_thumb_url' => PortalCache::memberPhotoThumbUrl($memberId),
+                            'photo_preview_url' => PortalCache::memberPhotoPreviewUrl($memberId),
                         ];
                     })
                     ->values()
@@ -111,7 +116,9 @@ class ClubContentController extends Controller
             }
         ));
 
-        $groups = $members
+        $pageMembers = $members->forPage($page, $perPage)->values();
+
+        $groups = $pageMembers
             ->groupBy(fn (array $member): string => $member['year_from'].'-'.$member['year_to'])
             ->map(fn ($group, string $key): array => [
                 'key' => $key,
@@ -124,15 +131,49 @@ class ClubContentController extends Controller
             'current_year' => $currentYear,
             'previous_year' => $previousYear,
             'groups' => $groups,
+            'total' => $members->count(),
+            'pagination' => $this->paginationPayload($page, $perPage, $members->count(), $pageMembers->count()),
         ]);
     }
 
-    public function employees(): JsonResponse
+    public function employees(Request $request): JsonResponse
     {
-        $employees = collect(PortalCache::remember('api_employee_directory_v1', now()->addMinutes(30), function (): array {
-            return DB::table('EmployeesDetails')
+        $version = PortalCache::contentVersion('employee-directory');
+        [$page, $perPage] = $this->paginationParams($request);
+        $search = trim((string) ($request->query('q') ?? $request->query('search') ?? ''));
+        $branch = trim((string) $request->query('branch', ''));
+        $cacheKey = sprintf(
+            'api_employee_directory_page_%d_%d_%s_%s_v3_%d',
+            $page,
+            $perPage,
+            md5(mb_strtolower($search)),
+            md5(mb_strtolower($branch)),
+            $version
+        );
+
+        $payload = PortalCache::remember($cacheKey, now()->addHours(6), function () use ($page, $perPage, $search, $branch): array {
+            $query = DB::table('EmployeesDetails')
                 ->where('PreStatus', 'Y')
-                ->whereNotNull('EmpName')
+                ->whereNotNull('EmpName');
+
+            if ($search !== '') {
+                $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $search).'%';
+
+                $query->where(function ($query) use ($like): void {
+                    $query->where('EmpID', 'like', $like)
+                        ->orWhere('EmpName', 'like', $like)
+                        ->orWhere('Branch', 'like', $like)
+                        ->orWhere('Sec', 'like', $like)
+                        ->orWhere('Desig', 'like', $like);
+                });
+            }
+
+            if ($branch !== '' && mb_strtolower($branch) !== 'all') {
+                $query->where('Branch', $branch);
+            }
+
+            $total = (clone $query)->count();
+            $employees = $query
                 ->orderBy('Branch')
                 ->orderBy('EmpName')
                 ->select([
@@ -147,6 +188,7 @@ class ClubContentController extends Controller
                     'Sex',
                     'DateJoin',
                 ])
+                ->forPage($page, $perPage)
                 ->get()
                 ->map(function (object $employee): array {
                     $name = trim(($employee->Title && $employee->Title !== '0' ? $employee->Title.' ' : '').$employee->EmpName);
@@ -161,6 +203,8 @@ class ClubContentController extends Controller
                             ->join(''),
                         'has_photo' => PortalCache::hasEmployeePhoto($employeeId),
                         'photo_url' => PortalCache::employeePhotoUrl($employeeId),
+                        'photo_thumb_url' => PortalCache::employeePhotoThumbUrl($employeeId),
+                        'photo_preview_url' => PortalCache::employeePhotoPreviewUrl($employeeId),
                         'branch' => (string) ($employee->Branch ?? ''),
                         'section' => ($employee->Sec && $employee->Sec !== $employee->Branch) ? (string) $employee->Sec : '',
                         'designation' => (string) ($employee->Desig ?? ''),
@@ -172,21 +216,38 @@ class ClubContentController extends Controller
                 })
                 ->values()
                 ->all();
-        }));
 
-        $groups = $employees
-            ->groupBy('branch')
-            ->map(fn ($group, string $branch): array => [
-                'branch' => $branch !== '' ? $branch : 'General',
-                'members' => $group->values(),
-            ])
-            ->values();
+            return [
+                'employees' => $employees,
+                'groups' => collect($employees)
+                    ->groupBy(fn (array $employee): string => $employee['branch'] !== '' ? $employee['branch'] : 'Other')
+                    ->map(fn ($members, string $branch): array => [
+                        'branch' => $branch,
+                        'members' => $members->values()->all(),
+                    ])
+                    ->values()
+                    ->all(),
+                'total' => $total,
+                'pagination' => $this->paginationPayload($page, $perPage, $total, count($employees)),
+            ];
+        });
 
-        return response()->json([
-            'employees' => $employees,
-            'groups' => $groups,
-            'total' => $employees->count(),
-        ]);
+        $payload['branches'] = PortalCache::remember("api_employee_directory_branches_v1_{$version}", now()->addHours(6), function (): array {
+            return DB::table('EmployeesDetails')
+                ->where('PreStatus', 'Y')
+                ->whereNotNull('EmpName')
+                ->whereNotNull('Branch')
+                ->select('Branch')
+                ->distinct()
+                ->orderBy('Branch')
+                ->pluck('Branch')
+                ->map(fn ($branch): string => trim((string) $branch))
+                ->filter()
+                ->values()
+                ->all();
+        });
+
+        return response()->json($payload);
     }
 
     public function contact(): JsonResponse
@@ -213,9 +274,11 @@ class ClubContentController extends Controller
         ]);
     }
 
-    public function affiliatedClubs(): JsonResponse
+    public function affiliatedClubs(Request $request): JsonResponse
     {
-        $clubs = PortalCache::remember('api_affiliated_clubs_v1', now()->addMinutes(30), function (): array {
+        [$page, $perPage] = $this->paginationParams($request);
+        $version = PortalCache::contentVersion('affiliated-clubs');
+        $clubs = PortalCache::remember("api_affiliated_clubs_v1_{$version}", now()->addMinutes(30), function (): array {
             $countryNames = $this->countryNamesByStoredValue();
 
             return AffiliatedClub::query()
@@ -286,7 +349,9 @@ class ClubContentController extends Controller
                 ->all();
         });
 
-        $groups = collect($clubs)
+        $pageClubs = collect($clubs)->forPage($page, $perPage)->values();
+
+        $groups = $pageClubs
             ->groupBy(fn (array $club): string => $club['country'] ?: 'Country not set')
             ->map(fn ($group, string $country): array => [
                 'country' => $country,
@@ -295,15 +360,17 @@ class ClubContentController extends Controller
             ->values()
             ->all();
 
-        return response()->json([
-            'clubs' => $clubs,
+        return PortalCache::noStoreJson([
+            'clubs' => $pageClubs,
             'groups' => $groups,
             'total' => count($clubs),
+            'pagination' => $this->paginationPayload($page, $perPage, count($clubs), $pageClubs->count()),
         ]);
     }
 
-    public function formerChairmen(): JsonResponse
+    public function formerChairmen(Request $request): JsonResponse
     {
+        [$page, $perPage] = $this->paginationParams($request);
         $members = collect(PortalCache::remember('api_former_chairmen_v1', now()->addMinutes(30), function (): array {
             return DB::table('T_ORG_COMMITTEE as oc')
                 ->join('CustomerMst as c', 'oc.PrvcusID', '=', 'c.PrvCusID')
@@ -345,13 +412,17 @@ class ClubContentController extends Controller
                         'year_to' => (int) $member->ct_to_year,
                         'has_photo' => PortalCache::hasMemberPhoto($memberId),
                         'photo_url' => PortalCache::memberPhotoUrl($memberId),
+                        'photo_thumb_url' => PortalCache::memberPhotoThumbUrl($memberId),
+                        'photo_preview_url' => PortalCache::memberPhotoPreviewUrl($memberId),
                     ];
                 })
                 ->values()
                 ->all();
         }));
 
-        $groups = $members
+        $pageMembers = $members->forPage($page, $perPage)->values();
+
+        $groups = $pageMembers
             ->groupBy(fn (array $member): string => $member['year_from'].'–'.$member['year_to'])
             ->map(fn ($group, string $label): array => [
                 'label' => $label,
@@ -362,6 +433,7 @@ class ClubContentController extends Controller
         return response()->json([
             'groups' => $groups,
             'total' => $members->count(),
+            'pagination' => $this->paginationPayload($page, $perPage, $members->count(), $pageMembers->count()),
         ]);
     }
 
@@ -409,19 +481,22 @@ class ClubContentController extends Controller
 
     public function circulars(Request $request): JsonResponse
     {
-        $page = max(1, (int) $request->integer('page', 1));
-        $perPage = min(max((int) $request->integer('per_page', $request->integer('limit', 10)), 1), 50);
+        [$page, $perPage] = $this->paginationParams($request);
+        $version = PortalCache::contentVersion('circulars');
+        $cacheKey = "api_circulars_page_{$page}_{$perPage}_v2_{$version}";
 
-        $items = collect(PortalCache::rememberResilient(
-            PortalContent::CIRCULAR_CACHE_KEY,
-            PortalContent::CIRCULAR_STALE_CACHE_KEY,
+        $payload = PortalCache::rememberResilient(
+            $cacheKey,
+            PortalCache::staleKey($cacheKey),
             now()->addMinutes(5),
             now()->addDay(),
-            function (): array {
-                return CircularItem::query()
-                    ->visible()
+            function () use ($page, $perPage): array {
+                $query = CircularItem::query()->visible();
+                $total = (clone $query)->count();
+                $items = $query
                     ->orderByDesc('dtt_ad_start')
                     ->orderByDesc('id_career_key')
+                    ->forPage($page, $perPage)
                     ->get()
                     ->map(fn (CircularItem $circular): array => [
                         'id' => (int) $circular->id_career_key,
@@ -430,52 +505,49 @@ class ClubContentController extends Controller
                         'excerpt' => $circular->excerpt,
                         'image_url' => $circular->image_url,
                         'display_image_url' => $circular->display_image_url,
+                        'image_thumb_url' => $circular->display_image_thumb_url,
                         'source_url' => $circular->action_url,
                         'start_date' => $circular->start_date_label,
                         'close_date' => $circular->has_distinct_close_date ? $circular->close_date_label : null,
                         'date_label' => $circular->has_distinct_close_date ? $circular->close_date_label : $circular->start_date_label,
                         'uploaded_date' => $circular->dtt_added?->format('M d, Y') ?? 'Unknown',
                     ])
-                    ->values()
-                    ->all();
-            },
-            []
-        ));
-        $total = $items->count();
-        $pageItems = $items->forPage($page, $perPage)->values();
-        $lastPage = max(1, (int) ceil($total / $perPage));
-        $from = $total === 0 ? 0 : (($page - 1) * $perPage) + 1;
-        $to = $from === 0 ? 0 : min($from + $pageItems->count() - 1, $total);
+                    ->values();
 
-        return response()->json([
-            'circulars' => $pageItems,
-            'total' => $total,
-            'pagination' => [
-                'current_page' => $page,
-                'per_page' => $perPage,
-                'total' => $total,
-                'last_page' => $lastPage,
-                'has_more' => $page < $lastPage,
-                'from' => $from,
-                'to' => $to,
-            ],
-        ]);
+                return [
+                    'circulars' => $items,
+                    'total' => $total,
+                    'pagination' => $this->paginationPayload($page, $perPage, $total, $items->count()),
+                ];
+            },
+            [
+                'circulars' => [],
+                'total' => 0,
+                'pagination' => $this->paginationPayload($page, $perPage, 0, 0),
+            ]
+        );
+
+        return response()->json($payload);
     }
 
     public function notices(Request $request): JsonResponse
     {
-        $limit = min(max((int) $request->integer('limit', 20), 1), 50);
+        [$page, $perPage] = $this->paginationParams($request);
+        $version = PortalCache::contentVersion('notices');
+        $cacheKey = "api_notices_page_{$page}_{$perPage}_v2_{$version}";
 
-        $items = collect(PortalCache::rememberResilient(
-            PortalContent::NOTICE_CACHE_KEY,
-            PortalContent::NOTICE_STALE_CACHE_KEY,
+        $payload = PortalCache::rememberResilient(
+            $cacheKey,
+            PortalCache::staleKey($cacheKey),
             now()->addMinutes(5),
             now()->addDay(),
-            function (): array {
-                return NoticeMessage::query()
-                    ->visible()
+            function () use ($page, $perPage): array {
+                $query = NoticeMessage::query()->visible();
+                $total = (clone $query)->count();
+                $items = $query
                     ->orderByDesc('Edate')
                     ->orderByDesc('id_message_key')
+                    ->forPage($page, $perPage)
                     ->get()
                     ->map(fn (NoticeMessage $notice): array => [
                         'id' => (int) $notice->id_message_key,
@@ -485,16 +557,46 @@ class ClubContentController extends Controller
                         'date' => $notice->published_date_label,
                         'date_sort' => $notice->Edate?->format('Y-m-d') ?? '',
                     ])
-                    ->values()
-                    ->all();
-            },
-            []
-        ));
+                    ->values();
 
-        return response()->json([
-            'notices' => $items->take($limit)->values(),
-            'total' => $items->count(),
-        ]);
+                return [
+                    'notices' => $items,
+                    'total' => $total,
+                    'pagination' => $this->paginationPayload($page, $perPage, $total, $items->count()),
+                ];
+            },
+            [
+                'notices' => [],
+                'total' => 0,
+                'pagination' => $this->paginationPayload($page, $perPage, 0, 0),
+            ]
+        );
+
+        return response()->json($payload);
+    }
+
+    private function paginationParams(Request $request): array
+    {
+        $page = max(1, (int) $request->integer('page', 1));
+        $perPage = min(max((int) $request->integer('per_page', $request->integer('limit', 20)), 1), 20);
+
+        return [$page, $perPage];
+    }
+
+    private function paginationPayload(int $page, int $perPage, int $total, int $pageCount): array
+    {
+        $lastPage = max(1, (int) ceil($total / max(1, $perPage)));
+        $from = $total === 0 ? 0 : (($page - 1) * $perPage) + 1;
+
+        return [
+            'current_page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'last_page' => $lastPage,
+            'has_more' => $page < $lastPage,
+            'from' => $from,
+            'to' => $from === 0 ? 0 : min($from + $pageCount - 1, $total),
+        ];
     }
 
     private function countryNamesByStoredValue(): array

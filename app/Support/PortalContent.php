@@ -10,13 +10,13 @@ class PortalContent
 
     public const NOTICE_STALE_CACHE_KEY = 'notice_board_stale_v2';
 
-    public const CIRCULAR_CACHE_KEY = 'circular_feed_v7';
+    public const CIRCULAR_CACHE_KEY = 'circular_feed_v8';
 
-    public const CIRCULAR_STALE_CACHE_KEY = 'circular_feed_stale_v7';
+    public const CIRCULAR_STALE_CACHE_KEY = 'circular_feed_stale_v8';
 
-    public const DASHBOARD_CIRCULAR_HIGHLIGHT_CACHE_KEY = 'dashboard_circular_highlight_v4';
+    public const DASHBOARD_CIRCULAR_HIGHLIGHT_CACHE_KEY = 'dashboard_circular_highlight_v5';
 
-    public const DASHBOARD_CIRCULAR_HIGHLIGHT_STALE_CACHE_KEY = 'dashboard_circular_highlight_stale_v4';
+    public const DASHBOARD_CIRCULAR_HIGHLIGHT_STALE_CACHE_KEY = 'dashboard_circular_highlight_stale_v5';
 
     public static function deltaToPlainText(?string $payload): string
     {
