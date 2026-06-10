@@ -9,13 +9,13 @@ class FormerChairmanController extends Controller
 {
     public function index()
     {
-        $members = collect(PortalCache::remember('former_chairman_v2', now()->addMinutes(30), function (): array {
+        $version = PortalCache::contentVersion('former-chairmen');
+
+        $members = collect(PortalCache::remember("former_chairman_v3_{$version}", now()->addMinutes(30), function (): array {
             return DB::table('T_ORG_COMMITTEE as oc')
                 ->join('CustomerMst as c', 'oc.PrvcusID', '=', 'c.PrvCusID')
                 ->where('oc.is_active', 1)
-                ->where(function ($q) {
-                    $q->whereRaw("LOWER(oc.tx_designation) LIKE 'chairman'");
-                })
+                ->whereRaw('LOWER(LTRIM(RTRIM(oc.tx_designation))) = ?', ['chairman'])
                 ->orderBy('oc.ct_from_year', 'desc')
                 ->orderBy('oc.id_serial', 'desc')
                 ->select([
@@ -33,7 +33,7 @@ class FormerChairmanController extends Controller
                 ])
                 ->get()
                 ->map(function ($m) {
-                    $name = trim(($m->Title ? $m->Title . ' ' : '') . $m->CusName);
+                    $name = trim((trim((string) $m->Title) !== '' ? trim((string) $m->Title) . ' ' : '') . $m->CusName);
                     $phone = $m->Mobile ?: $m->Phone ?: null;
                     $initials = collect(explode(' ', $m->CusName))
                         ->map(fn ($w) => strtoupper($w[0] ?? ''))
@@ -46,8 +46,8 @@ class FormerChairmanController extends Controller
                         'name' => $name,
                         'initials' => $initials,
                         'member_id' => $m->PrvCusID,
-                        'designation' => $m->tx_designation ?? '',
-                        'area' => $m->tx_area ?? '',
+                        'designation' => trim((string) ($m->tx_designation ?? '')),
+                        'area' => trim((string) ($m->tx_area ?? '')),
                         'phone' => $phone,
                         'year_from' => $m->ct_from_year,
                         'year_to' => $m->ct_to_year,

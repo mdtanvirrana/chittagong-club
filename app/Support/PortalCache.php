@@ -359,6 +359,31 @@ class PortalCache
         static::bumpContentVersion('affiliated-clubs');
     }
 
+    public static function clearOrgCommitteeCaches(): void
+    {
+        $cache = static::store();
+        $currentYear = (int) now()->format('Y');
+        $previousYear = $currentYear - 1;
+        $committeeVersion = max(1, (int) $cache->get(static::contentVersionKey('committee'), 1));
+        $formerChairmenVersion = max(1, (int) $cache->get(static::contentVersionKey('former-chairmen'), 1));
+
+        foreach ([
+            "committee_members_{$currentYear}_{$previousYear}_v2",
+            "committee_members_{$currentYear}_{$previousYear}_v3_{$committeeVersion}",
+            "api_committee_members_{$currentYear}_{$previousYear}_v1",
+            "api_committee_members_{$currentYear}_{$previousYear}_v2_{$committeeVersion}",
+            'former_chairman_v2',
+            "former_chairman_v3_{$formerChairmenVersion}",
+            'api_former_chairmen_v1',
+            "api_former_chairmen_v2_{$formerChairmenVersion}",
+        ] as $key) {
+            $cache->forget($key);
+        }
+
+        static::bumpContentVersion('committee');
+        static::bumpContentVersion('former-chairmen');
+    }
+
     private static function photoIndex(string $cacheKey, array $folders): array
     {
         if (isset(static::$photoIndexes[$cacheKey])) {

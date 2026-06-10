@@ -12,9 +12,10 @@ class CommitteeController extends Controller
     {
         $currentYear  = (int) Carbon::now()->format('Y');
         $previousYear = $currentYear - 1;
+        $version = PortalCache::contentVersion('committee');
 
         $members = collect(PortalCache::remember(
-            "committee_members_{$currentYear}_{$previousYear}_v2",
+            "committee_members_{$currentYear}_{$previousYear}_v3_{$version}",
             now()->addMinutes(30),
             function () use ($currentYear, $previousYear): array {
                 return DB::table('T_ORG_COMMITTEE as oc')
@@ -43,7 +44,7 @@ class CommitteeController extends Controller
                     ])
                     ->get()
                     ->map(function ($m) {
-                        $name = trim(($m->Title ? $m->Title . ' ' : '') . $m->CusName);
+                        $name = trim((trim((string) $m->Title) !== '' ? trim((string) $m->Title) . ' ' : '') . $m->CusName);
                         $phone = $m->Mobile ?: $m->Phone ?: null;
                         $initials = collect(explode(' ', $m->CusName))
                             ->map(fn ($w) => strtoupper($w[0] ?? ''))
@@ -56,8 +57,8 @@ class CommitteeController extends Controller
                             'name' => $name,
                             'initials' => $initials,
                             'member_id' => $m->PrvCusID,
-                            'designation' => $m->tx_designation ?? '',
-                            'area' => $m->tx_area ?? '',
+                            'designation' => trim((string) ($m->tx_designation ?? '')),
+                            'area' => trim((string) ($m->tx_area ?? '')),
                             'phone' => $phone,
                             'year_from' => $m->ct_from_year,
                             'year_to' => $m->ct_to_year,

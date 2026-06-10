@@ -3,10 +3,12 @@
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\AdminUserController as AdminAdminUserController;
 use App\Http\Controllers\Admin\AffiliatedClubController as AdminAffiliatedClubController;
+use App\Http\Controllers\Admin\CommitteeController as AdminCommitteeController;
 use App\Http\Controllers\Admin\CompanyProfileController as AdminCompanyProfileController;
 use App\Http\Controllers\Admin\ContactController as AdminContactController;
 use App\Http\Controllers\Admin\CircularController as AdminCircularController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\FormerChairmanController as AdminFormerChairmanController;
 use App\Http\Controllers\Admin\GalleryAlbumController as AdminGalleryAlbumController;
 use App\Http\Controllers\Admin\NoticeController as AdminNoticeController;
 use App\Http\Controllers\Admin\PictureUploadController as AdminPictureUploadController;
@@ -120,6 +122,20 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/affiliated-clubs/{club}/edit', [AdminAffiliatedClubController::class, 'edit'])->name('affiliated-clubs.edit');
         Route::put('/affiliated-clubs/{club}', [AdminAffiliatedClubController::class, 'update'])->name('affiliated-clubs.update');
         Route::delete('/affiliated-clubs/{club}', [AdminAffiliatedClubController::class, 'destroy'])->name('affiliated-clubs.destroy');
+
+        Route::get('/committees', [AdminCommitteeController::class, 'index'])->name('committees.index');
+        Route::get('/committees/create', [AdminCommitteeController::class, 'create'])->name('committees.create');
+        Route::post('/committees', [AdminCommitteeController::class, 'store'])->name('committees.store');
+        Route::get('/committees/{committee}/edit', [AdminCommitteeController::class, 'edit'])->name('committees.edit');
+        Route::put('/committees/{committee}', [AdminCommitteeController::class, 'update'])->name('committees.update');
+        Route::delete('/committees/{committee}', [AdminCommitteeController::class, 'destroy'])->name('committees.destroy');
+
+        Route::get('/former-chairmen', [AdminFormerChairmanController::class, 'index'])->name('former-chairmen.index');
+        Route::get('/former-chairmen/create', [AdminFormerChairmanController::class, 'create'])->name('former-chairmen.create');
+        Route::post('/former-chairmen', [AdminFormerChairmanController::class, 'store'])->name('former-chairmen.store');
+        Route::get('/former-chairmen/{chairman}/edit', [AdminFormerChairmanController::class, 'edit'])->name('former-chairmen.edit');
+        Route::put('/former-chairmen/{chairman}', [AdminFormerChairmanController::class, 'update'])->name('former-chairmen.update');
+        Route::delete('/former-chairmen/{chairman}', [AdminFormerChairmanController::class, 'destroy'])->name('former-chairmen.destroy');
 
         Route::get('/circulars', [AdminCircularController::class, 'index'])->name('circulars.index');
         Route::get('/circulars/create', [AdminCircularController::class, 'create'])->name('circulars.create');

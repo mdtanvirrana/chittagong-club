@@ -203,6 +203,8 @@
         ['label' => 'Notices', 'route' => 'admin.notices.index', 'match' => 'admin.notices.*', 'icon' => 'campaign'],
         ['label' => 'Contacts', 'route' => 'admin.contacts.index', 'match' => 'admin.contacts.*', 'icon' => 'contacts'],
         ['label' => 'Affiliated Clubs', 'route' => 'admin.affiliated-clubs.index', 'match' => 'admin.affiliated-clubs.*', 'icon' => 'handshake'],
+        ['label' => 'Committee', 'route' => 'admin.committees.index', 'match' => 'admin.committees.*', 'icon' => 'groups'],
+        ['label' => 'Former Chairman', 'route' => 'admin.former-chairmen.index', 'match' => 'admin.former-chairmen.*', 'icon' => 'history_edu'],
         ['label' => 'Circulars', 'route' => 'admin.circulars.index', 'match' => 'admin.circulars.*', 'icon' => 'article'],
         ['label' => 'Upload Pictures', 'route' => 'admin.pictures.create', 'match' => 'admin.pictures.*', 'icon' => 'upload_file'],
         ['label' => 'Gallery', 'route' => 'admin.gallery.index', 'match' => 'admin.gallery.*', 'icon' => 'photo_library'],

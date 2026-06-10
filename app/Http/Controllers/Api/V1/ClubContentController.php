@@ -56,10 +56,11 @@ class ClubContentController extends Controller
     {
         $currentYear = (int) Carbon::now()->format('Y');
         $previousYear = $currentYear - 1;
+        $version = PortalCache::contentVersion('committee');
         [$page, $perPage] = $this->paginationParams($request);
 
         $members = collect(PortalCache::remember(
-            "api_committee_members_{$currentYear}_{$previousYear}_v1",
+            "api_committee_members_{$currentYear}_{$previousYear}_v2_{$version}",
             now()->addMinutes(30),
             function () use ($currentYear, $previousYear): array {
                 return DB::table('T_ORG_COMMITTEE as oc')
@@ -89,7 +90,8 @@ class ClubContentController extends Controller
                     ->get()
                     ->map(function (object $member): array {
                         $memberId = (string) $member->PrvCusID;
-                        $name = trim(($member->Title ? $member->Title.' ' : '').$member->CusName);
+                        $title = trim((string) $member->Title);
+                        $name = trim(($title !== '' ? $title.' ' : '').$member->CusName);
                         $words = preg_split('/\s+/', trim((string) $member->CusName)) ?: [];
 
                         return [
@@ -100,8 +102,8 @@ class ClubContentController extends Controller
                                 ->map(fn (string $word): string => strtoupper(mb_substr($word, 0, 1)))
                                 ->join(''),
                             'member_id' => $memberId,
-                            'designation' => (string) ($member->tx_designation ?? ''),
-                            'area' => (string) ($member->tx_area ?? ''),
+                            'designation' => trim((string) ($member->tx_designation ?? '')),
+                            'area' => trim((string) ($member->tx_area ?? '')),
                             'phone' => $member->Mobile ?: $member->Phone ?: null,
                             'year_from' => (int) $member->ct_from_year,
                             'year_to' => (int) $member->ct_to_year,
@@ -371,11 +373,13 @@ class ClubContentController extends Controller
     public function formerChairmen(Request $request): JsonResponse
     {
         [$page, $perPage] = $this->paginationParams($request);
-        $members = collect(PortalCache::remember('api_former_chairmen_v1', now()->addMinutes(30), function (): array {
+        $version = PortalCache::contentVersion('former-chairmen');
+
+        $members = collect(PortalCache::remember("api_former_chairmen_v2_{$version}", now()->addMinutes(30), function (): array {
             return DB::table('T_ORG_COMMITTEE as oc')
                 ->join('CustomerMst as c', 'oc.PrvcusID', '=', 'c.PrvCusID')
                 ->where('oc.is_active', 1)
-                ->whereRaw("LOWER(oc.tx_designation) LIKE 'chairman'")
+                ->whereRaw('LOWER(LTRIM(RTRIM(oc.tx_designation))) = ?', ['chairman'])
                 ->orderBy('oc.ct_from_year', 'desc')
                 ->orderBy('oc.id_serial', 'desc')
                 ->select([
@@ -394,7 +398,8 @@ class ClubContentController extends Controller
                 ->get()
                 ->map(function (object $member): array {
                     $memberId = (string) $member->PrvCusID;
-                    $name = trim(($member->Title ? $member->Title.' ' : '').$member->CusName);
+                    $title = trim((string) $member->Title);
+                    $name = trim(($title !== '' ? $title.' ' : '').$member->CusName);
                     $words = preg_split('/\s+/', trim((string) $member->CusName)) ?: [];
 
                     return [
@@ -405,8 +410,8 @@ class ClubContentController extends Controller
                             ->map(fn (string $word): string => strtoupper(mb_substr($word, 0, 1)))
                             ->join(''),
                         'member_id' => $memberId,
-                        'designation' => (string) ($member->tx_designation ?? ''),
-                        'area' => (string) ($member->tx_area ?? ''),
+                        'designation' => trim((string) ($member->tx_designation ?? '')),
+                        'area' => trim((string) ($member->tx_area ?? '')),
                         'phone' => $member->Mobile ?: $member->Phone ?: null,
                         'year_from' => (int) $member->ct_from_year,
                         'year_to' => (int) $member->ct_to_year,
