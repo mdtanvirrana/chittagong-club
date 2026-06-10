@@ -20,31 +20,38 @@ class AffiliatedClubController extends Controller
         $search = trim((string) $request->input('q', ''));
 
         $clubs = AffiliatedClub::query()
+            ->from('T_AFFILIATED_CLUBS as clubs')
+            ->leftJoin('ACountry as countries', function ($join) {
+                $join->on('clubs.Country', '=', 'countries.CID')
+                    ->orOn('clubs.Country', '=', 'countries.CName');
+            })
+            ->select('clubs.*', DB::raw('COALESCE(countries.CName, clubs.Country) as country_name'))
             ->when($search !== '', function ($query) use ($search) {
                 $like = '%' . $search . '%';
 
                 $query->where(function ($builder) use ($like) {
                     $builder
-                        ->whereRaw('LTRIM(RTRIM(COMPANY)) LIKE ?', [$like])
-                        ->orWhereRaw('LTRIM(RTRIM(BranchName)) LIKE ?', [$like])
-                        ->orWhereRaw('LTRIM(RTRIM(BranchAddress)) LIKE ?', [$like])
-                        ->orWhereRaw('LTRIM(RTRIM(HOAddress)) LIKE ?', [$like])
-                        ->orWhereRaw('LTRIM(RTRIM(BranchTel)) LIKE ?', [$like])
-                        ->orWhereRaw('LTRIM(RTRIM(HOTel)) LIKE ?', [$like])
-                        ->orWhereRaw('LTRIM(RTRIM(tx_mobile)) LIKE ?', [$like])
-                        ->orWhereRaw('LTRIM(RTRIM(tx_email)) LIKE ?', [$like])
-                        ->orWhereRaw('LTRIM(RTRIM(CEO)) LIKE ?', [$like]);
+                        ->whereRaw('LTRIM(RTRIM(clubs.COMPANY)) LIKE ?', [$like])
+                        ->orWhereRaw('LTRIM(RTRIM(clubs.Country)) LIKE ?', [$like])
+                        ->orWhereRaw('LTRIM(RTRIM(countries.CName)) LIKE ?', [$like])
+                        ->orWhereRaw('LTRIM(RTRIM(clubs.BranchName)) LIKE ?', [$like])
+                        ->orWhereRaw('LTRIM(RTRIM(clubs.BranchAddress)) LIKE ?', [$like])
+                        ->orWhereRaw('LTRIM(RTRIM(clubs.HOAddress)) LIKE ?', [$like])
+                        ->orWhereRaw('LTRIM(RTRIM(clubs.BranchTel)) LIKE ?', [$like])
+                        ->orWhereRaw('LTRIM(RTRIM(clubs.HOTel)) LIKE ?', [$like])
+                        ->orWhereRaw('LTRIM(RTRIM(clubs.tx_mobile)) LIKE ?', [$like])
+                        ->orWhereRaw('LTRIM(RTRIM(clubs.tx_email)) LIKE ?', [$like])
+                        ->orWhereRaw('LTRIM(RTRIM(clubs.CEO)) LIKE ?', [$like]);
                 });
             })
-            ->orderByRaw('CASE WHEN id_serial IS NULL THEN 1 ELSE 0 END')
-            ->orderBy('id_serial')
-            ->orderBy('COMPANY')
+            ->orderByRaw('CASE WHEN clubs.id_serial IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('clubs.id_serial')
+            ->orderBy('clubs.COMPANY')
             ->paginate(15)
             ->withQueryString();
 
         return view('admin.affiliated-clubs.index', compact('clubs', 'search'));
     }
-
     public function create()
     {
         return view('admin.affiliated-clubs.form', [
@@ -52,6 +59,7 @@ class AffiliatedClubController extends Controller
                 'id_serial' => ((int) (AffiliatedClub::query()->max('id_serial') ?? 0)) + 1,
                 'is_active' => true,
             ]),
+            'countries' => $this->countries(),
             'isEditing' => false,
         ]);
     }
@@ -60,10 +68,12 @@ class AffiliatedClubController extends Controller
     {
         DB::transaction(function () use ($request): void {
             $now = now();
-            $nextId = ((int) (AffiliatedClub::query()->lockForUpdate()->max('id_affiliated_club_key') ?? 0)) + 1;
+
+            $nextId = ((int) (AffiliatedClub::query()
+                    ->lockForUpdate()
+                    ->max('id_affiliated_club_key') ?? 0)) + 1;
 
             AffiliatedClub::query()->create([
-                'id_affiliated_club_key' => $nextId,
                 'id_affiliated_club_ver' => 1,
                 'is_active' => $request->boolean('is_active'),
                 'id_ds_env' => 100000,
@@ -76,7 +86,9 @@ class AffiliatedClubController extends Controller
                 'dtt_added' => $now,
                 'Edate' => $now->toDateString(),
                 'Etime' => $now->format('H:i:s'),
+
                 'id_serial' => (int) $request->input('serial'),
+                'Country' => $this->nullableInput($request->input('country')),
                 'COMPANY' => $this->nullableInput($request->input('company')),
                 'BranchName' => $this->nullableInput($request->input('branch_name')),
                 'BranchAddress' => $this->nullableInput($request->input('branch_address')),
@@ -90,22 +102,9 @@ class AffiliatedClubController extends Controller
                 'CEO' => $this->nullableInput($request->input('ceo')),
                 'VATREGISTRATION' => $this->nullableInput($request->input('vat_registration')),
                 'Shopid' => $this->nullableInput($request->input('shop_id')),
-                'Logo_Path' => $this->storeImage(
-                    $request,
-                    $nextId,
-                    null,
-                    'logo',
-                    'remove_logo',
-                    'affiliated-club-logo',
-                ),
-                'image_path' => $this->storeImage(
-                    $request,
-                    $nextId,
-                    null,
-                    'image',
-                    'remove_image',
-                    'affiliated-club-featured',
-                ),
+
+                'Logo_Path' => $this->storeImage($request, $nextId, null, 'logo', 'remove_logo', 'affiliated-club-logo'),
+                'image_path' => $this->storeImage($request, $nextId, null, 'image', 'remove_image', 'affiliated-club-featured'),
             ]);
         });
 
@@ -118,8 +117,13 @@ class AffiliatedClubController extends Controller
 
     public function edit(int $club)
     {
+        $clubRow = $this->findClub($club);
+
+        $clubRow->setAttribute('Country', $this->countryDisplayValue($clubRow->Country));
+
         return view('admin.affiliated-clubs.form', [
-            'club' => $this->findClub($club),
+            'club' => $clubRow,
+            'countries' => $this->countries(),
             'isEditing' => true,
         ]);
     }
@@ -129,11 +133,12 @@ class AffiliatedClubController extends Controller
         $clubRow = $this->findClub($club);
 
         $clubRow->fill([
-            'id_affiliated_club_ver' => max(1, (int) $clubRow->id_affiliated_club_ver) + 1,
             'is_active' => $request->boolean('is_active'),
             'dtt_mod' => now(),
             'id_user_mod' => $this->resolveAuditUserId(),
+
             'id_serial' => (int) $request->input('serial'),
+            'Country' => $this->nullableInput($request->input('country')),
             'COMPANY' => $this->nullableInput($request->input('company')),
             'BranchName' => $this->nullableInput($request->input('branch_name')),
             'BranchAddress' => $this->nullableInput($request->input('branch_address')),
@@ -147,22 +152,9 @@ class AffiliatedClubController extends Controller
             'CEO' => $this->nullableInput($request->input('ceo')),
             'VATREGISTRATION' => $this->nullableInput($request->input('vat_registration')),
             'Shopid' => $this->nullableInput($request->input('shop_id')),
-            'Logo_Path' => $this->storeImage(
-                $request,
-                (int) $clubRow->id_affiliated_club_key,
-                $clubRow->getAttribute('Logo_Path'),
-                'logo',
-                'remove_logo',
-                'affiliated-club-logo',
-            ),
-            'image_path' => $this->storeImage(
-                $request,
-                (int) $clubRow->id_affiliated_club_key,
-                $clubRow->getAttribute('image_path'),
-                'image',
-                'remove_image',
-                'affiliated-club-featured',
-            ),
+
+            'Logo_Path' => $this->storeImage($request, (int) $clubRow->id_affiliated_club_key, $clubRow->getAttribute('Logo_Path'), 'logo', 'remove_logo', 'affiliated-club-logo'),
+            'image_path' => $this->storeImage($request, (int) $clubRow->id_affiliated_club_key, $clubRow->getAttribute('image_path'), 'image', 'remove_image', 'affiliated-club-featured'),
         ])->save();
 
         PortalCache::clearAffiliatedClubCaches();
@@ -178,6 +170,7 @@ class AffiliatedClubController extends Controller
 
         $this->deleteManagedImage($clubRow->getAttribute('Logo_Path'));
         $this->deleteManagedImage($clubRow->getAttribute('image_path'));
+
         $clubRow->delete();
 
         PortalCache::clearAffiliatedClubCaches();
@@ -185,6 +178,31 @@ class AffiliatedClubController extends Controller
         return redirect()
             ->route('admin.affiliated-clubs.index')
             ->with('status', 'Affiliated club deleted successfully.');
+    }
+
+    private function countries()
+    {
+        return DB::table('ACountry')
+            ->whereNotNull('CName')
+            ->whereRaw("LTRIM(RTRIM(CName)) <> ''")
+            ->orderBy('CName')
+            ->get(['CID', 'CName']);
+    }
+
+    private function countryDisplayValue(mixed $country): ?string
+    {
+        $value = $this->nullableInput($country);
+
+        if (! $value) {
+            return null;
+        }
+
+        $matchedCountry = DB::table('ACountry')
+            ->where('CID', $value)
+            ->orWhere('CName', $value)
+            ->value('CName');
+
+        return $matchedCountry ?: $value;
     }
 
     private function findClub(int $clubId): AffiliatedClub
@@ -213,8 +231,7 @@ class AffiliatedClubController extends Controller
         string $fileKey = 'image',
         string $removeKey = 'remove_image',
         string $filenamePrefix = 'affiliated-club',
-    ): ?string
-    {
+    ): ?string {
         if ($request->boolean($removeKey) && ! $request->hasFile($fileKey)) {
             $this->deleteManagedImage($currentPath);
 
