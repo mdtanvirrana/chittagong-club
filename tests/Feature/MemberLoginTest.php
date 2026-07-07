@@ -1,0 +1,531 @@
+<?php
+
+use App\Support\MemberSession;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+
+test('member can sign in with an active customer record and Users_App credentials', function () {
+    $memberLookup = \Mockery::mock();
+    $credentialLookup = \Mockery::mock();
+    $log = \Mockery::mock();
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('CustomerMst as c')
+        ->andReturn($memberLookup);
+
+    $memberLookup->shouldReceive('join')
+        ->once()
+        ->with('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.CardID')
+        ->andReturnSelf();
+    $memberLookup->shouldReceive('where')
+        ->once()
+        ->with('cc.GM', 'M')
+        ->andReturnSelf();
+    $memberLookup->shouldReceive('where')
+        ->once()
+        ->with('c.MemExpTypeID', 100)
+        ->andReturnSelf();
+    $memberLookup->shouldReceive('where')
+        ->once()
+        ->with('c.PrvCusID', 'CCL-1001')
+        ->andReturnSelf();
+    $memberLookup->shouldReceive('select')
+        ->once()
+        ->with(['c.PrvCusID', 'c.Title', 'c.CusName', 'c.Mobile', 'c.Phone'])
+        ->andReturnSelf();
+    $memberLookup->shouldReceive('first')
+        ->once()
+        ->andReturn((object) [
+            'PrvCusID' => 'CCL-1001',
+            'Title' => 'Mr.',
+            'CusName' => 'Test Member',
+            'Mobile' => '01711111111',
+            'Phone' => null,
+        ]);
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('Users_App')
+        ->andReturn($credentialLookup);
+
+    $credentialLookup->shouldReceive('where')
+        ->once()
+        ->with('PrvcusID', 'CCL-1001')
+        ->andReturnSelf();
+    $credentialLookup->shouldReceive('first')
+        ->once()
+        ->with(['Password', 'is_admin'])
+        ->andReturn((object) [
+            'Password' => md5('secret123'),
+            'is_admin' => 0,
+        ]);
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('UsersLog')
+        ->andReturn($log);
+
+    $log->shouldReceive('insert')
+        ->once()
+        ->with(\Mockery::on(function (array $values): bool {
+            return $values['PrvcusID'] === 'CCL-1001'
+                && $values['Status'] === 'Login'
+                && isset($values['EDate'], $values['ETime'], $values['eIP']);
+        }))
+        ->andReturnTrue();
+
+    $response = $this->from(route('login'))->post(route('login.post'), [
+        'member_id' => 'CCL-1001',
+        'password' => 'secret123',
+    ]);
+
+    $response
+        ->assertRedirect(route('dashboard'))
+        ->assertSessionHas(MemberSession::KEY, fn ($member) => data_get($member, 'id') === 'CCL-1001'
+            && data_get($member, 'name') === 'Mr. Test Member');
+});
+
+test('member login fails when Users_App credentials do not match', function () {
+    $memberLookup = \Mockery::mock();
+    $credentialLookup = \Mockery::mock();
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('CustomerMst as c')
+        ->andReturn($memberLookup);
+
+    $memberLookup->shouldReceive('join')
+        ->once()
+        ->with('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.CardID')
+        ->andReturnSelf();
+    $memberLookup->shouldReceive('where')
+        ->once()
+        ->with('cc.GM', 'M')
+        ->andReturnSelf();
+    $memberLookup->shouldReceive('where')
+        ->once()
+        ->with('c.MemExpTypeID', 100)
+        ->andReturnSelf();
+    $memberLookup->shouldReceive('where')
+        ->once()
+        ->with('c.PrvCusID', 'CCL-1002')
+        ->andReturnSelf();
+    $memberLookup->shouldReceive('select')
+        ->once()
+        ->with(['c.PrvCusID', 'c.Title', 'c.CusName', 'c.Mobile', 'c.Phone'])
+        ->andReturnSelf();
+    $memberLookup->shouldReceive('first')
+        ->once()
+        ->andReturn((object) [
+            'PrvCusID' => 'CCL-1002',
+            'Title' => '',
+            'CusName' => 'Test Member',
+            'Mobile' => '01712222222',
+            'Phone' => null,
+        ]);
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('Users_App')
+        ->andReturn($credentialLookup);
+
+    $credentialLookup->shouldReceive('where')
+        ->once()
+        ->with('PrvcusID', 'CCL-1002')
+        ->andReturnSelf();
+    $credentialLookup->shouldReceive('first')
+        ->once()
+        ->with(['Password', 'is_admin'])
+        ->andReturn((object) [
+            'Password' => md5('different-pass'),
+            'is_admin' => 0,
+        ]);
+
+    $response = $this->from(route('login'))->post(route('login.post'), [
+        'member_id' => 'CCL-1002',
+        'password' => 'wrong-pass',
+    ]);
+
+    $response
+        ->assertRedirect(route('login'))
+        ->assertSessionHasErrors([
+            'member_id' => 'Invalid Membership ID or password.',
+        ]);
+});
+
+test('member login fails with invalid credentials when no password exists', function () {
+    $memberLookup = \Mockery::mock();
+    $credentialLookup = \Mockery::mock();
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('CustomerMst as c')
+        ->andReturn($memberLookup);
+
+    $memberLookup->shouldReceive('join')
+        ->once()
+        ->with('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.CardID')
+        ->andReturnSelf();
+    $memberLookup->shouldReceive('where')
+        ->once()
+        ->with('cc.GM', 'M')
+        ->andReturnSelf();
+    $memberLookup->shouldReceive('where')
+        ->once()
+        ->with('c.MemExpTypeID', 100)
+        ->andReturnSelf();
+    $memberLookup->shouldReceive('where')
+        ->once()
+        ->with('c.PrvCusID', 'CCL-1003')
+        ->andReturnSelf();
+    $memberLookup->shouldReceive('select')
+        ->once()
+        ->with(['c.PrvCusID', 'c.Title', 'c.CusName', 'c.Mobile', 'c.Phone'])
+        ->andReturnSelf();
+    $memberLookup->shouldReceive('first')
+        ->once()
+        ->andReturn((object) [
+            'PrvCusID' => 'CCL-1003',
+            'Title' => '',
+            'CusName' => 'No Password Member',
+            'Mobile' => '01711721053',
+            'Phone' => null,
+        ]);
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('Users_App')
+        ->andReturn($credentialLookup);
+
+    $credentialLookup->shouldReceive('where')
+        ->once()
+        ->with('PrvcusID', 'CCL-1003')
+        ->andReturnSelf();
+    $credentialLookup->shouldReceive('first')
+        ->once()
+        ->with(['Password', 'is_admin'])
+        ->andReturnNull();
+
+    $response = $this->from(route('login'))->post(route('login.post'), [
+        'member_id' => 'CCL-1003',
+        'password' => 'anything',
+    ]);
+
+    $response
+        ->assertRedirect(route('login'))
+        ->assertSessionHasErrors([
+            'member_id' => 'Invalid Membership ID or password.',
+        ])
+        ->assertSessionMissing('member_initial_password_setup');
+});
+
+test('member can create a first-time password through sms otp verification', function () {
+    $sendMemberLookup = \Mockery::mock();
+    $sendCredentialLookup = \Mockery::mock();
+    $profileLookup = \Mockery::mock();
+    $otpInsert = \Mockery::mock();
+    $otpSendUpdate = \Mockery::mock();
+    $otpLookup = \Mockery::mock();
+    $otpVerifyUpdate = \Mockery::mock();
+    $storeMemberLookup = \Mockery::mock();
+    $storeCredentialLookup = \Mockery::mock();
+    $changeCredentialLookup = \Mockery::mock();
+    $passwordHistory = \Mockery::mock();
+    $credentialSave = \Mockery::mock();
+    $otpUseUpdate = \Mockery::mock();
+    $capturedMessage = null;
+    $successBody = 'SMS SUBMITTED: ID - 12345';
+
+    Http::fake(function ($request) use (&$capturedMessage, $successBody) {
+        $capturedMessage = $request->data()['msg'] ?? null;
+        expect($request->data()['api_key'] ?? null)->toBe('sms-api-key');
+        expect($request->data()['type'] ?? null)->toBe('text');
+        expect($request->data()['senderid'] ?? null)->toBe('8809601019288');
+        expect($request->data()['contacts'] ?? null)->toBe('8801711721053');
+        expect(isset($request->data()['submit']))->toBeFalse();
+
+        return Http::response($successBody);
+    });
+
+    Config::set('services.robi_sms.url', 'https://msg.example.test/smsapi');
+    Config::set('services.robi_sms.api_key', 'sms-api-key');
+    Config::set('services.robi_sms.type', 'text');
+    Config::set('services.robi_sms.sender_id', '8809601019288');
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('CustomerMst as c')
+        ->andReturn($sendMemberLookup);
+
+    $sendMemberLookup->shouldReceive('join')
+        ->once()
+        ->with('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.CardID')
+        ->andReturnSelf();
+    $sendMemberLookup->shouldReceive('where')
+        ->once()
+        ->with('cc.GM', 'M')
+        ->andReturnSelf();
+    $sendMemberLookup->shouldReceive('where')
+        ->once()
+        ->with('c.MemExpTypeID', 100)
+        ->andReturnSelf();
+    $sendMemberLookup->shouldReceive('where')
+        ->once()
+        ->with('c.PrvCusID', 'CCL-1003')
+        ->andReturnSelf();
+    $sendMemberLookup->shouldReceive('select')
+        ->once()
+        ->with(['c.PrvCusID', 'c.Title', 'c.CusName', 'c.Mobile', 'c.Phone'])
+        ->andReturnSelf();
+    $sendMemberLookup->shouldReceive('first')
+        ->once()
+        ->andReturn((object) [
+            'PrvCusID' => 'CCL-1003',
+            'Title' => '',
+            'CusName' => 'No Password Member',
+            'Mobile' => '01711721053',
+            'Phone' => null,
+        ]);
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('Users_App')
+        ->andReturn($sendCredentialLookup);
+
+    $sendCredentialLookup->shouldReceive('where')
+        ->once()
+        ->with('PrvcusID', 'CCL-1003')
+        ->andReturnSelf();
+    $sendCredentialLookup->shouldReceive('first')
+        ->once()
+        ->with(['Password', 'is_admin'])
+        ->andReturnNull();
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('CPROFILE')
+        ->andReturn($profileLookup);
+
+    $profileLookup->shouldReceive('first')
+        ->once()
+        ->andReturn((object) [
+            'BranchName' => 'CCL',
+            'CompanyName' => 'Chittagong Club Ltd.',
+        ]);
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('SMSSend_OTP')
+        ->andReturn($otpInsert);
+
+    $otpInsert->shouldReceive('insertGetId')
+        ->once()
+        ->with(\Mockery::on(function (array $values): bool {
+            return $values['PrvcusID'] === 'CCL-1003'
+                && $values['Mobile'] === '8801711721053'
+                && is_int($values['OTP'])
+                && preg_match('/^CCL Apps login OTP is \d{6}, Valid for 5 minutes\. Chittagong Club Ltd\.$/', $values['SMSText']) === 1
+                && $values['Status'] === 'PENDING'
+                && $values['Note'] === 'new'
+                && isset($values['SDate'], $values['STime'], $values['EDate'], $values['ETime']);
+        }))
+        ->andReturn(701);
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('SMSSend_OTP')
+        ->andReturn($otpSendUpdate);
+
+    $otpSendUpdate->shouldReceive('where')
+        ->once()
+        ->with('id_otp', 701)
+        ->andReturnSelf();
+    $otpSendUpdate->shouldReceive('update')
+        ->once()
+        ->with(\Mockery::on(function (array $values): bool {
+            return $values['Status'] === 'SENT'
+                && isset($values['EDate'], $values['ETime']);
+        }))
+        ->andReturn(1);
+
+    $sendResponse = $this
+        ->from(route('password.initial.create'))
+        ->post(route('password.initial.send'), [
+            'member_id' => 'CCL-1003',
+        ]);
+
+    preg_match('/(\d{6})/', (string) $capturedMessage, $matches);
+    $otp = $matches[1] ?? null;
+
+    expect($otp)->not->toBeNull();
+
+    $sendResponse
+        ->assertRedirect(route('password.initial.create'))
+        ->assertSessionHas('member_initial_password_setup.member_id', 'CCL-1003')
+        ->assertSessionHas('member_initial_password_setup.member_name', 'No Password Member')
+        ->assertSessionHas('member_initial_password_setup.phone.e164_digits', '8801711721053')
+        ->assertSessionHas('member_initial_password_setup.otp_id', 701)
+        ->assertSessionHas('password_setup_status', 'We sent a 6-digit code to +880 17*****053.');
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('SMSSend_OTP')
+        ->andReturn($otpLookup);
+
+    $otpLookup->shouldReceive('where')
+        ->once()
+        ->with('id_otp', 701)
+        ->andReturnSelf();
+    $otpLookup->shouldReceive('first')
+        ->once()
+        ->andReturn((object) [
+            'id_otp' => 701,
+            'PrvcusID' => 'CCL-1003',
+            'Mobile' => '8801711721053',
+            'OTP' => (int) $otp,
+            'Status' => 'SENT',
+            'Note' => 'new',
+        ]);
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('SMSSend_OTP')
+        ->andReturn($otpVerifyUpdate);
+
+    $otpVerifyUpdate->shouldReceive('where')
+        ->once()
+        ->with('id_otp', 701)
+        ->andReturnSelf();
+    $otpVerifyUpdate->shouldReceive('update')
+        ->once()
+        ->with(\Mockery::on(function (array $values): bool {
+            return $values['Status'] === 'VERIFIED'
+                && isset($values['EDate'], $values['ETime']);
+        }))
+        ->andReturn(1);
+
+    $verifyResponse = $this
+        ->withSession(app('session.store')->all())
+        ->post(route('password.initial.verify.store'), [
+            'code' => $otp,
+        ]);
+
+    $verifyResponse
+        ->assertRedirect(route('password.initial.create'))
+        ->assertSessionHas('password_setup_status', 'OTP confirmed. Set your new password now.');
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('CustomerMst as c')
+        ->andReturn($storeMemberLookup);
+
+    $storeMemberLookup->shouldReceive('join')
+        ->once()
+        ->with('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.CardID')
+        ->andReturnSelf();
+    $storeMemberLookup->shouldReceive('where')
+        ->once()
+        ->with('cc.GM', 'M')
+        ->andReturnSelf();
+    $storeMemberLookup->shouldReceive('where')
+        ->once()
+        ->with('c.MemExpTypeID', 100)
+        ->andReturnSelf();
+    $storeMemberLookup->shouldReceive('where')
+        ->once()
+        ->with('c.PrvCusID', 'CCL-1003')
+        ->andReturnSelf();
+    $storeMemberLookup->shouldReceive('exists')
+        ->once()
+        ->andReturnTrue();
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('Users_App')
+        ->andReturn($storeCredentialLookup);
+
+    $storeCredentialLookup->shouldReceive('where')
+        ->once()
+        ->with('PrvcusID', 'CCL-1003')
+        ->andReturnSelf();
+    $storeCredentialLookup->shouldReceive('first')
+        ->once()
+        ->with(['Password', 'is_admin'])
+        ->andReturnNull();
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('Users_App')
+        ->andReturn($changeCredentialLookup);
+
+    $changeCredentialLookup->shouldReceive('where')
+        ->once()
+        ->with('PrvcusID', 'CCL-1003')
+        ->andReturnSelf();
+    $changeCredentialLookup->shouldReceive('first')
+        ->once()
+        ->with(['Password', 'is_admin'])
+        ->andReturnNull();
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('Users_App_Pass')
+        ->andReturn($passwordHistory);
+
+    $passwordHistory->shouldReceive('insert')
+        ->once()
+        ->with(\Mockery::on(function (array $values): bool {
+            return $values['PrvcusID'] === 'CCL-1003'
+                && $values['NewPass'] === md5('first-pass-123')
+                && $values['ConPass'] === md5('first-pass-123')
+                && $values['Note'] === 'new'
+                && isset($values['EDate'], $values['ETime']);
+        }))
+        ->andReturnTrue();
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('Users_App')
+        ->andReturn($credentialSave);
+
+    $credentialSave->shouldReceive('updateOrInsert')
+        ->once()
+        ->with(
+            ['PrvcusID' => 'CCL-1003'],
+            \Mockery::on(function (array $values): bool {
+                return $values['Password'] === md5('first-pass-123')
+                    && isset($values['LastUpdateDate'], $values['LastUpdateTime']);
+            })
+        )
+        ->andReturnTrue();
+
+    DB::shouldReceive('table')
+        ->once()
+        ->with('SMSSend_OTP')
+        ->andReturn($otpUseUpdate);
+
+    $otpUseUpdate->shouldReceive('where')
+        ->once()
+        ->with('id_otp', 701)
+        ->andReturnSelf();
+    $otpUseUpdate->shouldReceive('update')
+        ->once()
+        ->with(\Mockery::on(function (array $values): bool {
+            return $values['Status'] === 'USED'
+                && isset($values['EDate'], $values['ETime']);
+        }))
+        ->andReturn(1);
+
+    $response = $this
+        ->withSession(app('session.store')->all())
+        ->post(route('password.initial.store'), [
+            'password' => 'first-pass-123',
+            'password_confirmation' => 'first-pass-123',
+        ]);
+
+    $response
+        ->assertRedirect(route('login'))
+        ->assertSessionHas('password_reset_status', 'Password created successfully. Sign in with your new password.');
+});

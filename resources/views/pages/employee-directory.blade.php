@@ -1,13 +1,14 @@
-@extends('layouts.app')
-@section('title', 'Employee Directory — Chittagong Club Ltd.')
+@extends('layouts.userpanel')
+@section('page_title', 'Employee Directory')
 @section('show_nav', true)
 
-@section('content')
+@section('userpanel_content')
 <div
     x-data="{
         search: '',
         activeBranch: 'All',
         activeEmp: null,
+        previewEmp: null,
         employees: {{ json_encode($employees) }},
         grouped: {{ json_encode($grouped) }},
 
@@ -37,29 +38,38 @@
             return this.grouped;
         },
 
+        get previewOpen() {
+            return this.previewEmp !== null;
+        },
+
         open(emp) { this.activeEmp = emp; },
-        close() { this.activeEmp = null; }
+        close() { this.activeEmp = null; },
+        openPreview(emp) {
+            if (! emp || ! emp.has_photo) {
+                return;
+            }
+
+            this.previewEmp = emp;
+        },
+        closePreview() {
+            this.previewEmp = null;
+        },
+        handleEscape() {
+            if (this.previewOpen) {
+                this.closePreview();
+                return;
+            }
+
+            this.close();
+        }
     }"
-    @keydown.escape.window="close()"
+    @keydown.escape.window="handleEscape()"
     class="flex flex-col min-h-screen pb-24"
 >
 
     {{-- Header --}}
-    <header class="sticky top-0 z-50 bg-brand-blue/90 ios-blur border-b border-white/10 px-4 pt-12 pb-4 space-y-3">
-        <div class="flex items-center justify-between">
-            <a href="{{ route('dashboard') }}"
-               class="flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-                <span class="material-symbols-outlined text-white">arrow_back_ios</span>
-            </a>
-            <div class="text-center">
-                <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Chittagong Club Ltd</p>
-                <h1 class="text-white text-lg font-bold">Employee Directory</h1>
-            </div>
-            <div class="size-10"></div>
-        </div>
-
-        {{-- Search --}}
-        <div class="relative">
+    <header class="userpanel-subheader bg-primary/5 pb-5 p-4 sticky top-0 z-50 rounded-b-xl shadow-lg">
+        <div class="relative pb-2">
             <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                 <span class="material-symbols-outlined text-white/40 text-xl">search</span>
             </div>
@@ -93,10 +103,8 @@
 
     {{-- Stats bar --}}
     <div class="px-4 py-3 flex items-center justify-between">
-        <p class="text-white/40 text-sm">
-            <span class="text-primary font-bold" x-text="filtered.length"></span> employees
-        </p>
-        <p class="text-white/25 text-xs">{{ $employees->count() }} total active</p>
+       <p></p>
+        <p class="text-white/40 text-sm"><span class="text-primary font-bold" x-text="filtered.length"></span> employees</p>
     </div>
 
     {{-- ── Grouped view (default) ──────────────────────── --}}
@@ -116,14 +124,30 @@
                 {{-- Employee cards --}}
                 <div class="space-y-2">
                     <template x-for="emp in group.members" :key="emp.id">
-                        <button
+                        <div
                             @click="open(emp)"
-                            class="w-full flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-3 text-left active:scale-[0.98] transition-transform"
+                            @keydown.enter.prevent="open(emp)"
+                            @keydown.space.prevent="open(emp)"
+                            role="button"
+                            tabindex="0"
+                            class="w-full flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-3 text-left active:scale-[0.98] transition-transform cursor-pointer"
                         >
                             {{-- Avatar --}}
-                            <div class="shrink-0 size-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                                <span class="text-primary font-extrabold text-sm" x-text="emp.initials"></span>
-                            </div>
+                            <button
+                                type="button"
+                                @click.stop="openPreview(emp)"
+                                class="shrink-0 size-11 rounded-xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center"
+                                :class="emp.has_photo ? 'active:scale-95 transition-transform' : 'cursor-default'"
+                                :aria-label="'Preview ' + emp.name + ' profile picture'"
+                            >
+                                <img
+                                    :src="emp.has_photo ? emp.photo_url : null"
+                                    :alt="emp.name + ' photo'"
+                                    class="member-avatar-photo"
+                                    x-show="emp.has_photo"
+                                >
+                                <span class="text-primary font-extrabold text-sm" x-show="!emp.has_photo" x-text="emp.initials"></span>
+                            </button>
 
                             {{-- Info --}}
                             <div class="flex-1 min-w-0">
@@ -151,7 +175,7 @@
                                     <span class="material-symbols-outlined text-white/15 text-base">phone_disabled</span>
                                 </div>
                             </template>
-                        </button>
+                        </div>
                     </template>
                 </div>
             </div>
@@ -161,13 +185,29 @@
     {{-- ── Flat filtered view (search / branch filter active) ── --}}
     <div x-show="filteredGrouped === null" class="px-4 space-y-2 pb-4">
         <template x-for="emp in filtered" :key="emp.id">
-            <button
+            <div
                 @click="open(emp)"
-                class="w-full flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-3 text-left active:scale-[0.98] transition-transform"
+                @keydown.enter.prevent="open(emp)"
+                @keydown.space.prevent="open(emp)"
+                role="button"
+                tabindex="0"
+                class="w-full flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-3 text-left active:scale-[0.98] transition-transform cursor-pointer"
             >
-                <div class="shrink-0 size-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                    <span class="text-primary font-extrabold text-sm" x-text="emp.initials"></span>
-                </div>
+                <button
+                    type="button"
+                    @click.stop="openPreview(emp)"
+                    class="shrink-0 size-11 rounded-xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center"
+                    :class="emp.has_photo ? 'active:scale-95 transition-transform' : 'cursor-default'"
+                    :aria-label="'Preview ' + emp.name + ' profile picture'"
+                >
+                    <img
+                        :src="emp.has_photo ? emp.photo_url : null"
+                        :alt="emp.name + ' photo'"
+                        class="member-avatar-photo"
+                        x-show="emp.has_photo"
+                    >
+                    <span class="text-primary font-extrabold text-sm" x-show="!emp.has_photo" x-text="emp.initials"></span>
+                </button>
                 <div class="flex-1 min-w-0">
                     <p class="text-white font-bold text-sm leading-tight truncate" x-text="emp.name"></p>
                     <p class="text-primary/70 text-xs truncate" x-text="emp.desig"></p>
@@ -188,7 +228,7 @@
                         <span class="material-symbols-outlined text-white/15 text-base">phone_disabled</span>
                     </div>
                 </template>
-            </button>
+            </div>
         </template>
 
         {{-- Empty --}}
@@ -203,19 +243,19 @@
 
     {{-- ── Detail Modal ─────────────────────────────────── --}}
     <template x-if="activeEmp !== null">
-        <div class="fixed inset-0 z-[100] flex items-end justify-center">
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
 
-            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="close()"></div>
+            <div class="member-modal-backdrop absolute inset-0 bg-black/60" @click="close()"></div>
 
             <div
-                class="relative w-full max-w-[425px] bg-[#0a3d62] rounded-t-3xl border-t border-white/10 flex flex-col"
+                class="member-modal-surface relative w-full max-w-[425px] rounded-3xl border border-white/10 flex flex-col"
                 style="max-height: 80dvh;"
                 x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="transform translate-y-full"
-                x-transition:enter-end="transform translate-y-0"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
                 x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="transform translate-y-0"
-                x-transition:leave-end="transform translate-y-full"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
             >
                 {{-- Handle --}}
                 <div class="flex justify-center pt-3 pb-2 shrink-0">
@@ -226,9 +266,21 @@
                 <div class="px-5 pb-4 border-b border-white/10 shrink-0">
                     <div class="flex items-center gap-4">
                         {{-- Large avatar --}}
-                        <div class="shrink-0 size-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                            <span class="text-primary font-extrabold text-2xl" x-text="activeEmp.initials"></span>
-                        </div>
+                        <button
+                            type="button"
+                            @click.stop="openPreview(activeEmp)"
+                            class="shrink-0 size-16 rounded-2xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center"
+                            :class="activeEmp.has_photo ? 'active:scale-95 transition-transform' : 'cursor-default'"
+                            :aria-label="'Preview ' + activeEmp.name + ' profile picture'"
+                        >
+                            <img
+                                :src="activeEmp.has_photo ? activeEmp.photo_url : null"
+                                :alt="activeEmp.name + ' photo'"
+                                class="member-avatar-photo"
+                                x-show="activeEmp.has_photo"
+                            >
+                            <span class="text-primary font-extrabold text-2xl" x-show="!activeEmp.has_photo" x-text="activeEmp.initials"></span>
+                        </button>
                         <div class="flex-1 min-w-0">
                             <p class="text-white font-extrabold text-base leading-tight" x-text="activeEmp.name"></p>
                             <p class="text-primary text-sm font-semibold mt-0.5" x-text="activeEmp.desig"></p>
@@ -303,6 +355,37 @@
             </div>
         </div>
     </template>
+
+    <div x-show="previewOpen"
+         x-transition.opacity
+         class="fixed inset-0 z-[120] flex items-center justify-center p-4"
+         style="display: none;">
+        <button type="button"
+                @click="closePreview()"
+                class="absolute inset-0 bg-slate-950/35"
+                aria-label="Close image preview"></button>
+
+        <div class="relative w-full max-w-sm">
+            <button type="button"
+                    @click="closePreview()"
+                    class="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full border border-white/10 bg-slate-950/25 text-white">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <div class="member-modal-surface rounded-[2rem] border border-white/10 p-4 shadow-2xl">
+                <div class="aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-primary/20 bg-white/5">
+                    <img :src="previewEmp ? previewEmp.photo_url : null"
+                         :alt="previewEmp ? previewEmp.name + ' full-size profile picture' : 'Profile picture preview'"
+                         class="member-avatar-photo member-avatar-photo-preview">
+                </div>
+
+                <div class="pt-4 text-center">
+                    <p class="text-white text-base font-bold" x-text="previewEmp ? previewEmp.name : ''"></p>
+                    <p class="mt-1 text-xs text-white/40" x-text="previewEmp ? 'Employee ID: ' + previewEmp.id : ''"></p>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </div>
 @endsection

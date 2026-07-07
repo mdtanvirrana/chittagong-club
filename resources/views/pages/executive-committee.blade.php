@@ -1,22 +1,10 @@
-@extends('layouts.app')
-@section('title', 'Chittagong Club Limited – Executive Committee')
+@extends('layouts.userpanel')
+@section('page_title', 'Executive Committee')
 @section('show_nav', true)
 
-@section('content')
+@section('userpanel_content')
 <div class="flex flex-col min-h-screen pb-24">
 
-    {{-- Sticky Header --}}
-    <header class="sticky top-0 z-50 bg-brand-blue/90 ios-blur flex items-center px-4 pt-12 pb-4 justify-between border-b border-white/10">
-        <a href="{{ route('dashboard') }}"
-           class="text-white flex size-10 items-center justify-center rounded-full hover:bg-white/10 cursor-pointer">
-            <span class="material-symbols-outlined">arrow_back_ios_new</span>
-        </a>
-        <div class="text-center">
-            <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Chittagong Club Ltd</p>
-            <h1 class="text-white text-lg font-bold">Chittagong Club Limited – Executive Committee</h1>
-        </div>
-        <div class="size-10"></div>
-    </header>
 
     <main class="flex flex-col gap-6 p-4 pb-8">
 
@@ -54,9 +42,7 @@
         {{-- Avatar: Shrink-0 prevents the image from squishing --}}
         <div class="shrink-0 size-14 sm:size-16 rounded-xl overflow-hidden border border-primary/20">
             @if ($m['has_photo'])
-                <div class="size-full bg-center bg-cover"
-                     style="background-image: url('{{ asset('images/' . $m['member_id'] . '.jpg') }}')">
-                </div>
+                <img src="{{ $m['photo_url'] }}" alt="{{ $m['name'] }}" class="member-avatar-photo">
             @else
                 <div class="size-full bg-primary/10 flex items-center justify-center">
                     <span class="text-primary font-extrabold text-base">{{ $m['initials'] }}</span>
@@ -115,7 +101,7 @@
         {{-- Footer --}}
         <div class="mt-4 flex flex-col items-center text-center opacity-40 px-8">
             <span class="material-symbols-outlined text-2xl mb-2 text-primary">verified_user</span>
-            <p class="text-xs italic">Upholding the prestige and legacy of Chittagong Club Ltd </p>
+            <p class="text-xs italic">Upholding the prestige and legacy of {{ $companyName }}</p>
         </div>
 
     </main>

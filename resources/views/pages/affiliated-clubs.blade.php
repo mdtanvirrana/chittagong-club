@@ -1,21 +1,38 @@
-@extends('layouts.app')
-@section('title', 'Affiliated Clubs — Chittagong Club Ltd.')
+@extends('layouts.userpanel')
+@section('page_title', 'Affiliated Clubs')
 @section('show_nav', true)
 
-@section('content')
+@section('userpanel_content')
 <div
     x-data="{
         search: '',
         activeClub: null,
-        clubs: {{ json_encode($clubs) }},
+        clubs: @js($clubs),
 
         get filtered() {
             if (!this.search) return this.clubs;
             const q = this.search.toLowerCase();
             return this.clubs.filter(c =>
                 c.name.toLowerCase().includes(q) ||
-                (c.address && c.address.toLowerCase().includes(q))
+                (c.country && c.country.toLowerCase().includes(q)) ||
+                (c.address && c.address.toLowerCase().includes(q)) ||
+                (c.ho_address && c.ho_address.toLowerCase().includes(q))
             );
+        },
+        get filteredGroups() {
+            const groups = new Map();
+
+            this.filtered.forEach((club) => {
+                const country = club.country || 'Country not set';
+
+                if (!groups.has(country)) {
+                    groups.set(country, []);
+                }
+
+                groups.get(country).push(club);
+            });
+
+            return Array.from(groups, ([country, clubs]) => ({ country, clubs }));
         },
         open(club) { this.activeClub = club; },
         close() { this.activeClub = null; }
@@ -25,19 +42,7 @@
 >
 
     {{-- Header --}}
-    <header class="sticky top-0 z-50 bg-brand-blue/90 ios-blur border-b border-white/10 px-4 pt-12 pb-4">
-        <div class="flex items-center justify-between mb-4">
-            <a href="{{ route('dashboard') }}"
-               class="flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-                <span class="material-symbols-outlined text-white">arrow_back_ios</span>
-            </a>
-            <div class="text-center">
-                <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Chittagong Club Ltd</p>
-                <h1 class="text-white text-lg font-bold">Affiliated Clubs</h1>
-            </div>
-            <div class="size-10"></div>
-        </div>
-
+    <header class="userpanel-subheader bg-primary/5 pb-5 p-4 sticky top-0 z-50 rounded-b-xl shadow-lg">
         {{-- Search --}}
         <div class="relative">
             <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
@@ -59,46 +64,60 @@
 
     {{-- Count --}}
     <div class="px-4 py-3 flex items-center justify-between">
+        <p class="text-white/25 text-xs"></p>
         <p class="text-white/40 text-sm">
             <span class="text-primary font-bold" x-text="filtered.length"></span> clubs
         </p>
-        <p class="text-white/25 text-xs">Total: {{ count($clubs) }}</p>
+
     </div>
 
     {{-- Club list --}}
-    <main class="px-4 space-y-3">
+    <main class="px-4 space-y-5">
 
-        <template x-for="club in filtered" :key="club.id">
-            <button
-                @click="open(club)"
-                class="w-full flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl p-4 text-left active:scale-[0.98] transition-transform"
-            >
-                {{-- Avatar / placeholder --}}
-                <div class="shrink-0 size-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
-                    {{-- swap with <img> once images are available --}}
-                    <span class="text-primary font-extrabold text-lg" x-text="club.initials"></span>
+        <template x-for="group in filteredGroups" :key="group.country">
+            <section class="space-y-3">
+                <div class="flex items-center justify-between px-1">
+                    <h2 class="text-white/75 text-[11px] font-extrabold uppercase tracking-[0.18em]" x-text="group.country"></h2>
+                    <span class="text-white/30 text-xs" x-text="group.clubs.length + (group.clubs.length === 1 ? ' club' : ' clubs')"></span>
                 </div>
 
-                {{-- Info --}}
-                <div class="flex-1 min-w-0">
-                    <p class="text-white font-bold text-sm leading-tight line-clamp-1" x-text="club.name"></p>
-                    <p class="text-white/40 text-xs mt-0.5 line-clamp-2 leading-relaxed" x-text="club.address || 'Address not available'"></p>
-                </div>
+                <template x-for="club in group.clubs" :key="club.id">
+                    <button
+                        @click="open(club)"
+                        class="w-full flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl p-4 text-left active:scale-[0.98] transition-transform"
+                    >
+                        {{-- Avatar / placeholder --}}
+                        <div class="shrink-0 size-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
+                            <template x-if="club.logo_url">
+                                <img :src="club.logo_url" :alt="club.name" class="h-full w-full object-cover">
+                            </template>
+                            <template x-if="!club.logo_url">
+                                <span class="text-primary font-extrabold text-lg" x-text="club.initials"></span>
+                            </template>
+                        </div>
 
-                {{-- Call icon --}}
-                <template x-if="club.first_phone">
-                    <a :href="'tel:' + club.first_phone.replace(/\s+/g, '')"
-                       @click.stop
-                       class="shrink-0 flex size-10 items-center justify-center rounded-full bg-primary/10 border border-primary/20 active:scale-90 transition-transform">
-                        <span class="material-symbols-outlined text-primary text-lg">call</span>
-                    </a>
+                        {{-- Info --}}
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white font-bold text-sm leading-tight line-clamp-1" x-text="club.name"></p>
+                            <p class="text-white/40 text-xs mt-0.5 line-clamp-2 leading-relaxed" x-text="club.ho_address || club.address || 'Address not available'"></p>
+                        </div>
+
+                        {{-- Call icon --}}
+                        <template x-if="club.first_phone">
+                            <a :href="'tel:' + club.first_phone.replace(/\s+/g, '')"
+                               @click.stop
+                               class="shrink-0 flex size-10 items-center justify-center rounded-full bg-primary/10 border border-primary/20 active:scale-90 transition-transform">
+                                <span class="material-symbols-outlined text-primary text-lg">call</span>
+                            </a>
+                        </template>
+                        <template x-if="!club.first_phone">
+                            <div class="shrink-0 size-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10">
+                                <span class="material-symbols-outlined text-white/20 text-lg">phone_disabled</span>
+                            </div>
+                        </template>
+                    </button>
                 </template>
-                <template x-if="!club.first_phone">
-                    <div class="shrink-0 size-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10">
-                        <span class="material-symbols-outlined text-white/20 text-lg">phone_disabled</span>
-                    </div>
-                </template>
-            </button>
+            </section>
         </template>
 
         {{-- Empty state --}}
@@ -114,21 +133,21 @@
 
     {{-- ── Detail Modal ─────────────────────────────────── --}}
     <template x-if="activeClub !== null">
-        <div class="fixed inset-0 z-[100] flex items-end justify-center">
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
 
             {{-- Backdrop --}}
-            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="close()"></div>
+            <div class="member-modal-backdrop absolute inset-0 bg-black/60" @click="close()"></div>
 
             {{-- Sheet --}}
             <div
-                class="relative w-full max-w-[425px] bg-[#0a3d62] rounded-t-3xl border-t border-white/10 flex flex-col"
+                class="member-modal-surface relative w-full max-w-[425px] rounded-3xl border border-white/10 flex flex-col"
                 style="max-height: 90dvh;"
                 x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="transform translate-y-full"
-                x-transition:enter-end="transform translate-y-0"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
                 x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="transform translate-y-0"
-                x-transition:leave-end="transform translate-y-full"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
             >
                 {{-- Handle --}}
                 <div class="flex justify-center pt-3 pb-1 shrink-0">
@@ -140,28 +159,50 @@
 
                     {{-- Club image / banner --}}
                     <div class="mx-4 mt-3 mb-4 h-36 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
-                        {{-- Replace with <img> once available --}}
-                        <div class="flex flex-col items-center gap-2 opacity-40">
-                            <span class="material-symbols-outlined text-4xl text-primary">domain</span>
-                            <p class="text-white/40 text-xs">Image coming soon</p>
-                        </div>
+                        <template x-if="activeClub.image_url">
+                            <img :src="activeClub.image_url" :alt="activeClub.name" class="h-full w-full object-cover">
+                        </template>
+                        <template x-if="!activeClub.image_url">
+                            <div class="flex flex-col items-center gap-2 opacity-40">
+                                <span class="material-symbols-outlined text-4xl text-primary">domain</span>
+                                <p class="text-white/40 text-xs">Image coming soon</p>
+                            </div>
+                        </template>
                     </div>
 
                     {{-- Name & branch --}}
-                    <div class="px-5 mb-5">
-                        <h2 class="text-white font-extrabold text-xl leading-tight" x-text="activeClub.name"></h2>
-                        <p class="text-primary text-sm font-semibold mt-0.5" x-text="activeClub.branch"
-                           x-show="activeClub.branch && activeClub.branch !== activeClub.name"></p>
-                        <template x-if="activeClub.ceo">
-                            <p class="text-white/40 text-xs mt-1">
-                                <span class="text-white/25">CEO / Head: </span>
-                                <span x-text="activeClub.ceo"></span>
-                            </p>
-                        </template>
+                    <div class="px-5 mb-5 flex items-start gap-3">
+                        <div class="shrink-0 size-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
+                            <template x-if="activeClub.logo_url">
+                                <img :src="activeClub.logo_url" :alt="activeClub.name" class="h-full w-full object-cover">
+                            </template>
+                            <template x-if="!activeClub.logo_url">
+                                <span class="text-primary font-extrabold text-xl" x-text="activeClub.initials"></span>
+                            </template>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h2 class="text-white font-extrabold text-xl leading-tight" x-text="activeClub.name"></h2>
+                            <p class="text-primary text-sm font-semibold mt-0.5" x-text="activeClub.branch"
+                               x-show="activeClub.branch && activeClub.branch !== activeClub.name"></p>
+                            <template x-if="activeClub.ceo">
+                                <p class="text-white/40 text-xs mt-1">
+                                    <span class="text-white/25">CEO / Head: </span>
+                                    <span x-text="activeClub.ceo"></span>
+                                </p>
+                            </template>
+                        </div>
                     </div>
 
                     {{-- Detail rows --}}
                     <div class="mx-4 bg-white/5 border border-white/10 rounded-2xl divide-y divide-white/5 mb-4">
+
+                        {{-- Country --}}
+                        <template x-if="activeClub.country">
+                            <div class="flex items-start gap-3 px-4 py-3">
+                                <span class="material-symbols-outlined text-primary text-base mt-0.5 shrink-0">public</span>
+                                <p class="text-white/70 text-sm leading-relaxed" x-text="activeClub.country"></p>
+                            </div>
+                        </template>
 
                         {{-- Address --}}
                         <template x-if="activeClub.address">

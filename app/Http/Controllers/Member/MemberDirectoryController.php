@@ -3,39 +3,42 @@
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\DB;
+use App\Support\MemberAccess;
+use App\Support\PortalCache;
 
 class MemberDirectoryController extends Controller
 {
     public function index()
     {
-        $rows = DB::table('CustomerMst as c')
-            ->leftJoin('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.Cardid')
-            ->where('c.MemExpTypeID', 100)
-            ->whereIn('c.Cardid', [101])
-            ->orderBy('c.CusName')
-            ->select('c.PrvCusID', 'c.CusName', 'cc.Remarks as MemberCategory')
-            ->get();
+        $members = PortalCache::remember('member_directory_v4', now()->addMinutes(15), function (): array {
+            return MemberAccess::activeMemberQuery()
+                ->orderBy('c.Cardid')
+                ->orderBy('c.slno')
+                ->select('c.PrvCusID', 'c.CusName', 'c.Email', 'c.Mobile', 'cc.Remarks as MemberCategory')
+                ->get()
+                ->map(function ($m) {
+                    $memberId = (string) $m->PrvCusID;
+                    $words = array_values(array_filter(explode(' ', trim($m->CusName))));
+                    $initials = implode('', array_map(
+                        fn ($w) => strtoupper(mb_substr($w, 0, 1)),
+                        array_slice($words, 0, 2)
+                    ));
+                    $hasPhoto = PortalCache::hasMemberPhoto($memberId);
 
-        $members = $rows->map(function ($m) {
-            $memberId = (string) $m->PrvCusID;
-            $words = array_values(array_filter(explode(' ', trim($m->CusName))));
-            $initials = implode('', array_map(
-                fn($w) => strtoupper(mb_substr($w, 0, 1)),
-                array_slice($words, 0, 2)
-            ));
-            $photoPath = public_path('images/' . $memberId . '.jpg');
-            $hasPhoto = file_exists($photoPath);
-
-            return [
-                'id' => $memberId,
-                'name' => (string) $m->CusName,
-                'category' => (string) ($m->MemberCategory ?? ''),
-                'initials' => $initials,
-                'has_photo' => $hasPhoto,
-                'photo_url' => $hasPhoto ? asset('images/' . $memberId . '.jpg') : null,
-            ];
-        })->values()->all();
+                    return [
+                        'id' => $memberId,
+                        'name' => (string) $m->CusName,
+                        'category' => (string) ($m->MemberCategory ?? ''),
+                        'initials' => $initials,
+                        'has_photo' => $hasPhoto,
+                        'photo_url' => PortalCache::memberPhotoUrl($memberId),
+                        'email' => trim((string) ($m->Email ?? '')),
+                        'mobile' => trim((string) ($m->Mobile ?? '')),
+                    ];
+                })
+                ->values()
+                ->all();
+        });
 
         // Safely encode — HEX flags prevent ANY special char from breaking Blade/JS
         $membersJson = json_encode(

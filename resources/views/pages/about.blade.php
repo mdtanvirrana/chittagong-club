@@ -1,29 +1,16 @@
-@extends('layouts.app')
-@section('title', 'About CCL — Chittagong Club Ltd.')
+@extends('layouts.userpanel')
+@section('page_title', 'About CCL')
 @section('show_nav', true)
-@section('content')
+@section('userpanel_content')
 
     <div class="flex flex-col min-h-screen pb-24">
-
-        {{-- Header --}}
-        <header class="sticky top-0 z-50 bg-brand-blue/90 ios-blur border-b border-white/10 px-4 pt-12 pb-4">
-            <div class="flex items-center justify-between">
-                <a href="{{ route('dashboard') }}"
-                   class="flex size-10 text-center items-center justify-center rounded-full hover:bg-white/10
-                   transition-colors">
-                    <span class="material-symbols-outlined text-white">arrow_back_ios</span>
-                </a>
-                <div class="text-center">
-                    <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Chittagong Club Ltd</p>
-                    <h1 class="text-white text-lg font-bold">About CCL</h1>
-                </div>
-                <div class="size-10"></div>
-            </div>
-        </header>
+        @php
+            $aboutHeroUrl = $clubPhotoUrl ?? asset('about.png');
+        @endphp
 
         {{-- Hero Image --}}
         <div class="relative w-full h-56 overflow-hidden">
-            <img src="https://chittagongclubltd.com/wp-content/uploads/2023/04/Drone-Photo-Faisal-Azim-2-768x464-1-600x363.jpg"
+            <img src="{{ $aboutHeroUrl }}"
                  alt="Chittagong Club"
                  class="w-full h-full object-cover"
                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
@@ -31,8 +18,6 @@
             <div class="w-full h-full bg-primary/10 border-b border-white/10 items-center justify-center hidden">
                 <span class="material-symbols-outlined text-5xl text-primary/30">domain</span>
             </div>
-            {{-- Gradient overlay --}}
-            <div class="absolute inset-0 bg-gradient-to-t from-[#02568a]/90 via-transparent to-transparent"></div>
             {{-- Badge --}}
             <div class="absolute bottom-4 left-4">
                 <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold mb-0.5">Est.</p>
@@ -132,6 +117,11 @@
                 </p>
             </div>
 
+            <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+                <p class="text-primary text-[10px] font-bold uppercase tracking-[0.2em]">Trade License</p>
+                <p class="mt-2 text-white font-bold text-base">07/2020-2021</p>
+            </div>
+
             {{-- Divider --}}
             <div class="flex items-center gap-3">
                 <div class="h-px flex-1 bg-white/10"></div>
@@ -146,7 +136,7 @@
                         <span class="material-symbols-outlined text-white/50 text-xl">code</span>
                     </div>
                     <div>
-                        <p class="text-white font-bold text-sm">De Soft Technology Ltd</p>
+                        <p class="text-white font-bold text-sm">De Soft</p>
                         <a href="https://www.de-softbd.com" target="_blank"
                            class="text-primary/70 text-xs">www.de-softbd.com</a>
                     </div>

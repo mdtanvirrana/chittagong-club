@@ -1,63 +1,47 @@
 <?php
 
 namespace App\Http\Controllers\Member;
+
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\DB;
+use App\Http\Requests\Member\UpdatePasswordRequest;
+use App\Support\MemberAccess;
+use App\Support\MemberProfileViewData;
+use Illuminate\Validation\ValidationException;
 
 class MemberProfileController extends Controller
 {
     public function index()
     {
-        $memberId = session('member.id');
+        return view('pages.member-profile', MemberProfileViewData::forCurrentMember());
+    }
 
-        $member = DB::table('CustomerMst as c')
-            ->leftJoin('List_MemExpType as mt', 'c.MemExpTypeID', '=', 'mt.MemExpTypeID')
-            ->leftJoin('CusCardCatagory as cc', 'c.Cardid', '=', 'cc.Cardid')
-            ->where('c.PrvCusID', $memberId)
-            ->select([
-                'c.PrvCusID',
-                'c.Title',
-                'c.CusName',
-                'c.FName',
-                'c.MName',
-                'c.LName',
-                'c.BloodGroup',
-                'c.Phone',
-                'c.Mobile',
-                'c.Email',
-                'c.Address',
-                'c.City',
-                'c.Profession',
-                'c.Sex',
-                'c.BirthDt',
-                'c.DOE',          // join date
-                'c.ExpDt',        // expiry date
-                'c.MaritalStatus',
-                'c.MarriageDT',
-                'c.SpouseName',
-                'c.SpoBlood',
-                'c.SpoMobile',
-                'c.NoChild',
-                'c.Child1',
-                'c.Child2',
-                'c.Child3',
-                'c.FatherName',
-                'c.MotherName',
-                'c.Religion',
-                'c.Nationality',
-                'c.NID',
-                'c.PassportNo',
-                'c.CreditBal',
-                'c.Remarks',
-                'mt.MemExpTypeName',  // member status e.g. Active, Expired
-                'cc.Remarks as MemberCategory', // e.g. Permanent, Corporate
-            ])
-            ->first();
+    public function updatePassword(UpdatePasswordRequest $request)
+    {
+        $memberId = trim((string) $request->session()->get('member.id'));
 
-        if (! $member) {
-            abort(404, 'Member not found.');
+        abort_if($memberId === '', 404, 'Member not found.');
+
+        $currentPassword = (string) $request->input('current_password');
+        $newPassword = (string) $request->input('new_password');
+
+        if (! MemberAccess::activeMemberExists($memberId) || ! MemberAccess::credentialsMatch($memberId, $currentPassword)) {
+            throw ValidationException::withMessages([
+                'current_password' => 'The current password is incorrect.',
+            ]);
         }
 
-        return view('pages.member-profile', compact('member'));
+        $updated = MemberAccess::changePassword($memberId, $newPassword, 'changed');
+
+        if (! $updated) {
+            throw ValidationException::withMessages([
+                'new_password' => 'Unable to update the password right now. Please try again.',
+            ]);
+        }
+
+        $request->session()->regenerateToken();
+
+        return redirect()
+            ->route('profile')
+            ->with('password_status', 'Password changed successfully.');
     }
 }

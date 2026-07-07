@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Http\Requests\Auth;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class InitializePasswordRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'password' => ['required', 'string', 'min:6', 'max:40', 'confirmed'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'password.required' => 'Enter a new password.',
+            'password.min' => 'The new password must be at least 6 characters.',
+            'password.max' => 'The new password may not be greater than 40 characters.',
+            'password.confirmed' => 'Confirm the new password.',
+        ];
+    }
+}

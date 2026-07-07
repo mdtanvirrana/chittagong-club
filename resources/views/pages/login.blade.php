@@ -1,135 +1,153 @@
 @extends('layouts.app')
-@section('title', 'Login — Chittagong Club Ltd.')
+@section('page_title', 'Login')
 
 @push('styles')
-<style>
-    .blue-depth-gradient { background: radial-gradient(circle at center, #116fa7 0%, #0c5c8b 100%); }
-    .gold-text-gradient {
-        background: linear-gradient(135deg, #f2cc0d 0%, #fff3b0 50%, #d4af37 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    .gold-btn-gradient { background: linear-gradient(135deg, #f2cc0d 0%, #ffdf40 50%, #d4af37 100%); }
-</style>
+    @include('partials.member-auth-styles')
 @endpush
 
 @section('content')
-<div
-    x-data="{
+    <div
+        x-data="{
         showPassword: false,
         loading: false,
         memberId: '',
         password: '',
     }"
-    class="relative flex h-screen w-full flex-col blue-depth-gradient overflow-hidden"
->
-    {{-- Status bar spacer --}}
-    <div class="h-12 w-full"></div>
+        class="relative flex min-h-screen w-full flex-col blue-depth-gradient overflow-x-hidden"
+    >
+        {{-- Status bar spacer --}}
+        <div class="h-3 w-full"></div>
 
 
+        @include('partials.member-auth-hero')
 
-    {{-- Hero / Logo --}}
-    <div class="flex flex-col items-center justify-center pt-8 pb-12 px-8">
-        <div class="relative mb-8">
-            <div class="absolute -inset-4 bg-primary/10 blur-3xl rounded-full opacity-50"></div>
-            <div class="relative flex items-center justify-center w-32 h-32">
-                <img
-                    class="w-24 h-24 object-contain rounded-full"
-                    src="{{asset('logo.jpg')}}"
-                    alt="Chittagong Club Logo"
-                />
-            </div>
-        </div>
-        <h1 class="text-4xl font-extrabold tracking-tight text-center mb-2">
-            <span class="gold-text-gradient">Chittagong Club</span>
-        </h1>
-        <p class="text-white/60 text-sm font-light tracking-widest uppercase text-center">
-            Exclusive Member Access
-        </p>
-    </div>
+        {{-- Login Form --}}
+        <div class="flex-1 px-8 pb-3 flex flex-col justify-start w-full">
+            <form action="{{ route('login.post') }}" method="POST" class="space-y-3" @submit="loading = true">
+                @csrf
 
-    {{-- Login Form --}}
-    <div class="flex-1 px-8 pb-12 flex flex-col justify-start w-full">
-        <form action="{{ route('login.post') }}" method="POST" class="space-y-6">
-            @csrf
-
-            {{-- Error alert --}}
-            @if ($errors->any())
-            <div class="flex items-center gap-3 bg-red-500/15 border border-red-500/30 rounded-xl px-4 py-3">
-                <span class="material-symbols-outlined text-red-400 shrink-0">error</span>
-                <p class="text-red-300 text-sm">{{ $errors->first() }}</p>
-            </div>
-            @endif
-
-            {{-- Membership ID --}}
-            <div class="space-y-2">
-                <label class="block text-xs font-semibold text-primary/80 uppercase tracking-widest ml-1">
-                    Membership ID
-                </label>
-                <div class="relative group">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <span class="material-symbols-outlined text-white/40 group-focus-within:text-primary transition-colors">badge</span>
+                @if (session('password_reset_status'))
+                    <div
+                        class="flex items-center gap-3 bg-emerald-500/15 border border-emerald-400/30 rounded-xl px-4 py-3">
+                        <span class="material-symbols-outlined text-emerald-300 shrink-0">check_circle</span>
+                        <p class="text-emerald-700 text-sm">{{ session('password_reset_status') }}</p>
                     </div>
-                    <input
-                        name="member_id"
-                        type="text"
-                        value="{{ old('member_id') }}"
-                        placeholder="e.g. CCL-88291"
-                        autocomplete="username"
-                        class="block w-full bg-white/5 border {{ $errors->has('member_id') ? 'border-red-500/50' : 'border-white/10' }} rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
-                    />
+                @endif
+
+                @if (session('session_expired'))
+                    <div
+                        class="flex items-center gap-3 bg-amber-500/15 border border-amber-400/30 rounded-xl px-4 py-3">
+                        <span class="material-symbols-outlined text-amber-300 shrink-0">schedule</span>
+                        <p class="text-amber-700 text-sm">{{ session('session_expired') }}</p>
+                    </div>
+                @endif
+
+                {{-- Error alert --}}
+                @if ($errors->any())
+                    <div class="flex items-center gap-3 bg-red-500/15 border border-red-500/30 rounded-xl px-4 py-3">
+                        <span class="material-symbols-outlined text-red-400 shrink-0">error</span>
+                        <p class="text-red-700 text-sm">{{ $errors->first() }}</p>
+                    </div>
+                @endif
+
+                {{-- Membership ID --}}
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold text-primary/80 uppercase tracking-widest ml-1">
+                        Membership ID
+                    </label>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <span class="material-symbols-outlined login-icon">badge</span>
+                        </div>
+                        <input
+                            name="member_id"
+                            type="text"
+                            value="{{ old('member_id') }}"
+                            autocomplete="username"
+                            class="login-input block w-full {{ $errors->has('member_id') ? 'border-red-500/50' : 'border-primary/10' }} rounded-xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
+                        />
+                    </div>
                 </div>
-            </div>
 
-            {{-- Password --}}
-            <div class="space-y-2">
-                <label class="block text-xs font-semibold text-primary/80 uppercase tracking-widest">Security Code</label>
-                <div class="relative group">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <span class="material-symbols-outlined text-white/40 group-focus-within:text-primary transition-colors">lock</span>
-                    </div>
-                    <input
-                        name="password"
-                        :type="showPassword ? 'text' : 'password'"
-                        placeholder="••••••••"
-                        autocomplete="current-password"
-                        class="block w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-12 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
-                    />
-                    <button
-                        type="button"
-                        @click="showPassword = !showPassword"
-                        class="absolute inset-y-0 right-0 pr-4 flex items-center"
-                    >
-                        <span class="material-symbols-outlined text-white/40 hover:text-white"
+                {{-- Password --}}
+                <div class="space-y-2">
+                    <label
+                        class="block text-xs font-semibold text-primary/80 uppercase tracking-widest">Password</label>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <span class="material-symbols-outlined login-icon">lock</span>
+                        </div>
+                        <input
+                            name="password"
+                            :type="showPassword ? 'text' : 'password'"
+                            autocomplete="current-password"
+                            class="login-input block w-full border border-primary/10 rounded-xl py-4 pl-12 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
+                        />
+                        <button
+                            type="button"
+                            @click="showPassword = !showPassword"
+                            class="login-toggle absolute inset-y-0 right-0 pr-4 flex items-center"
+                        >
+                        <span class="material-symbols-outlined"
+                              :class="{ 'is-active': showPassword }"
                               x-text="showPassword ? 'visibility' : 'visibility_off'">
                         </span>
-                    </button>
+                        </button>
+                    </div>
+                    <div class="flex justify-end">
+                        <a
+                            href="{{ route('password.forgot') }}"
+                            class="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80 transition hover:text-primary"
+                        >
+                            Forgot Password?
+                        </a>
+                    </div>
                 </div>
-            </div>
 
-            {{-- Submit --}}
-            <button
-                type="submit"
-                :disabled="loading"
-                class="w-full gold-btn-gradient text-brand-blue font-bold py-4 rounded-xl shadow-[0_10px_20px_-5px_rgba(242,204,13,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70"
-            >
-                <span x-show="!loading">SIGN IN TO PORTAL</span>
-                <span x-show="loading" class="flex items-center gap-2">
+                {{-- Submit --}}
+                <button
+                    type="submit"
+                    :disabled="loading"
+                    class="w-full gold-btn-gradient text-brand-blue font-bold py-4 rounded-xl shadow-[0_10px_20px_-5px_rgba(242,204,13,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                >
+                    <span x-show="!loading">SIGN IN TO PORTAL</span>
+                    <span x-show="loading" class="flex items-center gap-2">
                     <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                     </svg>
                     Signing in…
                 </span>
-                <span class="material-symbols-outlined text-xl" x-show="!loading">login</span>
-            </button>
+                    <span class="material-symbols-outlined text-xl" x-show="!loading">login</span>
+                </button>
 
-        </form>
-    </div>
+            </form>
 
-    {{-- iOS home indicator --}}
-    <div class="h-8 w-full flex justify-center items-end pb-2">
-        <div class="w-32 h-1 bg-white/20 rounded-full"></div>
+            <div class="mt-10 mx-auto ">
+                <a
+                    href="{{ route('password.initial.create') }}"
+                    class="flex w-full items-center justify-center gap-1 rounded-lg border border-primary/15 bg-white/70 px-2 py-1.5 text-xs  text-primary/80  font-semibold uppercase tracking-wide text-primary shadow-sm transition hover:bg-white/90"
+                >
+                    <span class="material-symbols-outlined text-sm  text-primary/80 ">lock_reset</span>
+                   <span class=" text-primary/80 ">Registration</span>
+                </a>
+            </div>
+
+            <section class="mt-6 border-t border-primary/10 pt-4">
+                <p class="text-center text-[10px] font-bold uppercase tracking-[0.25em] text-primary/70">Club Policies</p>
+                <div class="mt-5 flex flex-col items-center space-y-3 text-sm font-medium">
+                    <a href="{{ route('legal.terms') }}" class="text-black hover:text-primary hover:underline transition">Terms &amp; Conditions</a>
+                    <a href="{{ route('legal.refund') }}" class="text-black hover:text-primary hover:underline transition">Return and Refund Policy</a>
+                    <a href="{{ route('legal.privacy') }}" class="text-black hover:text-primary hover:underline transition">Privacy Policy</a>
+                    <a href="{{ route('legal.data') }}" class="text-black hover:text-primary hover:underline transition">Data Policy</a>
+                    <a href="{{ route('legal.contact') }}" class="text-black hover:text-primary hover:underline transition">Contact Us</a>
+                </div>
+            </section>
+        </div>
+
+        {{-- iOS home indicator --}}
+        <div class="h-8 w-full flex justify-center items-end pb-2">
+            <div class="w-32 h-1 bg-white/20 rounded-full"></div>
+        </div>
     </div>
-</div>
 @endsection

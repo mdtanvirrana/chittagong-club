@@ -1,8 +1,8 @@
-@extends('layouts.app')
-@section('title', 'Notice Board — Chittagong Club Ltd.')
+@extends('layouts.userpanel')
+@section('page_title', 'Notice Board')
 @section('show_nav', true)
 
-@section('content')
+@section('userpanel_content')
 <div
     x-data="{
         search: '',
@@ -26,18 +26,7 @@
 >
 
     {{-- Header --}}
-    <header class="bg-brand-blue pt-12 pb-5 px-4 sticky top-0 z-50 rounded-b-xl shadow-lg">
-        <div class="flex items-center justify-between mb-4">
-            <a href="{{ route('dashboard') }}"
-               class="text-white flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-                <span class="material-symbols-outlined">arrow_back_ios</span>
-            </a>
-            <div class="text-center">
-                <p class="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Chittagong Club Ltd</p>
-                <h1 class="text-white text-lg font-bold">Notice Board</h1>
-            </div>
-            <div class="size-10"></div>
-        </div>
+    <header class="userpanel-subheader bg-primary/5 pb-5 p-4 sticky top-0 z-50 rounded-b-xl shadow-lg">
 
         {{-- Search --}}
         <div class="relative">
@@ -110,23 +99,23 @@
 
     {{-- ── Modal: notice detail ──────────────────────────── --}}
     <template x-if="activeNotice !== null">
-        <div class="fixed inset-0 z-[100] flex items-end justify-center"
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4"
              @keydown.escape.window="closeNotice()">
 
             {{-- Backdrop --}}
-            <div class="absolute inset-0 bg-black/60 ios-blur"
+            <div class="member-modal-backdrop absolute inset-0 bg-black/60"
                  @click="closeNotice()"></div>
 
             {{-- Sheet --}}
             <div
-                class="relative w-full max-w-[425px] bg-[#0a3d62] rounded-t-3xl border-t border-white/10 flex flex-col"
+                class="member-modal-surface relative w-full max-w-[425px] rounded-3xl border border-white/10 flex flex-col"
                 style="max-height: 88dvh;"
                 x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="transform translate-y-full"
-                x-transition:enter-end="transform translate-y-0"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
                 x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="transform translate-y-0"
-                x-transition:leave-end="transform translate-y-full"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
             >
                 {{-- Handle --}}
                 <div class="flex justify-center pt-3 pb-2 shrink-0">

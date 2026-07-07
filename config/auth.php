@@ -20,6 +20,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Member Portal Session Lifetime
+    |--------------------------------------------------------------------------
+    |
+    | Member portal authentication uses a custom session payload rather than
+    | Laravel's built-in guard. This defines the inactivity timeout in
+    | minutes. Each authenticated request refreshes the timer.
+    |
+    */
+
+    'member_session_lifetime' => (int) env('MEMBER_SESSION_LIFETIME', 5),
+
+    /*
+    |--------------------------------------------------------------------------
     | Authentication Guards
     |--------------------------------------------------------------------------
     |
@@ -39,6 +52,11 @@ return [
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
+        ],
+
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'admins',
         ],
     ],
 
@@ -63,6 +81,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
+        ],
+
+        'admins' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\AdminUser::class,
         ],
 
         // 'users' => [

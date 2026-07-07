@@ -1,6 +1,5 @@
 *.log
 .DS_Store
-.env
 .env.backup
 .env.production
 .phpactor.json
@@ -14,6 +13,7 @@
 /auth.json
 /node_modules
 /public/build
+/public/cache
 /public/hot
 /public/storage
 /public/images
